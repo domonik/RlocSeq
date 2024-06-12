@@ -1,0 +1,110 @@
+
+# This is an example config file which serves as interface for the tool.
+# Copy this file (e.g. to a file named config.yml) and make changes to your needs. Afterwards you can run the pipeline
+# via:
+#
+# snakemake -s snakefile.smk --cores 1 --configfile config.yml
+#
+# You can change the number of cores as you need. It will speed up the run since it runs stuff in parallel
+
+# Settings to find initial Data and where to store Results.
+# The CountFile needs to have the non-normalized counts as well as a gene identifier that is the same as the one from
+# UniProts "Gene Names (ordered locus)" (aka locus tag) in the first column. This is essential since it will need those
+# for GOEnrichment
+
+
+
+RUN_DIR: "Pipeline/RUNS/LightDark_DarkPuro" # The Directory to store results in
+CountFile: "initialData/LightDarkSingleMapped.csv" # The counts file to use
+gff: "initialData/Synsp.gff3"
+id_column: "Gene Names (ordered locus)" # UniProt Column name of your index column
+name_column: "Gene Names"
+initial_sep: ","
+Rlib: "Rlib" # Some R packages will be installed here due to version conflicts
+
+
+# The Counts file will be split at _ seperator and all terms will become conditions
+# eg. Header row has to have entries like minusP_TotalCell_R1 using the column mapping:
+# ["Puromycin", "Fraction", "Replicate"] minusP will become a level of the factor Puromycin
+column_mapping: ["Puromycin", "Fraction", "LightDark", "Replicate"]
+
+# The design formula that is used by DESeq usual the last factor will be the one used for cmparisons and
+# DESeq automatically adjusts for other factors
+design: "~ Replicate + Fraction"
+
+# Will be zipped together in order to run for multiple conditions. Must be levels of last Factor
+conditions: ["M", "M", "C"]
+baselines: ["C", "TC", "TC"]
+
+# If your initial table contains  columns that you don´t want to use instead of using DESeqs correction via the design
+# formula. You can specify them via the name form the column mapping and the level to drop.
+drop_condition: {"Puromycin": ["minusP"], "LightDark": ["L"]}
+
+# You can use a list of sample names that you don´t want to use. e.g. if this sample doesn´t cluster well with others
+# e.g. you can remove the sample mentioned above via putting: ["minusP_TotalCell_R1"] here. If you don´t want to remove
+# any samples put False.
+blacklisted_samples: []
+
+
+# You can use spike ins which must be in your CountFile. Spike ins will be detected via a Name pattern. e.g. "ERCC"
+# Spike ins will be removed after they were used for normalization
+use-spike-ins: False
+spike-in-pattern: "ERCC"
+
+# You can put a list of house-keeping genes here where you are sure that they don't change between your conditions. If
+# you do so they will be used for DESeq normalization. If both "use-spike-ins" and "use-housekeeping" are False. It will
+# use the default DESeq2 normalization method
+use-housekeeping: False
+housekeeping: ""
+
+
+# GOTerm databases are automatically built via downloading terms from UniProt. Therefore, you need to specify a taxID.
+# Since you can use the database for multiple Runs  specify a directory where to store the Database and files.
+GOTermDir: "GOTerms2"
+tax_id: 1111708
+genus: "Synechocystis"
+species: "sp"
+
+# GOEnrichment Settings
+# These are the Cutoffs used for GO Enrichment.
+log2FCCutOff: 0.8
+pAdjCutOff: 0.05
+
+# Gene Set sizes used by ClutserProfilers GOEnrich function
+minGSSize: 30
+maxGSSize: 500
+
+# KEGGEnrichment Settings - mainly uses GO settings
+
+# organism ID from KEGG DB
+keggOrgID: "syn"
+
+
+# Setting for GO Term enrichment reduction. Will remove redundant GO Terms via Calculating their Semantic Similarity and
+# Clustering via DBScan
+
+# epsilon to use for DBScan Clustering increase to remove more redundant terms decrease to cluster less
+cluster-eps: 0.25
+# Which column of the Enrichment Table to use for sorting. Will use the first from a cluster and drop others.
+# You can also sort via "strlen" which will then keep eihter the longest or shortest GO Term depending on the ascending
+# value
+sort_method: "p.adjust"
+ascending: True
+
+
+# Plotting
+
+# You can highlight genes in the Volcano Plots via the highlight dict. You can either use gene names from the tag2gene
+# file or the locus tag
+#
+# The key of the dict (GOI) will be displayed in the legend. The first entry of the list is then the color followed by either
+# another list that contains names or tags or a string that can be interpreted as a regex for a gene name.
+# upcolor downcolor and normalcolor are the colors used in the volcano plot
+# you can use every HTML color you like.
+
+highlight: {"mRNA enconding<br>ribosomal proteins": ["black", "rpl|rps"], "ncRNA/sRNA": ["blue", "ncr|ncl"], "tRNA": ["purple", "6803t"], "photosystem": ["green", "psa|psb"]}
+upColor: "rgb(255,0,0)"
+downColor: "rgb(255,0,0)" # "rgb(255,165,0)"
+normalColor: "rgb(255,0,0)" # "rgb(199,199,199)"
+
+enrichPlotType: "bar" # one of bar or scatter

@@ -1,0 +1,78 @@
+primary-file: "run_configs/config.yml" # path to the config file that will be used first
+secondary-file: "run_configs/second_config.yml"
+tertiary-file: "run_configs/third_config.yml"
+total_cell-file: "run_configs/total_cell_config.yml"
+puromycinTC: "run_configs/configPuromycinTC.yml"
+lightDarkLightConfig: "run_configs/lightDarkConfig.yml"
+lightDarkDarkConfig: "run_configs/lightDarkDarkConfig.yml"
+lightDarkLightPuroConfig: "run_configs/lightDarkPuroConfig.yml"
+lightDarkDarkPuroConfig: "run_configs/lightDarkDarkPuroConfig.yml"
+lightDarkLightTCConfig: "run_configs/lightDarkLightTCConfig.yml"
+
+padj_cutoff: 0.05
+
+
+multipanel_font_size: 20
+
+multilevel:
+  lfc_cutoff: 0.5
+  padj_cutoff: 0.05
+  additional_housekeeping_genes: []
+  mode: "intersect"
+
+memeMotif:
+  RUN_DIR: "Pipeline/RUNS/LightRunMinusPuromycin/MotifEnrichment"
+  DESeqResultTable: "Pipeline/RUNS/LightRunMinusPuromycin/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv"
+  gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
+  fasta: "initialData/Synechocystis.fasta"
+  add_column: "locus_tag"
+  lfc_cutoff: 0.8
+  padj_cutoff: 0.05
+
+
+memeMotif2:
+  RUN_DIR: "Pipeline/RUNS/LightRunPlusPuromycin/MotifEnrichment"
+  DESeqResultTable: "Pipeline/RUNS/LightRunPlusPuromycin/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv"
+  gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
+  fasta: "initialData/Synechocystis.fasta"
+  add_column: "locus_tag"
+  lfc_cutoff: 0.8
+  padj_cutoff: 0.05
+
+
+memeMotifLD_L:
+  RUN_DIR: "Pipeline/RUNS/LightDark_LightOnly/MotifEnrichment"
+  DESeqResultTable: "Pipeline/RUNS/LightDark_LightOnly/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv"
+  gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
+  fasta: "initialData/Synechocystis.fasta"
+  add_column: "locus_tag"
+  lfc_cutoff: 0.8
+  padj_cutoff: 0.05
+
+memeMotifLD_D:
+  RUN_DIR: "Pipeline/RUNS/LightDark_DarkOnly/MotifEnrichment"
+  DESeqResultTable: "Pipeline/RUNS/LightDark_DarkOnly/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv"
+  gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
+  fasta: "initialData/Synechocystis.fasta"
+  add_column: "locus_tag"
+  lfc_cutoff: 0.8
+  padj_cutoff: 0.05
+
+memeMotifLD_DPuro:
+  RUN_DIR: "Pipeline/RUNS/LightDark_DarkPuro/MotifEnrichment"
+  DESeqResultTable: "Pipeline/RUNS/LightDark_DarkPuro/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv"
+  gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
+  fasta: "initialData/Synechocystis.fasta"
+  add_column: "locus_tag"
+  lfc_cutoff: 0.8
+  padj_cutoff: 0.05
+
+
+memeMotifLD_LPuro:
+  RUN_DIR: "Pipeline/RUNS/LightDark_LightPuro/MotifEnrichment"
+  DESeqResultTable: "Pipeline/RUNS/LightDark_LightPuro/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv"
+  gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
+  fasta: "initialData/Synechocystis.fasta"
+  add_column: "locus_tag"
+  lfc_cutoff: 0.8
+  padj_cutoff: 0.05

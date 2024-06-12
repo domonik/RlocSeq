@@ -1,0 +1,9 @@
+channels:
+ - conda-forge
+ - bioconda
+dependencies:
+ - matplotlib
+ - pandas
+ - plotly
+ - matplotlib-venn
+ - python-kaleido
