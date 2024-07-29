@@ -395,8 +395,10 @@ rule joinTables:
     input:
         deseqResMinus = rules.other_extractDESeqResult.output.result_table,
         deseqResPlus = rules.second_extractDESeqResult.output.result_table,
+        add_data = "initialData/locusTagtoGeneName.csv"
     output:
         tsv = "Pipeline/Summary/joinedDESeq_c{condition}_vs_b{baseline}.tsv",
+        stayed = "Pipeline/Summary/stayedAtMembrane_c{condition}_vs_b{baseline}.tsv",
     run:
         df_minus = pd.read_csv(input.deseqResMinus, sep="\t")
         df_plus = pd.read_csv(input.deseqResPlus, sep="\t")
@@ -410,9 +412,32 @@ rule joinTables:
         df["shiftCtoM"] = (df["plusPMembran"] & df["minusPCytosol"])
         df["stayedAtMembrane"] = df["plusPMembran"] & df["minusPMembran"]
         df["stayedInCytosol"] = df["plusPCytosol"] & df["minusPCytosol"]
-        print(df[df.index.str.contains("-as") & df["shiftMtoC"]])
-        print(df[df.index.str.contains("-as") & df["shiftCtoM"]])
-        df.to_csv(output.tsv, sep="\t")
+        add_data = pd.read_csv(input.add_data, sep=",")
+
+        df = df.merge(add_data, left_index=True, right_on="locus_tag")
+        df = df[df.columns[-2:].to_list() + df.columns[:-2].to_list()]
+        df.to_csv(output.tsv, sep="\t", index=False)
+        df = df[df["stayedAtMembrane"] == True]
+
+        df.to_csv(output.stayed, sep="\t", index=False)
+
+
+rule GOTermEnrichmentStayed:
+    input:
+        df = rules.joinTables.output.tsv,
+        annotation_db = rules.other_generateOrgDB.output.annotation_db,
+    params:
+        cfg = config["primary"]
+    output:
+        up = "Pipeline/Summary/GO/joinedDESeq_c{condition}_vs_b{baseline}_ud_up.tsv",
+        down = "Pipeline/Summary/GO/joinedDESeq_c{condition}_vs_b{baseline}_ud_down.tsv"
+    conda:
+        "envs/clusterprofiler.yml"
+    script: "scripts/GOTermStayedAtMembrane.R"
+
+
+
+
 
 rule extractMembraneAndSolubleProteins:
     input:
@@ -531,9 +556,10 @@ rule correlationRNAvsProteins:
 rule checkIntraTransMembrane:
     input:
         uniprot = rules.other_downloadOrganismGOTerms.output.go_terms,
-        deseq_res = rules.second_extractDESeqResult.output.result_table,
+        deseq_res = rules.joinTables.output.tsv,
     output:
-        svg = "Pipeline/c{condition}vs{baseline}Foo.svg"
+        svg = "Pipeline/c{condition}vs{baseline}Foo.svg",
+        membrane_table = "Pipeline/c{condition}vs{baseline}_MembraneInfo.tsv"
     script: "scripts/checkMembraneDistribution.py"
 
 rule refineVolcano:
@@ -1038,10 +1064,11 @@ rule all:
 
         tu = expand(rules.createTUTable.output, condition=["M"], baseline=["C"]),
         tu2 = expand(rules.createTUTable2.output, condition=["M"], baseline=["C"]),
-        #tu3 = expand(rules.plotHistogramm.output, condition=config["primary"]["conditions"], baseline=config["primary"]["baselines"]),
+        #tu3 = expand(rules.plotHistogramm.output,zip, condition=["M"], baseline=["C"]),
+        stayedGO = expand(rules.GOTermEnrichmentStayed.output, condition=["M"], baseline=["C"]),
         df = expand(rules.summarizeResult.output, condition=["M"], baseline=["C"]),
         transintramembrane = expand(rules.joinTables.output, condition=["M"], baseline=["C"]),
-        #dfr = expand(rules.checkIntraTransMembrane.output, condition=config["primary"]["conditions"], baseline=config["primary"]["baselines"]),
+        dfr = expand(rules.checkIntraTransMembrane.output, condition=["M"], baseline=["C"]),
         size_factors = rules.third_runDESeq.output,
         #protloc = expand(rules.correlationRNAvsProteins.output, condition="M", baseline="C"),
         summary_fig = expand(rules.compareResults.output, condition="M", baseline="C"),
