@@ -255,7 +255,10 @@ rule createTUTable2:
         out_df_up.to_csv(output.tu_table, sep="\t", index=False)
 
 
-
+rule download_subcell:
+    output:
+        tsv = "Pipeline/SubcellularLoc/uniprot_anno.tsv"
+    script: "scripts/downloadCellularLocation.py"
 
 
 rule createTUTable:
@@ -312,6 +315,9 @@ rule createTUTable:
 
         out_df_up.to_csv(output.tu_table, sep="\t", index=False)
         out_df_down.to_csv(output.tu_table_down, sep="\t", index=False)
+
+
+
 
 rule plotHistogramm:
     input:
@@ -398,11 +404,11 @@ rule joinTables:
         add_data = "initialData/locusTagtoGeneName.csv"
     output:
         tsv = "Pipeline/Summary/joinedDESeq_c{condition}_vs_b{baseline}.tsv",
+        output_for_R_because_this_retarded_language_cannot_even_read_tsv_files = "Pipeline/Summary/joinedDESeqForRetardedR_c{condition}_vs_b{baseline}.tsv",
         stayed = "Pipeline/Summary/stayedAtMembrane_c{condition}_vs_b{baseline}.tsv",
     run:
         df_minus = pd.read_csv(input.deseqResMinus, sep="\t")
         df_plus = pd.read_csv(input.deseqResPlus, sep="\t")
-        df = df_minus.join(df_plus, rsuffix="_plusPuromycin", lsuffix="_minusPuromycin")
         df = df_minus.join(df_plus, rsuffix="_plusPuromycin", lsuffix="_minusPuromycin")
         df["minusPMembran"] = (df["log2FoldChange_minusPuromycin"] >= config["primary"]["log2FCCutOff"]) & (df["padj_minusPuromycin"] <= config["primary"]["pAdjCutOff"])
         df["minusPCytosol"] = (df["log2FoldChange_minusPuromycin"] <= -config["primary"]["log2FCCutOff"]) & (df["padj_minusPuromycin"] <= config["primary"]["pAdjCutOff"])
@@ -412,19 +418,26 @@ rule joinTables:
         df["shiftCtoM"] = (df["plusPMembran"] & df["minusPCytosol"])
         df["stayedAtMembrane"] = df["plusPMembran"] & df["minusPMembran"]
         df["stayedInCytosol"] = df["plusPCytosol"] & df["minusPCytosol"]
+        df["UTR"] = df.index.str.contains("UTR")
+        df["antisense"] = df.index.str.contains("-as")
+        df["non-coding"] = df.index.str.contains("ncr|ncl")
+        df["mRNA"] = ~(df["UTR"] | df["antisense"] | df["non-coding"])
         add_data = pd.read_csv(input.add_data, sep=",")
 
         df = df.merge(add_data, left_index=True, right_on="locus_tag")
         df = df[df.columns[-2:].to_list() + df.columns[:-2].to_list()]
         df.to_csv(output.tsv, sep="\t", index=False)
+        df_for_r = df[["locus_tag", "stayedAtMembrane", "stayedInCytosol"]]
+
         df = df[df["stayedAtMembrane"] == True]
 
         df.to_csv(output.stayed, sep="\t", index=False)
+        df_for_r.to_csv(output.output_for_R_because_this_retarded_language_cannot_even_read_tsv_files, sep="\t", index=False)
 
 
 rule GOTermEnrichmentStayed:
     input:
-        df = rules.joinTables.output.tsv,
+        df = rules.joinTables.output.output_for_R_because_this_retarded_language_cannot_even_read_tsv_files,
         annotation_db = rules.other_generateOrgDB.output.annotation_db,
     params:
         cfg = config["primary"]
@@ -555,11 +568,11 @@ rule correlationRNAvsProteins:
 
 rule checkIntraTransMembrane:
     input:
-        uniprot = rules.other_downloadOrganismGOTerms.output.go_terms,
+        uniprot = rules.download_subcell.output.tsv,
         deseq_res = rules.joinTables.output.tsv,
     output:
-        svg = "Pipeline/c{condition}vs{baseline}Foo.svg",
-        membrane_table = "Pipeline/c{condition}vs{baseline}_MembraneInfo.tsv"
+        png = "Pipeline/SubcellularLoc/{condition}vs{baseline}SubcellLoc.png",
+        tsv = "Pipeline/SubcellularLoc/{condition}vs{baseline}SubcellLoc.tsv",
     script: "scripts/checkMembraneDistribution.py"
 
 rule refineVolcano:
@@ -592,6 +605,7 @@ rule refineVolcano:
         fig.update_traces(
             marker=dict(size=3),
         )
+        fig.layout.annotations = None
         fig.add_annotation(
             text="Cytosol",
             font=dict(color="#002695"),
@@ -1019,8 +1033,8 @@ rule extractOverlap:
         ldlp = rules.lightDarkLightPuro_extractDESeqResult.output.result_table,
         lddp = rules.lightDarkDarkPuro_extractDESeqResult.output.result_table,
     output:
-        svg = "Pipeline/Paper/c{condition}_vs_b{baseline}_overlap.svg",
-        html = "Pipeline/Paper/c{condition}_vs_b{baseline}_overlap.html"
+        svg = "Pipeline/overlap/c{condition}_vs_b{baseline}_overlap.svg",
+        html = "Pipeline/overlap/c{condition}_vs_b{baseline}_overlap.html"
     conda: "envs/matplotlibPlotly.yml"
     script:
         "scripts/getVennDiagram.py"
@@ -1048,6 +1062,18 @@ rule plotGSEA:
     script:
         "scripts/GSEAPlot.py"
 
+rule copyFigures:
+    input:
+        f1Cperc = expand(rules.compareResults.output.svgplus, condition=["M"], baseline=["C"]),
+        f1Cvolcano = expand(rules.refineVolcano.output.svg, condition=["M"], baseline=["C"]),
+    output:
+        f1Cperc = "Pipeline/Paper/Subfigures/Figure1CPercent.svg",
+        f1Cvolcano = "Pipeline/Paper/Subfigures/Figure1CVolcano.svg"
+    shell:
+        """
+        cp {input.f1Cperc} {output.f1Cperc}
+        cp {input.f1Cvolcano} {output.f1Cvolcano}
+        """
 
 rule all:
     default_target: True
@@ -1061,6 +1087,7 @@ rule all:
         motifldd = rules.meme_ldd_allMotif.input,
         motifldlp = rules.meme_ldlpuro_allMotif.input,
         motiflddp = rules.meme_lddpuro_allMotif.input,
+        figures = rules.copyFigures.output,
 
         tu = expand(rules.createTUTable.output, condition=["M"], baseline=["C"]),
         tu2 = expand(rules.createTUTable2.output, condition=["M"], baseline=["C"]),
@@ -1086,5 +1113,6 @@ rule all:
         ldd_puro = rules.lightDarkDarkPuro_all.input,
         ldd_tc = rules.lightDarkLightTC_all.input,
         test = expand(rules.plotGSEA.output, condition="M", baseline="C", run_dir=[os.path.basename(config["RUNS"][run]["RUN_DIR"]) for run in config["RUNS"]]),
+        subcell = rules.download_subcell.output
 
 

@@ -76,3 +76,11 @@ memeMotifLD_LPuro:
   add_column: "locus_tag"
   lfc_cutoff: 0.8
   padj_cutoff: 0.05
+
+
+CCFigure:
+  layout:
+    width: 624
+    height: 400
+    legend:
+      orientation: "h"
