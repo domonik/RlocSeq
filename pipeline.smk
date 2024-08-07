@@ -427,7 +427,7 @@ rule joinTables:
         df = df.merge(add_data, left_index=True, right_on="locus_tag")
         df = df[df.columns[-2:].to_list() + df.columns[:-2].to_list()]
         df.to_csv(output.tsv, sep="\t", index=False)
-        df_for_r = df[["locus_tag", "stayedAtMembrane", "stayedInCytosol"]]
+        df_for_r = df[["locus_tag", "stayedAtMembrane", "stayedInCytosol", "mRNA", "log2FoldChange_plusPuromycin"]]
 
         df = df[df["stayedAtMembrane"] == True]
 
@@ -566,7 +566,7 @@ rule correlationRNAvsProteins:
         fig.write_html(output.html)
 
 
-rule checkIntraTransMembrane:
+rule checkProteinLocalization:
     input:
         uniprot = rules.download_subcell.output.tsv,
         deseq_res = rules.joinTables.output.tsv,
@@ -1062,6 +1062,150 @@ rule plotGSEA:
     script:
         "scripts/GSEAPlot.py"
 
+
+
+
+
+rule subsetGFF:
+    input:
+        tsv = expand(rules.checkProteinLocalization.output.tsv, condition=["M"], baseline=["C"]),
+        gff = config["gff"]
+    output:
+        stayed = "Pipeline/stayedMotif/subset_gff_stayed_type{type}.gff",
+        bg = "Pipeline/stayedMotif/subset_gff_bg_type{type}.gff",
+    conda: "envs/biopython.yml"
+    script: "scripts/extractFastaFromGFF.py"
+
+
+rule extractFasta:
+    input:
+        stayed = rules.subsetGFF.output.stayed,
+        bg = rules.subsetGFF.output.bg,
+        fasta = config["fasta"]
+    output:
+        stayed = "Pipeline/stayedMotif/subset_fasta_stayed_t{type}.fa",
+        bg = "Pipeline/stayedMotif/subset_fasta_bg_t{type}.fa",
+    conda: "envs/bedtools.yml"
+    shell:
+        """
+        bedtools getfasta -s -fi {input.fasta} -bed {input.stayed} > {output.stayed}
+        bedtools getfasta -s -fi {input.fasta} -bed {input.bg} > {output.bg}
+        """
+
+
+rule renameFasta:
+    input:
+        stayed = rules.extractFasta.output.stayed,
+        bg = rules.extractFasta.output.bg,
+        stayed_gff = rules.extractFasta.input.stayed,
+        bg_gff = rules.extractFasta.input.bg,
+    output:
+        stayed="Pipeline/stayedMotif/subset_fasta_stayed_renamed_t{type}.fa",
+        bg="Pipeline/stayedMotif/subset_fasta_bg_renamed_t{type}.fa",
+        all="Pipeline/stayedMotif/subset_fasta_all_renamed_t{type}.fa",
+    conda: "envs/biopython.yml"
+    script:
+        "scripts/renameFasta.py"
+
+
+
+rule memeMotifStayed:
+    input:
+        stayed = rules.renameFasta.output.stayed,
+        bg = rules.renameFasta.output.bg
+    output:
+        dir = directory("Pipeline/stayedMotif/MEME_t{type}/"),
+    conda:
+        "envs/meme.yml"
+    shell:
+        """
+        streme --p {input.stayed} --o {output.dir} --n {input.bg} --evalue --minw 3 --align right --rna --nmotifs 5
+        """
+
+
+
+rule fimoBG:
+    input:
+        fasta = rules.renameFasta.output.all,
+        motifs = rules.memeMotifStayed.output.dir
+    output:
+        dir = directory("Pipeline/stayedMotif/bgFIMO_t{type}/"),
+    conda:
+        "envs/meme.yml"
+    shell:
+        """
+        fimo --version
+        fimo  --oc {output.dir}  --thresh 1.0E-4 --bfile --motif-- {input.motifs}/streme.txt {input.fasta}  
+        """
+
+rule checkMotifDistribution:
+    input:
+        dir = rules.fimoBG.output.dir,
+        tsv = expand(rules.checkProteinLocalization.output.tsv, condition=["M"], baseline=["C"]),
+        fasta = rules.renameFasta.output.stayed,
+        bg_fasta = rules.renameFasta.output.bg
+    conda: "envs/biopython.yml"
+
+    output:
+        tsv = "Pipeline/stayedMotif/motifDistribution_t{type}.tsv"
+    script: "scripts/checkMotifDistribution.py"
+
+
+rule prepareForGSEAMotif:
+    input:
+        motifs = rules.checkMotifDistribution.output.tsv,
+        deseq = expand(rules.joinTables.output.output_for_R_because_this_retarded_language_cannot_even_read_tsv_files, condition=["M"], baseline=["C"])
+    output:
+        file = "Pipeline/MotifGSEA/preparedFile_t{type}.tsv"
+    run:
+        import pandas as pd
+        import os
+        deseq = pd.read_csv(input.deseq[0], sep="\t")
+        motifs = pd.read_csv(input.motifs, sep="\t", comment="#")
+
+        for motif_id in motifs.motif_id.unique():
+            seqs = motifs[motifs["motif_id"] == motif_id]["sequence_name"]
+            deseq["Motif" + motif_id.replace("-", "_") ] = deseq.locus_tag.isin(seqs)
+        deseq = deseq[deseq["mRNA"]]
+        deseq.to_csv(output.file, sep="\t", index=False)
+
+
+
+rule motifGSEA:
+    input:
+        tsv = rules.prepareForGSEAMotif.output.file
+    output:
+        enrichedFile = "Pipeline/MotifGSEA/enrichedFile_t{type}.tsv",
+        gsFile = "Pipeline/MotifGSEA/gsFile_t{type}.tsv"
+    conda: "envs/clusterprofiler.yml",
+    script: "scripts/motifGSEA.R"
+
+rule plotMotifGSEA:
+    input:
+        df = rules.motifGSEA.output.gsFile,
+        info = rules.motifGSEA.output.enrichedFile
+    output:
+        html = "Pipeline/MotifGSEA/GSEAMotif_t{type}.html",
+    conda: "envs/matplotlibPlotly.yml"
+    script:
+        "scripts/GSEAPlot.py"
+
+
+rule ntFreqs:
+    input:
+        stayed=rules.renameFasta.output.stayed,
+        bg=rules.renameFasta.output.bg
+    output:
+        dir = "Pipeline/stayedMotif/NtFreqs_t{type}.tsv",
+    conda: "envs/biopython.yml"
+    script:
+        "scripts/calcNTFreq.py"
+
+
+
+
+
+
 rule copyFigures:
     input:
         f1Cperc = expand(rules.compareResults.output.svgplus, condition=["M"], baseline=["C"]),
@@ -1074,6 +1218,36 @@ rule copyFigures:
         cp {input.f1Cperc} {output.f1Cperc}
         cp {input.f1Cvolcano} {output.f1Cvolcano}
         """
+
+rule checkWithRBP3data:
+    input:
+        rbp3  = "initialData/rbp3data.tsv",
+        joined = expand(rules.checkProteinLocalization.output.tsv, condition="M", baseline="C")
+    output:
+        tsv = "Pipeline/RBP3Check/rbp3joined.tsv"
+    script: "scripts/checkRBP3Data.py"
+
+
+rule rbp3GSEA:
+    input:
+        tsv = rules.checkWithRBP3data.output.tsv,
+    output:
+        enrichedFile = "Pipeline/RBP3Check/gseaEnrich_puro{puro}.tsv",
+        gsFile = "Pipeline/RBP3Check/gseaInfo_puro{puro}.tsv"
+    conda: "envs/clusterprofiler.yml",
+    script: "scripts/RBP3GSEA.R"
+
+rule plotRBP3GSEA:
+    input:
+        df=expand(rules.rbp3GSEA.output.gsFile, puro=["plusPuromycin"])[0],
+        info=expand(rules.rbp3GSEA.output.enrichedFile, puro=["plusPuromycin"])[0],
+    output:
+        html = "Pipeline/RBP3Check/RBP3_GSEA.html",
+    conda: "envs/matplotlibPlotly.yml"
+    script:
+        "scripts/GSEAPlot.py"
+
+
 
 rule all:
     default_target: True
@@ -1095,7 +1269,7 @@ rule all:
         stayedGO = expand(rules.GOTermEnrichmentStayed.output, condition=["M"], baseline=["C"]),
         df = expand(rules.summarizeResult.output, condition=["M"], baseline=["C"]),
         transintramembrane = expand(rules.joinTables.output, condition=["M"], baseline=["C"]),
-        dfr = expand(rules.checkIntraTransMembrane.output, condition=["M"], baseline=["C"]),
+        dfr = expand(rules.checkProteinLocalization.output, condition=["M"], baseline=["C"]),
         size_factors = rules.third_runDESeq.output,
         #protloc = expand(rules.correlationRNAvsProteins.output, condition="M", baseline="C"),
         summary_fig = expand(rules.compareResults.output, condition="M", baseline="C"),
@@ -1113,6 +1287,10 @@ rule all:
         ldd_puro = rules.lightDarkDarkPuro_all.input,
         ldd_tc = rules.lightDarkLightTC_all.input,
         test = expand(rules.plotGSEA.output, condition="M", baseline="C", run_dir=[os.path.basename(config["RUNS"][run]["RUN_DIR"]) for run in config["RUNS"]]),
-        subcell = rules.download_subcell.output
+        subcell = rules.download_subcell.output,
+        rbp3 = rules.plotRBP3GSEA.output,
+        bg_searched = expand(rules.fimoBG.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
+        prep = expand(rules.plotMotifGSEA.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
+        prdwep = expand(rules.checkMotifDistribution.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
 
 

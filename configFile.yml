@@ -11,6 +11,9 @@ lightDarkLightTCConfig: "run_configs/lightDarkLightTCConfig.yml"
 
 padj_cutoff: 0.05
 
+gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
+fasta: "initialData/Synechocystis.fasta"
+
 
 multipanel_font_size: 20
 
@@ -78,9 +81,34 @@ memeMotifLD_LPuro:
   padj_cutoff: 0.05
 
 
+LayoutDefault:
+  template: "seaborn"
+  width: 624
+  height: 400
+  font:
+    size: 12
+  legend:
+    font:
+      size: 12
+  margin:
+    t: 20
+    b: 50
+    l: 50
+    r: 50
+
+
 CCFigure:
   layout:
     width: 624
     height: 400
     legend:
       orientation: "h"
+
+RBP3A:
+  layout:
+    legend:
+      orientation: "h"
+      y: 1
+      yanchor: "bottom"
+    margin:
+      t: 20

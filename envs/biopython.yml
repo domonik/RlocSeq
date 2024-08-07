@@ -4,3 +4,8 @@ channels:
 dependencies:
  - biopython
  - pandas
+ - scipy
+ - statsmodels
+ - pip
+ - pip:
+    - git+https://github.com/domonik/DEplots.git@5f0c04fe84f8abd615525fcdd591968d4864bac6

@@ -5,7 +5,8 @@ import numpy as np
 from plotly.subplots import make_subplots
 
 
-def plot_gsea(df, info, descs, colors=px.colors.DEFAULT_PLOTLY_COLORS):
+
+def plot_gsea(df, info, descs, colors=px.colors.qualitative.Light24):
     d = descs
     df = df[df["Description"].isin(d)]
     df['Description'] = pd.Categorical(df['Description'], categories=d, ordered=True)

@@ -22,8 +22,12 @@ def check_membrane_dist(uniprot_file, deseq_table, config, output, uni_col="Gene
     df = pd.read_csv(uniprot_file, sep="\t")
     subcell = "Subcellular location [CC]"
     df = df.rename({uni_col: "locus_tag"}, axis=1)
-    df = df[["locus_tag", "Gene Names", subcell]]
-    df['Cell membrane'] = df[subcell].str.contains("Cell membrane")
+    df["locus_tag"] = df["locus_tag"].str.split("; ")
+    df = df.explode('locus_tag').reset_index(drop=True)
+    print(df)
+
+    df = df[["locus_tag", "Gene Names", subcell, "Transmembrane", "Sequence"]] # dont need intramembrane since there are zero annotated
+    df['Cell membrane'] = df[subcell].str.contains("Cell membrane") | df[subcell].str.contains("Cell inner membrane")
     df["Cell inner membrane"] = df[subcell].str.contains("Cell inner membrane")
     df['Cellular thylakoid membrane'] = df[subcell].str.contains("Cellular thylakoid membrane")
     df['Cytoplasm'] = (df[subcell].str.contains("Cytoplasm") == True) & (~(df[subcell].str.contains("Cytoplasmic side") == True))
@@ -40,7 +44,7 @@ def check_membrane_dist(uniprot_file, deseq_table, config, output, uni_col="Gene
     odf = deseq_res.merge(df, left_on="merge_tag", right_on="locus_tag", how="left")
     df = deseq_res.merge(df, left_on="locus_tag", right_on="locus_tag")
 
-    odf = odf[["locus_tag_x", "Gene Names", "mRNA", "UTR", "antisense", "non-coding"] + list(x)]
+    #odf = odf[["locus_tag_x", "Gene Names", "mRNA", "UTR", "antisense", "non-coding"] + list(x)]
     odf = odf.rename({"locus_tag_x": "locus_tag"}, axis=1)
     odf.to_csv(output.tsv, sep="\t", index=False)
 
