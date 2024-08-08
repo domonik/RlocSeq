@@ -10,7 +10,8 @@ def main(snakemake_input, config, output):
     joined = pd.read_csv(snakemake_input.joined[0], sep="\t")
     joined = joined.merge(df, on="locus_tag", how="left")
     joined["RBP3_Target"] = (~pd.isna(joined["log2FC"])) == True
-    joined_out = joined[~(joined["UTR"] == True)]
+    joined_out = joined[~(joined["UTR"] | joined["antisense"])]  # filter because they are not in the rbp3 dataset
+    p=0
     loc = ["Cytoplasm", "Cell membrane", "Cellular thylakoid membrane"]
     cols = []
     for l in loc:
@@ -18,7 +19,8 @@ def main(snakemake_input, config, output):
         cols.append(col)
 
         joined_out[col] = (joined_out["RBP3_Target"] == True) & (joined_out[l] == True)
-    subset = ["locus_tag", "log2FoldChange_plusPuromycin", "log2FoldChange_minusPuromycin", "RBP3_Target"] + cols
+    moves = ["minusPMembran", "plusPMembran"]
+    subset = ["locus_tag", "log2FoldChange_plusPuromycin", "log2FoldChange_minusPuromycin", "RBP3_Target"] + cols + moves + loc
 
     joined_out = joined_out[subset]
     joined_out.to_csv(output.tsv, sep="\t", index=False)
@@ -128,6 +130,7 @@ def main(snakemake_input, config, output):
         )
 
     )
+    fig.write_html(output.html)
     #fig.show()
 
 

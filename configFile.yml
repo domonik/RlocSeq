@@ -97,10 +97,14 @@ LayoutDefault:
     r: 50
 
 
+fonts:
+  multipanel:
+    size: 14
+
 CCFigure:
   layout:
     width: 624
-    height: 400
+    height: 200
     legend:
       orientation: "h"
 
@@ -112,3 +116,23 @@ RBP3A:
       yanchor: "bottom"
     margin:
       t: 20
+
+RBP3GSEA:
+  layout:
+    height: 400
+
+    legend:
+      orientation: "h"
+
+
+
+RBP3Venn:
+  layout:
+    height: 200
+    margin:
+      t: 40
+
+    legend:
+      orientation: "h"
+      y: 0
+      yanchor: "top"

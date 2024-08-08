@@ -421,7 +421,8 @@ rule joinTables:
         df["UTR"] = df.index.str.contains("UTR")
         df["antisense"] = df.index.str.contains("-as")
         df["non-coding"] = df.index.str.contains("ncr|ncl")
-        df["mRNA"] = ~(df["UTR"] | df["antisense"] | df["non-coding"])
+        df["tRNA"] = df.index.str.contains("6803t03")
+        df["mRNA"] = (df.index.str.startswith("sll") | df.index.str.startswith("slr") | df.index.str.startswith("ssl") | df.index.str.startswith("ssr")) & ~(df["UTR"] | df["antisense"])
         add_data = pd.read_csv(input.add_data, sep=",")
 
         df = df.merge(add_data, left_index=True, right_on="locus_tag")
@@ -447,7 +448,6 @@ rule GOTermEnrichmentStayed:
     conda:
         "envs/clusterprofiler.yml"
     script: "scripts/GOTermStayedAtMembrane.R"
-
 
 
 
@@ -1119,28 +1119,14 @@ rule memeMotifStayed:
         "envs/meme.yml"
     shell:
         """
-        streme --p {input.stayed} --o {output.dir} --n {input.bg} --evalue --minw 3 --align right --rna --nmotifs 5
+        streme --p {input.stayed} --o {output.dir} --n {input.bg} --evalue --minw 3 --align center --rna --nmotifs 20
         """
 
 
-
-rule fimoBG:
-    input:
-        fasta = rules.renameFasta.output.all,
-        motifs = rules.memeMotifStayed.output.dir
-    output:
-        dir = directory("Pipeline/stayedMotif/bgFIMO_t{type}/"),
-    conda:
-        "envs/meme.yml"
-    shell:
-        """
-        fimo --version
-        fimo  --oc {output.dir}  --thresh 1.0E-4 --bfile --motif-- {input.motifs}/streme.txt {input.fasta}  
-        """
 
 rule checkMotifDistribution:
     input:
-        dir = rules.fimoBG.output.dir,
+        dir = rules.memeMotifStayed.output.dir,
         tsv = expand(rules.checkProteinLocalization.output.tsv, condition=["M"], baseline=["C"]),
         fasta = rules.renameFasta.output.stayed,
         bg_fasta = rules.renameFasta.output.bg
@@ -1163,8 +1149,8 @@ rule prepareForGSEAMotif:
         deseq = pd.read_csv(input.deseq[0], sep="\t")
         motifs = pd.read_csv(input.motifs, sep="\t", comment="#")
 
-        for motif_id in motifs.motif_id.unique():
-            seqs = motifs[motifs["motif_id"] == motif_id]["sequence_name"]
+        for motif_id in motifs.motif_ID.unique():
+            seqs = motifs[motifs["motif_ID"] == motif_id]["seq_ID"]
             deseq["Motif" + motif_id.replace("-", "_") ] = deseq.locus_tag.isin(seqs)
         deseq = deseq[deseq["mRNA"]]
         deseq.to_csv(output.file, sep="\t", index=False)
@@ -1224,7 +1210,8 @@ rule checkWithRBP3data:
         rbp3  = "initialData/rbp3data.tsv",
         joined = expand(rules.checkProteinLocalization.output.tsv, condition="M", baseline="C")
     output:
-        tsv = "Pipeline/RBP3Check/rbp3joined.tsv"
+        tsv = "Pipeline/RBP3Check/rbp3joined.tsv",
+        html = "Pipeline/RBP3Check/rbp3joined.html",
     script: "scripts/checkRBP3Data.py"
 
 
@@ -1239,13 +1226,33 @@ rule rbp3GSEA:
 
 rule plotRBP3GSEA:
     input:
-        df=expand(rules.rbp3GSEA.output.gsFile, puro=["plusPuromycin"])[0],
-        info=expand(rules.rbp3GSEA.output.enrichedFile, puro=["plusPuromycin"])[0],
+        df=rules.rbp3GSEA.output.gsFile,
+        info=rules.rbp3GSEA.output.enrichedFile,
     output:
-        html = "Pipeline/RBP3Check/RBP3_GSEA.html",
+        html = "Pipeline/RBP3Check/RBP3_GSEA_{puro}.html",
+        svg = "Pipeline/RBP3Check/RBP3_GSEA_{puro}.svg",
     conda: "envs/matplotlibPlotly.yml"
     script:
-        "scripts/GSEAPlot.py"
+        "scripts/RBP3GSEAPlot.py"
+
+rule plotRBP3Venns:
+    input:
+        tsv = rules.checkWithRBP3data.output.tsv
+    output:
+        html = "Pipeline/RBP3Check/RBP3_Venn.html",
+        svg = "Pipeline/RBP3Check/RBP3_Venn.svg",
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/rbp3Venns.py"
+
+
+rule joinRBP3Plot:
+    input:
+        f1 = rules.plotRBP3Venns.output.svg,
+        f2 = expand(rules.plotRBP3GSEA.output.svg, puro=["plusPuromycin"])[0],
+    output:
+        svg = "Pipeline/Paper/RBP3Figure.svg"
+    conda: "envs/svgutils.yml"
+    script: "scripts/joinPlots.py"
 
 
 
@@ -1280,7 +1287,7 @@ rule all:
         dfg_volcano3 = expand(rules.refineVolcano3.output, condition="M", baseline="C"),
         dfg_go = expand(rules.refineGOEnrichment.output, condition="M", baseline="C", updown="up"),
         dfg_go2 = expand(rules.refineGOEnrichment2.output, condition="M", baseline="C", updown="up"),
-        overlap= expand(rules.extractOverlap.output, zip, condition=config["primary"]["conditions"],baseline=config["primary"]["baselines"]),
+        #overlap= expand(rules.extractOverlap.output, zip, condition=config["primary"]["conditions"],baseline=config["primary"]["baselines"]),
         ldl = rules.lightDarkLight_all.input,
         ldd = rules.lightDarkDark_all.input,
         ldl_puro = rules.lightDarkLightPuro_all.input,
@@ -1288,8 +1295,8 @@ rule all:
         ldd_tc = rules.lightDarkLightTC_all.input,
         test = expand(rules.plotGSEA.output, condition="M", baseline="C", run_dir=[os.path.basename(config["RUNS"][run]["RUN_DIR"]) for run in config["RUNS"]]),
         subcell = rules.download_subcell.output,
-        rbp3 = rules.plotRBP3GSEA.output,
-        bg_searched = expand(rules.fimoBG.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
+        rbp3 = expand(rules.plotRBP3GSEA.output, puro=["plusPuromycin", "minusPuromycin"]),
+        rbp3venn = rules.joinRBP3Plot.output,
         prep = expand(rules.plotMotifGSEA.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
         prdwep = expand(rules.checkMotifDistribution.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
 

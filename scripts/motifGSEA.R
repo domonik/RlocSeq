@@ -21,7 +21,9 @@ customGSEA(
   geneList = geneList,
   terms = terms,
   enrichedFile = efile,
-  gsFile = gsfile
+  gsFile = gsfile,
+  pval_cutoff = 1
+
 )
 
 

@@ -34,7 +34,7 @@ gsInfo <- function(object, geneSetID) {
     return(df)
 }
 
-customGSEA <- function(table, geneList, terms, enrichedFile, gsFile) {
+customGSEA <- function(table, geneList, terms, enrichedFile, gsFile, pval_cutoff) {
 
   TERM2GENE <- data.frame(TERM = character(0), GENE = character(0), stringsAsFactors = FALSE)
   for (term in terms) {
@@ -55,7 +55,7 @@ customGSEA <- function(table, geneList, terms, enrichedFile, gsFile) {
   ego <- GSEA(geneList = geneList,
               minGSSize = 1,
               maxGSSize = 10000,
-              pvalueCutoff = 1,
+              pvalueCutoff = pval_cutoff,
               verbose = FALSE,
               TERM2GENE = TERM2GENE
   )
@@ -64,7 +64,7 @@ customGSEA <- function(table, geneList, terms, enrichedFile, gsFile) {
 
 
   if (dim(summary)[1] == 0) {
-    df <- data.frame(matrix(ncol = 10, nrow = 0))
+    df <- data.frame(matrix(ncol = 12, nrow = 0))
     x <- c("ONTOLOGY", "ID", "Description", "setSize", "enrichmentScore", "NES", "pvalue", "p.adjust", "qvalue", "rank", "leading_edge", "core_enrichment")
     colnames(df) <- x
     summary <- df
@@ -73,8 +73,17 @@ customGSEA <- function(table, geneList, terms, enrichedFile, gsFile) {
   write.table(summary, file = enrichedFile, row.names = FALSE, sep = "\t")
 
   m <- nrow(summary)
-  geneSetID <- 1:m
-  gsdata <- do.call(rbind, lapply(geneSetID, gsInfo, object = ego))
+  if (m > 0) {
+    geneSetID <- 1:m
+    gsdata <- do.call(rbind, lapply(geneSetID, gsInfo, object = ego))
+
+  } else {
+    gsdata <- data.frame(matrix(ncol = 8, nrow = 0))
+    x <- c("x",	"runningScore",	"position",	"ymin",	"ymax",	"geneList",	"gene",	"Description")
+    colnames(gsdata) <- x
+
+  }
+
   write.table(gsdata, file = gsFile, row.names = FALSE, sep = "\t")
 }
 

@@ -5,7 +5,7 @@ detable <- read.table(detable, sep="\t", header=TRUE)
 rownames(detable) <- detable$locus_tag
 fc <- paste0("log2FoldChange_", snakemake@wildcards[["puro"]])
 print(fc)
-detable <- detable[!is.na(detable[fc]), ]
+detable <- detable[!is.na(detable[[fc]]), ]
 df_sorted <- detable[order(detable[[fc]], decreasing = TRUE), ]
 geneList <- df_sorted[[fc]]
 names(geneList) <- rownames(df_sorted)
@@ -25,7 +25,8 @@ customGSEA(
   geneList = geneList,
   terms = terms,
   enrichedFile = efile,
-  gsFile = gsfile
+  gsFile = gsfile,
+  pval_cutoff = 0.05
 )
 
 
