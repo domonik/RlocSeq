@@ -15,7 +15,6 @@ print(head(df_sorted))
 df_sorted[, terms] <- lapply(df_sorted[, terms], function(x) x == "True") # why the fuck is this necessary
 
 # Convert these columns to logical (boolean)
-
 # why the fuck is this necessary
 efile <- snakemake@output[["enrichedFile"]]
 gsfile <- snakemake@output[["gsFile"]]

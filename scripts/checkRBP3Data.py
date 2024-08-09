@@ -7,7 +7,7 @@ from scipy.stats import mannwhitneyu
 def main(snakemake_input, config, output):
     df = pd.read_csv(snakemake_input.rbp3, sep="\t")
     df = df[~df.Gene.str.contains("’")]
-    joined = pd.read_csv(snakemake_input.joined[0], sep="\t")
+    joined = pd.read_csv(snakemake_input.joined, sep="\t")
     joined = joined.merge(df, on="locus_tag", how="left")
     joined["RBP3_Target"] = (~pd.isna(joined["log2FC"])) == True
     joined_out = joined[~(joined["UTR"] | joined["antisense"])]  # filter because they are not in the rbp3 dataset
@@ -22,8 +22,9 @@ def main(snakemake_input, config, output):
     moves = ["minusPMembran", "plusPMembran"]
     subset = ["locus_tag", "log2FoldChange_plusPuromycin", "log2FoldChange_minusPuromycin", "RBP3_Target"] + cols + moves + loc
 
+    joined_out.to_csv(output.useful_tsv, sep="\t", index=False)
     joined_out = joined_out[subset]
-    joined_out.to_csv(output.tsv, sep="\t", index=False)
+    joined_out.to_csv(output.trash_tsv_for_R, sep="\t", index=False)
     data = joined[~pd.isna(joined["log2FoldChange_plusPuromycin"])]
     data = data[data["baseMean_plusPuromycin"] >= 100]
     pp = data[["RBP3_Target", "log2FoldChange_plusPuromycin"]]

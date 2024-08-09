@@ -1064,55 +1064,44 @@ rule plotGSEA:
 
 
 
-
-
-rule subsetGFF:
-    input:
-        tsv = expand(rules.checkProteinLocalization.output.tsv, condition=["M"], baseline=["C"]),
-        gff = config["gff"]
-    output:
-        stayed = "Pipeline/stayedMotif/subset_gff_stayed_type{type}.gff",
-        bg = "Pipeline/stayedMotif/subset_gff_bg_type{type}.gff",
-    conda: "envs/biopython.yml"
-    script: "scripts/extractFastaFromGFF.py"
-
-
 rule extractFasta:
     input:
-        stayed = rules.subsetGFF.output.stayed,
-        bg = rules.subsetGFF.output.bg,
+        gff = config["gff"],
         fasta = config["fasta"]
     output:
-        stayed = "Pipeline/stayedMotif/subset_fasta_stayed_t{type}.fa",
-        bg = "Pipeline/stayedMotif/subset_fasta_bg_t{type}.fa",
+        fasta = "Pipeline/sequences.fa",
     conda: "envs/bedtools.yml"
     shell:
         """
-        bedtools getfasta -s -fi {input.fasta} -bed {input.stayed} > {output.stayed}
-        bedtools getfasta -s -fi {input.fasta} -bed {input.bg} > {output.bg}
+        bedtools getfasta -s -fi {input.fasta} -bed {input.gff} > {output.fasta}
         """
 
 
-rule renameFasta:
+rule addFastatoTSV:
     input:
-        stayed = rules.extractFasta.output.stayed,
-        bg = rules.extractFasta.output.bg,
-        stayed_gff = rules.extractFasta.input.stayed,
-        bg_gff = rules.extractFasta.input.bg,
+        fasta = rules.extractFasta.output.fasta,
+        gff = config["gff"],
+        tsv = expand(rules.checkProteinLocalization.output.tsv, condition="M", baseline="C")[0]
     output:
-        stayed="Pipeline/stayedMotif/subset_fasta_stayed_renamed_t{type}.fa",
-        bg="Pipeline/stayedMotif/subset_fasta_bg_renamed_t{type}.fa",
-        all="Pipeline/stayedMotif/subset_fasta_all_renamed_t{type}.fa",
+        tsv="Pipeline/TableWithSequences.tsv",
     conda: "envs/biopython.yml"
     script:
-        "scripts/renameFasta.py"
+        "scripts/addFastaToTSV.py"
 
+rule getFastaForMotif:
+    input:
+        tsv = rules.addFastatoTSV.output.tsv
+    output:
+        bg = "Pipeline/stayedMotif/bg_seqs_t{type}.fa",
+        stayed = "Pipeline/stayedMotif/stayed_seqs_t{type}.fa"
+    conda: "envs/biopython.yml"
+    script: "scripts/extractFastaFromTable.py"
 
 
 rule memeMotifStayed:
     input:
-        stayed = rules.renameFasta.output.stayed,
-        bg = rules.renameFasta.output.bg
+        stayed = rules.getFastaForMotif.output.stayed,
+        bg = rules.getFastaForMotif.output.bg
     output:
         dir = directory("Pipeline/stayedMotif/MEME_t{type}/"),
     conda:
@@ -1128,8 +1117,8 @@ rule checkMotifDistribution:
     input:
         dir = rules.memeMotifStayed.output.dir,
         tsv = expand(rules.checkProteinLocalization.output.tsv, condition=["M"], baseline=["C"]),
-        fasta = rules.renameFasta.output.stayed,
-        bg_fasta = rules.renameFasta.output.bg
+        fasta = rules.getFastaForMotif.output.stayed,
+        bg_fasta = rules.getFastaForMotif.output.bg
     conda: "envs/biopython.yml"
 
     output:
@@ -1179,8 +1168,8 @@ rule plotMotifGSEA:
 
 rule ntFreqs:
     input:
-        stayed=rules.renameFasta.output.stayed,
-        bg=rules.renameFasta.output.bg
+        stayed=rules.getFastaForMotif.output.stayed,
+        bg=rules.getFastaForMotif.output.bg
     output:
         dir = "Pipeline/stayedMotif/NtFreqs_t{type}.tsv",
     conda: "envs/biopython.yml"
@@ -1208,16 +1197,17 @@ rule copyFigures:
 rule checkWithRBP3data:
     input:
         rbp3  = "initialData/rbp3data.tsv",
-        joined = expand(rules.checkProteinLocalization.output.tsv, condition="M", baseline="C")
+        joined = rules.addFastatoTSV.output.tsv
     output:
-        tsv = "Pipeline/RBP3Check/rbp3joined.tsv",
+        trash_tsv_for_R = "Pipeline/RBP3Check/trashTSVForR.tsv",
+        useful_tsv = "Pipeline/RBP3Check/rbp3joined.tsv",
         html = "Pipeline/RBP3Check/rbp3joined.html",
     script: "scripts/checkRBP3Data.py"
 
 
 rule rbp3GSEA:
     input:
-        tsv = rules.checkWithRBP3data.output.tsv,
+        tsv = rules.checkWithRBP3data.output.trash_tsv_for_R,
     output:
         enrichedFile = "Pipeline/RBP3Check/gseaEnrich_puro{puro}.tsv",
         gsFile = "Pipeline/RBP3Check/gseaInfo_puro{puro}.tsv"
@@ -1237,7 +1227,7 @@ rule plotRBP3GSEA:
 
 rule plotRBP3Venns:
     input:
-        tsv = rules.checkWithRBP3data.output.tsv
+        tsv = rules.checkWithRBP3data.output.useful_tsv
     output:
         html = "Pipeline/RBP3Check/RBP3_Venn.html",
         svg = "Pipeline/RBP3Check/RBP3_Venn.svg",
@@ -1295,7 +1285,7 @@ rule all:
         ldd_tc = rules.lightDarkLightTC_all.input,
         test = expand(rules.plotGSEA.output, condition="M", baseline="C", run_dir=[os.path.basename(config["RUNS"][run]["RUN_DIR"]) for run in config["RUNS"]]),
         subcell = rules.download_subcell.output,
-        rbp3 = expand(rules.plotRBP3GSEA.output, puro=["plusPuromycin", "minusPuromycin"]),
+        rbp3 = expand(rules.plotRBP3GSEA.output, puro=["plusPuromycin", ]),
         rbp3venn = rules.joinRBP3Plot.output,
         prep = expand(rules.plotMotifGSEA.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
         prdwep = expand(rules.checkMotifDistribution.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
