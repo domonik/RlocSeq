@@ -9,6 +9,8 @@ lightDarkLightPuroConfig: "run_configs/lightDarkPuroConfig.yml"
 lightDarkDarkPuroConfig: "run_configs/lightDarkDarkPuroConfig.yml"
 lightDarkLightTCConfig: "run_configs/lightDarkLightTCConfig.yml"
 
+membraneColor: "#2ca02c"
+cytosolColor: "#002695"
 padj_cutoff: 0.05
 
 gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
@@ -89,7 +91,8 @@ LayoutDefault:
     size: 12
   legend:
     font:
-      size: 12
+      size: 8
+      family: "Arial"
   margin:
     t: 20
     b: 50
@@ -100,6 +103,55 @@ LayoutDefault:
 fonts:
   multipanel:
     size: 14
+
+
+F1Workflow:
+  file: "Pipeline/Paper/Subfigures/Fig1Workflow.svg"
+  x: 0
+  y: 0
+
+
+F1Volcano:
+  file: "Pipeline/Paper/Subfigures/Fig1Volcano.svg"
+  x: 312
+  y: 150
+  layout:
+    width: 312
+    height: 370
+    margin:
+      r: 20
+    legend:
+      orientation: "h"
+      y: -0.25
+      x: 0
+      yanchor: "top"
+      indentation: 0
+      itemsizing: "constant"
+    yaxis:
+      title: "-Log<sub>10</sub>(p.adj)"
+    xaxis:
+      title: "Log<sub>2</sub>(Fold Change)"
+
+
+F1Percent:
+  file: "Pipeline/Paper/Subfigures/Fig1Percentage.svg"
+  x: 312
+  y: 0
+  layout:
+    width: 312
+    height: 150
+    margin:
+      r: 10
+      t: 50
+      l: 10
+    legend:
+      orientation: "h"
+      y: 1.2
+      x: 0
+      yanchor: "bottom"
+      xanchor: "left"
+
+
 
 CCFigure:
   layout:
@@ -136,3 +188,9 @@ RBP3Venn:
       orientation: "h"
       y: 0
       yanchor: "top"
+
+
+F1:
+  a: "F1Workflow"
+  b: "F1Percent"
+  c: "F1Volcano"

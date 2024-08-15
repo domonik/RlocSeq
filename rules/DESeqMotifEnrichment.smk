@@ -10,7 +10,7 @@ rule getFasta:
     output:
         fasta = temporary(os.path.join(config["RUN_DIR"],"fasta/sequences.fa")),
     shell:
-        "bedtools getfasta -s -fi {snakemake_input.fasta} -bed {snakemake_input.gff} > {output.fasta}"
+        "bedtools getfasta -s -fi {input.fasta} -bed {input.gff} > {output.fasta}"
 
 
 rule extractFasta:

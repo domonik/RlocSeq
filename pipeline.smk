@@ -419,13 +419,17 @@ rule joinTables:
         df["stayedAtMembrane"] = df["plusPMembran"] & df["minusPMembran"]
         df["stayedInCytosol"] = df["plusPCytosol"] & df["minusPCytosol"]
         df["UTR"] = df.index.str.contains("UTR")
-        df["antisense"] = df.index.str.contains("-as")
+        df["asRNA"] = df.index.str.contains("-as")
         df["non-coding"] = df.index.str.contains("ncr|ncl")
         df["tRNA"] = df.index.str.contains("6803t03")
-        df["mRNA"] = (df.index.str.startswith("sll") | df.index.str.startswith("slr") | df.index.str.startswith("ssl") | df.index.str.startswith("ssr")) & ~(df["UTR"] | df["antisense"])
+        df["CRISPR"] = df.index.str.contains("CRISPR")
+        df["CRISPR"] = df.index.str.contains("CRISPR")
+        df["mRNA"] = (df.index.str.startswith("sll") | df.index.str.startswith("slr") | df.index.str.startswith("ssl") | df.index.str.startswith("ssr")) & ~(df["UTR"] | df["asRNA"])
         add_data = pd.read_csv(input.add_data, sep=",")
 
         df = df.merge(add_data, left_index=True, right_on="locus_tag")
+        df["Photosystem mRNA"] = df.gene_name.str.contains("psa|psb")
+        df["Ribosome mRNA"] = df.gene_name.str.contains("rpl|rps")
         df = df[df.columns[-2:].to_list() + df.columns[:-2].to_list()]
         df.to_csv(output.tsv, sep="\t", index=False)
         df_for_r = df[["locus_tag", "stayedAtMembrane", "stayedInCytosol", "mRNA", "log2FoldChange_plusPuromycin"]]
@@ -586,7 +590,7 @@ rule refineVolcano:
         fig = read_json(input.json)
         fig.update_layout(
             title=None,
-            width=360,
+            width=624/2,
             height=250,
             font=dict(size=10,color="black"),
             margin=dict(r=10,l=10,t=10,b=10),
@@ -936,10 +940,9 @@ rule compareResults:
                 y = "Name")
             fig.update_yaxes(title=None, showticklabels=False, showline=True, mirror=True, linewidth=1, linecolor="black")
             fig.update_xaxes(title="Fraction of transcriptome [%]", showline=True, mirror=True, linewidth=1, linecolor="black", gridcolor="black", dtick=20)
-            print(fig.layout.legend)
             fig.update_layout(
                 title=dict(text=f"{puro}: C vs M"),
-                width=360,
+                width=624/2,
                 height=150,
                 font=dict(size=10, color="black"),
                 margin=dict(r=10, l=10, t=50, b=20),
@@ -1108,7 +1111,7 @@ rule memeMotifStayed:
         "envs/meme.yml"
     shell:
         """
-        streme --p {input.stayed} --o {output.dir} --n {input.bg} --evalue --minw 3 --align center --rna --nmotifs 20
+        streme --p {input.stayed} --o {output.dir}  --evalue --minw 3 --align center --rna --nmotifs 5 --maxw 6
         """
 
 
@@ -1180,21 +1183,7 @@ rule ntFreqs:
 
 
 
-
-rule copyFigures:
-    input:
-        f1Cperc = expand(rules.compareResults.output.svgplus, condition=["M"], baseline=["C"]),
-        f1Cvolcano = expand(rules.refineVolcano.output.svg, condition=["M"], baseline=["C"]),
-    output:
-        f1Cperc = "Pipeline/Paper/Subfigures/Figure1CPercent.svg",
-        f1Cvolcano = "Pipeline/Paper/Subfigures/Figure1CVolcano.svg"
-    shell:
-        """
-        cp {input.f1Cperc} {output.f1Cperc}
-        cp {input.f1Cvolcano} {output.f1Cvolcano}
-        """
-
-rule checkWithRBP3data:
+rule addRBP3Data:
     input:
         rbp3  = "initialData/rbp3data.tsv",
         joined = rules.addFastatoTSV.output.tsv
@@ -1203,11 +1192,17 @@ rule checkWithRBP3data:
         useful_tsv = "Pipeline/RBP3Check/rbp3joined.tsv",
         html = "Pipeline/RBP3Check/rbp3joined.html",
     script: "scripts/checkRBP3Data.py"
+#
+# rule gsea:
+#     input:
+#         tsv = rules.addRBP3Data.output.trash_tsv_for_R
+#     output:
+#
 
 
 rule rbp3GSEA:
     input:
-        tsv = rules.checkWithRBP3data.output.trash_tsv_for_R,
+        tsv = rules.addRBP3Data.output.trash_tsv_for_R,
     output:
         enrichedFile = "Pipeline/RBP3Check/gseaEnrich_puro{puro}.tsv",
         gsFile = "Pipeline/RBP3Check/gseaInfo_puro{puro}.tsv"
@@ -1227,7 +1222,7 @@ rule plotRBP3GSEA:
 
 rule plotRBP3Venns:
     input:
-        tsv = rules.checkWithRBP3data.output.useful_tsv
+        tsv = rules.addRBP3Data.output.useful_tsv
     output:
         html = "Pipeline/RBP3Check/RBP3_Venn.html",
         svg = "Pipeline/RBP3Check/RBP3_Venn.svg",
@@ -1245,6 +1240,87 @@ rule joinRBP3Plot:
     script: "scripts/joinPlots.py"
 
 
+rule extractRBP3Seqs:
+    input:
+        tsv = rules.addRBP3Data.output.useful_tsv
+    params:
+        type= "RBP3_Target"
+    output:
+        fasta = "Pipeline/RBP3Check/rbp3Seqs.fa"
+    conda: "envs/biopython.yml"
+    script: "scripts/extractRBP3Fasta.py"
+
+rule fimoRBP3:
+    input:
+        fasta = rules.extractRBP3Seqs.output.fasta,
+        motifs = rules.memeMotifStayed.output.dir
+    output:
+        dir = directory("Pipeline/RBP3Check/FIMO_t{type}/")
+    conda:
+        "envs/meme.yml"
+    shell:
+        "fimo  --oc {output.dir}  --thresh 1.0E-4 --bfile --motif-- {input.motifs}/streme.txt {input.fasta}"
+
+
+
+rule minusPVolcanoForFig1:
+    input:
+        json = expand(rules.other_volcanoPlot.output.json, condition=["M"], baseline=["C"])[0]
+    params:
+        condition="Membrane",
+        baseline= "Cytosol",
+        figureConfig="F1Volcano"
+    output:
+        svg = config["F1Volcano"]["file"]
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/refineVolcano.py"
+
+rule refinePercentagePlot:
+    input:
+        tsv = expand(rules.other_extractDESeqResult.output.result_table,condition=["M"], baseline=["C"])[0]
+    output:
+        svg = config["F1Percent"]["file"]
+    params:
+        condition="Membrane",
+        baseline="Cytosol",
+        figureConfig="F1Percent",
+        name="FOO",
+        log2FCCutOff=config["primary"]["log2FCCutOff"],
+        pAdjCutOff=config["primary"]["pAdjCutOff"]
+
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/percentagePlot.py"
+
+
+rule txtToPathWorkflow:
+    input:
+        file = "Workflow.svg"
+    output:
+        svg = config["F1Workflow"]["file"]
+    shell: "inkscape --export-text-to-path -o {output.svg} {input.file}"
+
+
+rule joinFig1:
+    input:
+        volcano = rules.minusPVolcanoForFig1.output.svg,
+        summary = rules.refinePercentagePlot.output.svg,
+        workflow = rules.txtToPathWorkflow.output.svg
+    params:
+        figures = config["F1"],
+        ges_y = config["F1Percent"]["layout"]["height"] + config["F1Volcano"]["layout"]["height"]
+    conda: "envs/svgutils.yml"
+    output:
+        svg = "Pipeline/Paper/Figure1.svg"
+    script:
+        "scripts/paperFigure.py"
+
+rule Figure1toPNG:
+    input:
+        svg = rules.joinFig1.output.svg
+    output:
+        png = "Pipeline/Paper/Figure1.png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
+
 
 rule all:
     default_target: True
@@ -1258,8 +1334,6 @@ rule all:
         motifldd = rules.meme_ldd_allMotif.input,
         motifldlp = rules.meme_ldlpuro_allMotif.input,
         motiflddp = rules.meme_lddpuro_allMotif.input,
-        figures = rules.copyFigures.output,
-
         tu = expand(rules.createTUTable.output, condition=["M"], baseline=["C"]),
         tu2 = expand(rules.createTUTable2.output, condition=["M"], baseline=["C"]),
         #tu3 = expand(rules.plotHistogramm.output,zip, condition=["M"], baseline=["C"]),
@@ -1288,6 +1362,8 @@ rule all:
         rbp3 = expand(rules.plotRBP3GSEA.output, puro=["plusPuromycin", ]),
         rbp3venn = rules.joinRBP3Plot.output,
         prep = expand(rules.plotMotifGSEA.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
+        rbp3fimo = expand(rules.fimoRBP3.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
         prdwep = expand(rules.checkMotifDistribution.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
-
+        fig1 = rules.joinFig1.output,
+        fig1png = rules.Figure1toPNG.output
 

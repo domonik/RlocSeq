@@ -10,7 +10,7 @@ def main(snakemake_input, config, output):
     joined = pd.read_csv(snakemake_input.joined, sep="\t")
     joined = joined.merge(df, on="locus_tag", how="left")
     joined["RBP3_Target"] = (~pd.isna(joined["log2FC"])) == True
-    joined_out = joined[~(joined["UTR"] | joined["antisense"])]  # filter because they are not in the rbp3 dataset
+    joined_out = joined[~(joined["UTR"] | joined["asRNA"])]  # filter because they are not in the rbp3 dataset
     p=0
     loc = ["Cytoplasm", "Cell membrane", "Cellular thylakoid membrane"]
     cols = []
@@ -121,16 +121,30 @@ def main(snakemake_input, config, output):
             )
         )
     sdf = df[pd.isna(df["Cytoplasm"])]
+    ssdf = sdf[sdf["stayedAtMembrane"] == True]
+    nsdf = sdf[~(sdf["stayedAtMembrane"] == True)]
     fig.add_trace(
         go.Scatter(
-            x=sdf["log2FC"],
-            y=sdf["log2FoldChange_plusPuromycin"],
+            x=ssdf["log2FC"],
+            y=ssdf["log2FoldChange_plusPuromycin"],
+            marker=dict(line=dict(color="black", width=1)),
+            mode="markers",
+            text=sdf["gene_name"],
+            name="Not annotated stayed"
+        )
+
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=nsdf["log2FC"],
+            y=nsdf["log2FoldChange_plusPuromycin"],
             mode="markers",
             text=sdf["gene_name"],
             name="Not annotated"
         )
 
     )
+
     fig.write_html(output.html)
     #fig.show()
 

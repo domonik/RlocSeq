@@ -12,10 +12,10 @@ def extract_fasta(tsv, type, stayed_output, bg_output):
 
     #stayed = df[(df["plusPMembran"] == True) & (df["Cellular thylakoid membrane"])]
     stayed = df[(df["stayedAtMembrane"] == True) & (df[type])]
-    stayed = stayed.apply(lambda row: SeqRecord(Seq(row["RNASequence"]), id=row["locus_tag"]), axis=1).tolist()
+    stayed = stayed.apply(lambda row: SeqRecord(Seq(row["RNASequence"]), id=row["locus_tag"], description=row["locus_tag"]), axis=1).tolist()
     SeqIO.write(stayed, stayed_output, format="fasta")
     bg = df[~((df["stayedAtMembrane"] == True))]
-    bg = bg.apply(lambda row: SeqRecord(Seq(row["RNASequence"]), id=row["locus_tag"]), axis=1).tolist()
+    bg = bg.apply(lambda row: SeqRecord(Seq(row["RNASequence"]), id=row["locus_tag"], description=row["locus_tag"]), axis=1).tolist()
     SeqIO.write(bg, bg_output, format="fasta")
 
 
