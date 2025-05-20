@@ -8,4 +8,4 @@ dependencies:
  - matplotlib-venn
  - python-kaleido
  - pip:
-    - git+https://github.com/domonik/DEplots.git@5f0c04fe84f8abd615525fcdd591968d4864bac6
+    - git+https://github.com/domonik/DEplots.git@main

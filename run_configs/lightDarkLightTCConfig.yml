@@ -30,7 +30,7 @@ column_mapping: ["Puromycin", "Fraction", "LightDark", "Replicate"]
 
 # The design formula that is used by DESeq usual the last factor will be the one used for cmparisons and
 # DESeq automatically adjusts for other factors
-design: "~ Replicate + Puromycin"
+design: "~ Replicate + LightDark + Puromycin"
 
 # Will be zipped together in order to run for multiple conditions. Must be levels of last Factor
 conditions: ["plusP"]

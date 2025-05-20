@@ -12,6 +12,48 @@ import plotly.io as pio
 import scipy
 
 
+def copy_to_subfigures(figures, cols, multi_fig, n_sets):
+    for row, subfigs in enumerate(figures, 1):
+        for idx, fig in enumerate(subfigs, 1):
+            running_idx = (row - 1) * cols + idx
+            for iidx, shape in enumerate(fig['layout']['shapes']):
+                shape["xref"] = f"x{running_idx}" if running_idx > 1 else "x"
+                shape["yref"] = f"y{running_idx}" if running_idx > 1 else "y"
+                multi_fig.add_shape(shape)
+                color = shape["fillcolor"]
+                if running_idx == 1 and color != "rgba(255,0,0,0)":
+                    multi_fig.add_trace(
+                        go.Scatter(
+                            x=[None],
+                            y=[None],
+                            mode="markers",
+                            name=fig['layout']['annotations'][iidx]["text"],
+                            marker=dict(
+                                color=color,
+                                size=900,
+                                # line=dict(
+                                #     color="black",
+                                #     width=3
+                                # ),
+                            ),
+                            showlegend=True
+
+                        )
+                    )
+            for annotation in fig['layout']['annotations'][n_sets:]:
+                if annotation["xref"] == "x":
+                    annotation["xref"] = f"x{running_idx}" if running_idx > 1 else "x"
+                    annotation["yref"] = f"y{running_idx}" if running_idx > 1 else "y"
+                else:
+                    annotation["xref"] = f"x{running_idx} domain" if running_idx > 1 else "x domain"
+                    annotation["yref"] = f"y{running_idx} domain" if running_idx > 1 else "y domain"
+                multi_fig.add_annotation(annotation)
+            multi_fig.update_xaxes(fig["layout"]["xaxis"], row=row, col=idx)
+            multi_fig.update_yaxes(fig["layout"]["yaxis"], row=row, col=idx)
+            multi_fig.update_yaxes(scaleanchor="x" if running_idx == 1 else f"x{running_idx}", scaleratio=1, col=idx)
+            multi_fig.update_xaxes(scaleanchor="y" if running_idx == 1 else f"x{running_idx}", scaleratio=1, col=idx)
+    return multi_fig
+
 def venn_to_plotly(L_sets, L_labels=None, title=None, L_color = None):
     # get number of sets
     n_sets = len(L_sets)

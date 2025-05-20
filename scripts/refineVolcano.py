@@ -1,51 +1,68 @@
+import pandas as pd
+from DEplots.volcano import volcano_from_deseq_result
+import plotly.graph_objs as go
+import numpy as np
 
 
-
-def main(json, output, params, config):
+def main(tsv, gsea, output, params, config):
     lout = config[params["figureConfig"]]
-    from plotly.io import read_json
-    fig = read_json(json)
-    fig.update_layout(config["LayoutDefault"])
-    fig.update_layout(lout["layout"])
-    for idx, shape in enumerate(fig.layout.shapes):
-        if idx == 0:
-            shape.update(fillcolor=config["membraneColor"], opacity=0.2)
-        elif idx == 1:
-            shape.update(fillcolor=config["cytosolColor"], opacity=0.2)
-    fig.layout.annotations = None
+    df = pd.read_csv(tsv, sep="\t")
+    gsea = pd.read_csv(gsea, sep="\t")
+    highlight = {key: (color, df[df[key] == True].index) for key, color in config["RNA_TYPE_COLORS"].items() if key in gsea.ID.tolist()}
+    other = " & ".join([key for key in config["RNA_TYPE_COLORS"] if key not in gsea.ID.tolist()])
+    df = df.rename({
+        "log2FoldChange_minusPuromycin": "log2FoldChange",
+        "padj_minusPuromycin": "padj"
+    },
+    axis=1)
+    fig = volcano_from_deseq_result(
+        df,
+        name_col="gene_name",
+        highlight=highlight,
+        lfc_cutoff=config["primary"]["log2FCCutOff"],
+        padj_cutoff=config["primary"]["pAdjCutOff"],
+        condition_name="Membrane",
+        base_name="Cytosol",
+        highlight_up_color=config["membraneColor"],
+        highlight_down_color=config["cytosolColor"],
+        opacity=0.3
+    )
+    fig: go.Figure
+    if "annotations" in lout:
+        for anno, data in lout["annotations"].items():
+            sdf = df[df["gene_name"] == anno]
+            print(data)
+            for _, n in sdf.iterrows():
+                fig.add_annotation(
+                    x=n["log2FoldChange"],
+                    y=-1 * np.log10(n["padj"]),
+                    ax=data["x"],
+                    ay=data["y"],
+                    text=anno,
+                    showarrow=True,
+                    axref="x",
+                    ayref="y",
+                    arrowwidth=1,
+                    arrowsize=0.5,
+                    arrowcolor="black",
+                    font=dict(size=lout["annotationsize"])
 
+                )
+    fig.update_layout(config["LayoutDefault"])
+    fig.update_xaxes(dtick=2)
+
+    fig.update_layout(lout["layout"])
     fig.update_traces(
         marker=dict(size=3),
     )
-    fig.add_annotation(
-        text=params["baseline"],
-        font=dict(color=config["cytosolColor"]),
-        showarrow=False,
-        x=0,
-        y=1,
-        xref="x domain",
-        yref="y domain",
-        xanchor="left",
-        yanchor="top"
-    )
-    fig.add_annotation(
-        text=params["condition"],
-        font=dict(color=config["membraneColor"]),
-        showarrow=False,
-        x=1,
-        y=1,
-        xref="x domain",
-        yref="y domain",
-        xanchor="right",
-        yanchor="top"
-    )
-    fig.data[0].update(name="mRNA", showlegend=True)
-    fig.update_xaxes(dtick=2)
+    fig.data[0].update(name="not sig.", showlegend=True)
     fig.write_image(output.svg)
+    fig.write_html(output.html)
 
 if __name__ == '__main__':
     main(
-        snakemake.input.json,
+        snakemake.input.tsv,
+        snakemake.input.gsea,
         snakemake.output,
         snakemake.params,
         snakemake.config

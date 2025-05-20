@@ -13,7 +13,9 @@ NAMEMapping = {
     "minusP": "-Puromycin"
 }
 
-commit = "8e6f871e464c934125c86918288f22a4f154889d"
+
+
+commit = "d976e73568037f58eaa16bd824f587781854cf36"
 
 snakefile = github("domonik/SynDESeq2", path="snakefile.smk", commit=commit)
 snakefile = "../SynDESeq2/snakefile.smk"
@@ -177,10 +179,10 @@ rule checkTUs:
         de_res = pd.read_csv(input.deseqRes, sep="\t")
         df["padjs"] = df["locus_tags"].apply(checkLocusTagspvals(de_res, "padj"))
         df["lFCs"] = df["locus_tags"].apply(checkLocusTagspvals(de_res, "log2FoldChange"))
-        df["anySig+"] = df[["padjs", "lFCs"]].apply(lambda datas:  any([pval <= .05 and lfc > 0 for pval, lfc in zip(datas["padjs"], datas["lFCs"])]), axis=1)
-        df["anySig-"] = df[["padjs", "lFCs"]].apply(lambda datas:  any([padj <= .05 and lfc < 0 for padj, lfc in zip(datas["padjs"], datas["lFCs"])]), axis=1)
-        df["numSig+"] = df[["padjs", "lFCs"]].apply(lambda datas:  sum([padj <= .05 and lfc > 0 for padj, lfc in zip(datas["padjs"], datas["lFCs"])]), axis=1)
-        df["numSig-"] = df[["padjs", "lFCs"]].apply(lambda datas:  sum([padj <= .05 and lfc < 0 for padj, lfc in zip(datas["padjs"], datas["lFCs"])]), axis=1)
+        df["anySig+"] = df[["padjs", "lFCs"]].apply(lambda datas:  any([pval <= .05 and lfc > 0.8 for pval, lfc in zip(datas["padjs"], datas["lFCs"])]), axis=1)
+        df["anySig-"] = df[["padjs", "lFCs"]].apply(lambda datas:  any([padj <= .05 and lfc < -0.8 for padj, lfc in zip(datas["padjs"], datas["lFCs"])]), axis=1)
+        df["numSig+"] = df[["padjs", "lFCs"]].apply(lambda datas:  sum([padj <= .05 and lfc > 0.8 for padj, lfc in zip(datas["padjs"], datas["lFCs"])]), axis=1)
+        df["numSig-"] = df[["padjs", "lFCs"]].apply(lambda datas:  sum([padj <= .05 and lfc < -0.8 for padj, lfc in zip(datas["padjs"], datas["lFCs"])]), axis=1)
         df["num+"] = df[["padjs", "lFCs"]].apply(lambda datas:  sum([lfc > 0 for lfc in  datas["lFCs"]]), axis=1)
         df["num-"] = df[["padjs", "lFCs"]].apply(lambda datas:  sum([lfc < 0 for lfc in datas["lFCs"]]), axis=1)
         df["numGenes"] = df["lFCs"].apply(lambda x: len(x))
@@ -404,12 +406,14 @@ rule joinTables:
         add_data = "initialData/locusTagtoGeneName.csv"
     output:
         tsv = "Pipeline/Summary/joinedDESeq_c{condition}_vs_b{baseline}.tsv",
-        output_for_R_because_this_retarded_language_cannot_even_read_tsv_files = "Pipeline/Summary/joinedDESeqForRetardedR_c{condition}_vs_b{baseline}.tsv",
+        output_for_R_because_this_stupid_language_cannot_even_read_tsv_files = "Pipeline/Summary/joinedDESeqForstupidR_c{condition}_vs_b{baseline}.tsv",
         stayed = "Pipeline/Summary/stayedAtMembrane_c{condition}_vs_b{baseline}.tsv",
     run:
         df_minus = pd.read_csv(input.deseqResMinus, sep="\t")
         df_plus = pd.read_csv(input.deseqResPlus, sep="\t")
         df = df_minus.join(df_plus, rsuffix="_plusPuromycin", lsuffix="_minusPuromycin")
+        df = df[~df.index.str.contains("6803r")]
+
         df["minusPMembran"] = (df["log2FoldChange_minusPuromycin"] >= config["primary"]["log2FCCutOff"]) & (df["padj_minusPuromycin"] <= config["primary"]["pAdjCutOff"])
         df["minusPCytosol"] = (df["log2FoldChange_minusPuromycin"] <= -config["primary"]["log2FCCutOff"]) & (df["padj_minusPuromycin"] <= config["primary"]["pAdjCutOff"])
         df["plusPCytosol"] = (df["log2FoldChange_plusPuromycin"] <= -config["primary"]["log2FCCutOff"]) & (df["padj_plusPuromycin"] <= config["primary"]["pAdjCutOff"])
@@ -419,30 +423,34 @@ rule joinTables:
         df["stayedAtMembrane"] = df["plusPMembran"] & df["minusPMembran"]
         df["stayedInCytosol"] = df["plusPCytosol"] & df["minusPCytosol"]
         df["UTR"] = df.index.str.contains("UTR")
+        df["5UTR"] = df.index.str.contains("5UTR")
+        df["3UTR"] = df.index.str.contains("3UTR")
         df["asRNA"] = df.index.str.contains("-as")
-        df["non-coding"] = df.index.str.contains("ncr|ncl")
-        df["tRNA"] = df.index.str.contains("6803t03")
+        df["ncRNA"] = df.index.str.contains("ncr|ncl")
+        df["tRNA"] = df.index.str.contains("6803t")
         df["CRISPR"] = df.index.str.contains("CRISPR")
-        df["CRISPR"] = df.index.str.contains("CRISPR")
-        df["mRNA"] = (df.index.str.startswith("sll") | df.index.str.startswith("slr") | df.index.str.startswith("ssl") | df.index.str.startswith("ssr")) & ~(df["UTR"] | df["asRNA"])
+        df["mRNA"] = (df.index.str.startswith("sll") | df.index.str.startswith("slr") | df.index.str.startswith("ssl") | df.index.str.startswith("ssr") | df.index.str.startswith("sml" )| df.index.str.startswith("smr") | df.index.str.startswith("sgl") | df.index.str.startswith("Norf")) & ~(df["UTR"] | df["asRNA"])
         add_data = pd.read_csv(input.add_data, sep=",")
 
         df = df.merge(add_data, left_index=True, right_on="locus_tag")
+        df.loc[df["5UTR"], "gene_name"] = df.loc[df["5UTR"], "gene_name"] + " 5UTR"
+        df.loc[df["3UTR"], "gene_name"] = df.loc[df["5UTR"], "gene_name"] + " 3UTR"
         df["Photosystem mRNA"] = df.gene_name.str.contains("psa|psb")
         df["Ribosome mRNA"] = df.gene_name.str.contains("rpl|rps")
         df = df[df.columns[-2:].to_list() + df.columns[:-2].to_list()]
         df.to_csv(output.tsv, sep="\t", index=False)
-        df_for_r = df[["locus_tag", "stayedAtMembrane", "stayedInCytosol", "mRNA", "log2FoldChange_plusPuromycin"]]
+        rtkeys = [key for key in list(config["RNA_TYPE_COLORS"].keys()) if key in df.columns]
+        df_for_r = df[["locus_tag", "stayedAtMembrane", "stayedInCytosol", "mRNA", "log2FoldChange_plusPuromycin", "log2FoldChange_minusPuromycin"] + rtkeys]
 
         df = df[df["stayedAtMembrane"] == True]
 
         df.to_csv(output.stayed, sep="\t", index=False)
-        df_for_r.to_csv(output.output_for_R_because_this_retarded_language_cannot_even_read_tsv_files, sep="\t", index=False)
+        df_for_r.to_csv(output.output_for_R_because_this_stupid_language_cannot_even_read_tsv_files, sep="\t", index=False)
 
 
 rule GOTermEnrichmentStayed:
     input:
-        df = rules.joinTables.output.output_for_R_because_this_retarded_language_cannot_even_read_tsv_files,
+        df = rules.joinTables.output.output_for_R_because_this_stupid_language_cannot_even_read_tsv_files,
         annotation_db = rules.other_generateOrgDB.output.annotation_db,
     params:
         cfg = config["primary"]
@@ -1132,7 +1140,7 @@ rule checkMotifDistribution:
 rule prepareForGSEAMotif:
     input:
         motifs = rules.checkMotifDistribution.output.tsv,
-        deseq = expand(rules.joinTables.output.output_for_R_because_this_retarded_language_cannot_even_read_tsv_files, condition=["M"], baseline=["C"])
+        deseq = expand(rules.joinTables.output.output_for_R_because_this_stupid_language_cannot_even_read_tsv_files, condition=["M"], baseline=["C"])
     output:
         file = "Pipeline/MotifGSEA/preparedFile_t{type}.tsv"
     run:
@@ -1192,12 +1200,18 @@ rule addRBP3Data:
         useful_tsv = "Pipeline/RBP3Check/rbp3joined.tsv",
         html = "Pipeline/RBP3Check/rbp3joined.html",
     script: "scripts/checkRBP3Data.py"
-#
-# rule gsea:
-#     input:
-#         tsv = rules.addRBP3Data.output.trash_tsv_for_R
-#     output:
-#
+
+rule rnatypeGSEA:
+    input:
+        tsv = expand(rules.joinTables.output.output_for_R_because_this_stupid_language_cannot_even_read_tsv_files, condition="M", baseline="C")[0]
+    output:
+        enrichedFile = "Pipeline/rnaTypeGSEA/gseaEnrich_puro{puro}.tsv",
+        gsFile = "Pipeline/rnaTypeGSEA/gseaInfo_puro{puro}.tsv"
+    params:
+        terms = config["RNA_TYPE_COLORS"].keys()
+    conda: "envs/clusterprofiler.yml",
+    script: "scripts/rnatypeGSEA.R"
+
 
 
 rule rbp3GSEA:
@@ -1216,6 +1230,11 @@ rule plotRBP3GSEA:
     output:
         html = "Pipeline/RBP3Check/RBP3_GSEA_{puro}.html",
         svg = "Pipeline/RBP3Check/RBP3_GSEA_{puro}.svg",
+    params:
+        figureConfig="RBP3GSEA",
+        show_zero_lfc=True,
+        condition_name=None,
+        base_name=None
     conda: "envs/matplotlibPlotly.yml"
     script:
         "scripts/RBP3GSEAPlot.py"
@@ -1265,13 +1284,15 @@ rule fimoRBP3:
 
 rule minusPVolcanoForFig1:
     input:
-        json = expand(rules.other_volcanoPlot.output.json, condition=["M"], baseline=["C"])[0]
+        tsv = expand(rules.joinTables.output.tsv, condition="M", baseline="C")[0],
+        gsea = expand(rules.rnatypeGSEA.output.enrichedFile, puro="minusPuromycin")[0]
     params:
         condition="Membrane",
         baseline= "Cytosol",
         figureConfig="F1Volcano"
     output:
-        svg = config["F1Volcano"]["file"]
+        svg = config["F1Volcano"]["file"],
+        html = "Pipeline/Paper/Subfigures/F1Volcano.html"
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/refineVolcano.py"
 
@@ -1292,6 +1313,22 @@ rule refinePercentagePlot:
     script: "scripts/percentagePlot.py"
 
 
+rule F1GSEA:
+    input:
+        df=rules.rnatypeGSEA.output.gsFile,
+        info=rules.rnatypeGSEA.output.enrichedFile,
+    output:
+        html = "Pipeline/rnaTypeGSEA/rnaTypeGSEA_{puro}.html",
+        svg="Pipeline/Paper/Subfigures/rnaTypeGSEA_{puro}.svg",
+    conda: "envs/matplotlibPlotly.yml"
+    params:
+        figureConfig="F1GSEA",
+        show_zero_lfc=True,
+        condition_name=None,
+        base_name=None
+    script:
+        "scripts/RBP3GSEAPlot.py"
+
 rule txtToPathWorkflow:
     input:
         file = "Workflow.svg"
@@ -1304,10 +1341,11 @@ rule joinFig1:
     input:
         volcano = rules.minusPVolcanoForFig1.output.svg,
         summary = rules.refinePercentagePlot.output.svg,
-        workflow = rules.txtToPathWorkflow.output.svg
+        workflow = rules.txtToPathWorkflow.output.svg,
+        gsea = expand(rules.F1GSEA.output.svg, puro="minusPuromycin")[0]
     params:
         figures = config["F1"],
-        ges_y = config["F1Percent"]["layout"]["height"] + config["F1Volcano"]["layout"]["height"]
+        ges_y = 520
     conda: "envs/svgutils.yml"
     output:
         svg = "Pipeline/Paper/Figure1.svg"
@@ -1320,6 +1358,89 @@ rule Figure1toPNG:
     output:
         png = "Pipeline/Paper/Figure1.png"
     shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
+
+
+
+
+rule plotCoveragesFig5:
+    input:
+        design = "initialData/testDesign.tsv",
+        gff = "initialData/annotationFiltered.gff",
+        sf = rules.second_runDESeq.output.size_factors,
+    output:
+        svg = "Pipeline/Paper/Figure5/Coverages.svg",
+        db = "Pipeline/GFFDB/gff_database.db",
+    script: "scripts/plotCoveragesFigure5.py"
+
+
+rule plotCoveragesFig2:
+    input:
+        design = "initialData/testDesign.tsv",
+        gff = "initialData/annotationFiltered.gff",
+        sf = rules.other_runDESeq.output.size_factors,
+        db= "Pipeline/GFFDB/gff_database.db",
+    output:
+        svg = "Pipeline/Paper/Figure2/Coverages.svg",
+    script: "scripts/plotCoveragesFigure2.py"
+
+rule plotVolcanoFigure5:
+    input:
+        tsv=expand(rules.second_extractDESeqResult.output.result_table,condition="M",baseline="C")[0],
+        go=expand(rules.second_GOEnrichment.output.up, condition="M", baseline="C")[0],
+        add_data = "initialData/locusTagtoGeneName.csv"
+    output:
+        svg = "Pipeline/Paper/Figure5/F5Volcano.svg",
+        html="Pipeline/Paper/Figure5/F5Volcano.html"
+    params:
+        figureConfig = "VolcanoFigure5"
+    #conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/VolcanoFigure5.py"
+
+rule plotVennsFigure5:
+    input:
+        tsv=expand(rules.joinTables.output.tsv,condition="M",baseline="C")[0],
+    conda: "envs/matplotlibPlotly.yml"
+    output:
+        svg = "Pipeline/Paper/Figure5/F5Venns.svg",
+    script: "scripts/VennOverlap.py"
+
+# rule plotGOTermEnrichments:
+#     input:
+#         stayed = expand(rules.GOTermEnrichmentStayed.output, condition=["M"], baseline=["C"]),
+#     output:
+#         svg =
+
+
+rule plotVolcanoFigure4:
+    input:
+        tsv=expand(rules.tc_extractDESeqResult.output.result_table,condition="plusP",baseline="minusP")[0],
+        go=expand(rules.tc_GOEnrichment.output.up, condition="plusP", baseline="minusP")[0],
+        add_data= "initialData/locusTagtoGeneName.csv"
+    params:
+        figureConfig = "VolcanoFigure4"
+    output:
+        svg = "Pipeline/Paper/Figure4/F4Volcano.svg",
+        html="Pipeline/Paper/Figure4/F4Volcano.html"
+    #conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/VolcanoFigure5.py"
+
+rule plotGOTermEnrichmentFig4:
+    input:
+        tsv =expand(rules.tc_GOEnrichment.output.up, condition="plusP", baseline="minusP")[0],
+    output:
+        svg = "Pipeline/Paper/Figure4/F4Enrichment.svg",
+        html = "Pipeline/Paper/Figure4/F4Enrichment.html",
+    script: "scripts/enrichmentTotalCell.py"
+
+rule plotGOTermEnrichmentFig6:
+    input:
+        tsv1 =expand(rules.other_GOEnrichment.output.up, condition="M", baseline="C")[0],
+        tsv2= expand(rules.second_GOEnrichment.output,condition=["M"],baseline=["C"])[0],
+        tsv3= expand(rules.GOTermEnrichmentStayed.output,condition=["M"],baseline=["C"])[0],
+    output:
+        svg = "Pipeline/Paper/Figure6/F6Enrichment.svg",
+        html = "Pipeline/Paper/Figure6/F6Enrichment.html",
+    script: "scripts/plotEnrichmentPlots.py"
 
 
 rule all:
@@ -1365,5 +1486,13 @@ rule all:
         rbp3fimo = expand(rules.fimoRBP3.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
         prdwep = expand(rules.checkMotifDistribution.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
         fig1 = rules.joinFig1.output,
-        fig1png = rules.Figure1toPNG.output
+        fig1png = rules.Figure1toPNG.output,
+        rnatypegsea = expand(rules.rnatypeGSEA.output, puro=["minusPuromycin", ]),
+        cov = rules.plotCoveragesFig5.output,
+        cov2 = rules.plotCoveragesFig2.output,
+        f5volc = rules.plotVolcanoFigure5.output,
+        f4volc = rules.plotVolcanoFigure4.output,
+        f4enrich = rules.plotGOTermEnrichmentFig4.output,
+        f6enrich = rules.plotGOTermEnrichmentFig6.output,
+        f5venn = rules.plotVennsFigure5.output,
 

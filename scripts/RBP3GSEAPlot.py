@@ -1,20 +1,26 @@
 import pandas as pd
 from DEplots.enrichment import plot_gsea
+import plotly.express as px
 
-
-def main(df, info, config, output):
+def main(df, info, config, output, params):
+    lout = config[params["figureConfig"]]
     df = pd.read_csv(df, sep="\t")
     info = pd.read_csv(info, sep="\t")
     info.Description = info.Description.str.replace("_", " ").str.replace("and", "&")
     df.Description = df.Description.str.replace("_", " ").str.replace("and", "&")
+    descs = df["Description"].unique()
+    to_display = len(descs)
 
+    rh = [0.4] + [0.6 / to_display for _ in range(to_display)]
+    colors = [config["RNA_TYPE_COLORS"][key] if key in config["RNA_TYPE_COLORS"] else px.colors.DEFAULT_PLOTLY_COLORS[idx] for idx, key in enumerate(df["Description"].unique()) ]
     fig = plot_gsea(
-        df, info, show_zero_lfc=True,
-        condition_name="Membrane",
-        base_name="Cytosol"
+        df, info, show_zero_lfc=params["show_zero_lfc"],
+        condition_name=params["condition_name"],
+        base_name=params["base_name"],
+        row_heights=rh,
+        vertical_spacing=0,
+        colors=colors
     )
-    for d in fig.data[0:2]:
-        d.showlegend=False
     fig.add_annotation(
         yref=f"y domain",
         y=0,
@@ -32,7 +38,7 @@ def main(df, info, config, output):
             yref=f"y{idx+2} domain",
             y=0.5,
             x=1,
-            textangle=90,
+            textangle=0,
 
             xref="x domain",
             xanchor="left",
@@ -41,8 +47,18 @@ def main(df, info, config, output):
             showarrow=False
         )
     fig.update_shapes(line=dict(width=2))
+    fig.update_traces(marker_line=dict(width=0), width=1, selector=dict(type='bar'))
     fig.update_layout(config["LayoutDefault"])
-    fig.update_layout(config["RBP3GSEA"]["layout"])
+    fig.update_layout(lout["layout"])
+    fig.update_xaxes(
+        config["LayoutDefault"]["xaxis"]
+    )
+    if "xaxis" in lout:
+        fig.update_xaxes(
+            lout["layout"]["xaxis"]
+        )
+
+    fig.layout.annotations = [annotation for annotation in fig.layout.annotations if annotation.text != "0 L2FC"]
 
     fig.write_image(output.svg)
     fig.write_html(output.html)
@@ -54,5 +70,6 @@ if __name__ == '__main__':
         snakemake.input.df,
         snakemake.input.info,
         snakemake.config,
-        snakemake.output
+        snakemake.output,
+        snakemake.params
     )

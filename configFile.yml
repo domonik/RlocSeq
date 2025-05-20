@@ -1,5 +1,5 @@
-primary-file: "run_configs/config.yml" # path to the config file that will be used first
-secondary-file: "run_configs/second_config.yml"
+primary-file: "run_configs/minusPuroConfig.yml" # path to the config file that will be used first
+secondary-file: "run_configs/plusPuroConfig.yml"
 tertiary-file: "run_configs/third_config.yml"
 total_cell-file: "run_configs/total_cell_config.yml"
 puromycinTC: "run_configs/configPuromycinTC.yml"
@@ -11,6 +11,28 @@ lightDarkLightTCConfig: "run_configs/lightDarkLightTCConfig.yml"
 
 membraneColor: "#2ca02c"
 cytosolColor: "#002695"
+
+TRACE_COLORS:
+  "-p M": "#2ca02c"
+  "-p C": "#002695"
+  "+p M": "#2ca02c"
+  "+p C": "#002695"
+
+
+RNA_TYPE_COLORS:
+  5UTR: "#8f6b30"        # Orange Red
+  5'UTR: "#8f6b30"        # Orange Red
+  3UTR: "rgb(160, 82, 45)"       # Sienna
+  3'UTR: "rgb(160, 82, 45)"       # Sienna
+  asRNA: "#ffe863"      # Deep Sky Blue
+  ncRNA: "rgb(0, 128, 0)"        # Green
+  tRNA: "rgb(255, 105, 180)"     # Hot Pink
+  CRISPR: "rgb(255, 215, 0)"     # Gold
+  mRNA: "#f5c2ed"         # Blue
+  CDS: "#f5c2ed"         # Blue
+  gene: "rgb(219, 219, 219)"         # Blue
+  default: "#7CB9E8"         # Blue
+
 padj_cutoff: 0.05
 
 gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
@@ -27,7 +49,7 @@ multilevel:
 
 memeMotif:
   RUN_DIR: "Pipeline/RUNS/LightRunMinusPuromycin/MotifEnrichment"
-  DESeqResultTable: "Pipeline/RUNS/LightRunMinusPuromycin/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv"
+  DESeqResultTable: "Pipeline/RUNS/LightRunMinusPuromycin/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv3"
   gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
   fasta: "initialData/Synechocystis.fasta"
   add_column: "locus_tag"
@@ -37,7 +59,7 @@ memeMotif:
 
 memeMotif2:
   RUN_DIR: "Pipeline/RUNS/LightRunPlusPuromycin/MotifEnrichment"
-  DESeqResultTable: "Pipeline/RUNS/LightRunPlusPuromycin/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv"
+  DESeqResultTable: "Pipeline/RUNS/LightRunPlusPuromycin/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv3"
   gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
   fasta: "initialData/Synechocystis.fasta"
   add_column: "locus_tag"
@@ -47,7 +69,7 @@ memeMotif2:
 
 memeMotifLD_L:
   RUN_DIR: "Pipeline/RUNS/LightDark_LightOnly/MotifEnrichment"
-  DESeqResultTable: "Pipeline/RUNS/LightDark_LightOnly/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv"
+  DESeqResultTable: "Pipeline/RUNS/LightDark_LightOnly/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv3"
   gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
   fasta: "initialData/Synechocystis.fasta"
   add_column: "locus_tag"
@@ -56,7 +78,7 @@ memeMotifLD_L:
 
 memeMotifLD_D:
   RUN_DIR: "Pipeline/RUNS/LightDark_DarkOnly/MotifEnrichment"
-  DESeqResultTable: "Pipeline/RUNS/LightDark_DarkOnly/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv"
+  DESeqResultTable: "Pipeline/RUNS/LightDark_DarkOnly/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv3"
   gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
   fasta: "initialData/Synechocystis.fasta"
   add_column: "locus_tag"
@@ -65,7 +87,7 @@ memeMotifLD_D:
 
 memeMotifLD_DPuro:
   RUN_DIR: "Pipeline/RUNS/LightDark_DarkPuro/MotifEnrichment"
-  DESeqResultTable: "Pipeline/RUNS/LightDark_DarkPuro/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv"
+  DESeqResultTable: "Pipeline/RUNS/LightDark_DarkPuro/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv3"
   gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
   fasta: "initialData/Synechocystis.fasta"
   add_column: "locus_tag"
@@ -75,7 +97,7 @@ memeMotifLD_DPuro:
 
 memeMotifLD_LPuro:
   RUN_DIR: "Pipeline/RUNS/LightDark_LightPuro/MotifEnrichment"
-  DESeqResultTable: "Pipeline/RUNS/LightDark_LightPuro/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv"
+  DESeqResultTable: "Pipeline/RUNS/LightDark_LightPuro/PipelineData/DESeqResults/DESeqResult_cM_vs_bC.tsv3"
   gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
   fasta: "initialData/Synechocystis.fasta"
   add_column: "locus_tag"
@@ -88,7 +110,9 @@ LayoutDefault:
   width: 624
   height: 400
   font:
-    size: 12
+    size: 10
+    family: "Arial"
+
   legend:
     font:
       size: 8
@@ -98,6 +122,16 @@ LayoutDefault:
     b: 50
     l: 50
     r: 50
+  yaxis:
+    gridwidth: 0.75
+    title:
+      font:
+        size: 10
+  xaxis:
+    gridwidth: 0.75
+    title:
+      font:
+        size: 10
 
 
 fonts:
@@ -112,14 +146,46 @@ F1Workflow:
 
 
 F1Volcano:
+  annotationsize: 8
+  annotations:
+    cupA:
+      x: 1.55
+      y: 6.2
+    psaA:
+      x: 0.15
+      y: 4
+
+    psbA2:
+      x: 0.55
+      y: 6
+    rnpB:
+      x: -1.5
+      y: 9
+    fusB:
+      x: -1
+      y: 6
+    rpl10:
+      x: -0.2
+      y: 1.75
+
+    rpl11:
+      x: 1.1
+      y: 8
+
+    rpl12:
+      x: 3.2
+      y: 8
+    rimO:
+      x:
+      y:
   file: "Pipeline/Paper/Subfigures/Fig1Volcano.svg"
   x: 312
-  y: 150
+  y: 100
   layout:
     width: 312
-    height: 370
+    height: 250
     margin:
-      r: 20
+      r: 30
     legend:
       orientation: "h"
       y: -0.25
@@ -128,9 +194,11 @@ F1Volcano:
       indentation: 0
       itemsizing: "constant"
     yaxis:
-      title: "-Log<sub>10</sub>(p.adj)"
+      title:
+        text: "-Log<sub>10</sub>(p.adj)"
     xaxis:
-      title: "Log<sub>2</sub>(Fold Change)"
+      title:
+        text: "Log<sub>2</sub>(Fold Change)"
 
 
 F1Percent:
@@ -139,10 +207,10 @@ F1Percent:
   y: 0
   layout:
     width: 312
-    height: 150
+    height: 100
     margin:
       r: 10
-      t: 50
+      t: 30
       l: 10
     legend:
       orientation: "h"
@@ -150,6 +218,32 @@ F1Percent:
       x: 0
       yanchor: "bottom"
       xanchor: "left"
+
+F1GSEA:
+  file: "Pipeline/Paper/Subfigures/rnaTypeGSEA_minusPuromycin.svg"
+  x: 312
+  y: 320
+  layout:
+    width: 312
+    height: 200
+    margin:
+      r: 50
+      t: 30
+      b: 5
+    showlegend: False
+    annotations:
+      font:
+        size: 8
+    xaxis:
+      title:
+        standoff: 5
+    yaxis:
+      title:
+        text: "Enrichment<br>score"
+        standoff: 5
+
+
+
 
 
 
@@ -176,11 +270,51 @@ RBP3GSEA:
     legend:
       orientation: "h"
 
+MinusPuroCoverage:
+  layout:
+    height: 250
+    legend:
+      title:
+        font:
+          size: 10
+
+
+PlusPuroCoverage:
+  layout:
+    height: 250
+    legend:
+      title:
+        font:
+          size: 10
+
 
 
 RBP3Venn:
   layout:
     height: 200
+    margin:
+      r: 20
+      l: 20
+
+    legend:
+      orientation: "h"
+      y: 0
+      yanchor: "top"
+
+
+
+
+F1:
+  d: "F1GSEA"
+  a: "F1Workflow"
+  b: "F1Percent"
+  c: "F1Volcano"
+
+
+Fig5Venn:
+  layout:
+    height: 300
+    width: 312
     margin:
       t: 40
 
@@ -189,8 +323,45 @@ RBP3Venn:
       y: 0
       yanchor: "top"
 
+EnrichFigure6:
+  layout:
+    height: 1000
 
-F1:
-  a: "F1Workflow"
-  b: "F1Percent"
-  c: "F1Volcano"
+
+EnrichFigure4:
+  layout:
+    height: 1000
+    width: 312
+
+VolcanoFigure4:
+  highlight_go_term:
+    ribosome: "#8f6b30"
+    "protein folding chaperone": "#ffe863"
+  layout:
+    width: 312
+    height: 300
+    legend:
+      orientation: "h"
+
+
+VolcanoFigure5:
+  highlight_go_term:
+    photosystem: "#ffe863"
+    ribosome: "#8f6b30"
+  layout:
+    width: 312
+    height: 300
+    legend:
+      orientation: "h"
+  annotations:
+    psbA2:
+      x: 0.2
+      y: 18
+
+    rpl10:
+      x: -0.2
+      y: 10
+
+    rpl12:
+      x: 1.
+      y: 23

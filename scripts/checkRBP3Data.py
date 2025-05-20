@@ -20,7 +20,8 @@ def main(snakemake_input, config, output):
 
         joined_out[col] = (joined_out["RBP3_Target"] == True) & (joined_out[l] == True)
     moves = ["minusPMembran", "plusPMembran"]
-    subset = ["locus_tag", "log2FoldChange_plusPuromycin", "log2FoldChange_minusPuromycin", "RBP3_Target"] + cols + moves + loc
+    rna_keys = [key for key in list(config["RNA_TYPE_COLORS"].keys()) if key in joined_out.columns]
+    subset = ["locus_tag", "log2FoldChange_plusPuromycin", "log2FoldChange_minusPuromycin", "RBP3_Target"] + cols + moves + loc + rna_keys
 
     joined_out.to_csv(output.useful_tsv, sep="\t", index=False)
     joined_out = joined_out[subset]

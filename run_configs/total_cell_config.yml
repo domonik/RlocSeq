@@ -71,7 +71,7 @@ log2FCCutOff: 0.8
 pAdjCutOff: 0.05
 
 # Gene Set sizes used by ClutserProfilers GOEnrich function
-minGSSize: 30
+minGSSize: 10
 maxGSSize: 500
 
 # KEGGEnrichment Settings - mainly uses GO settings

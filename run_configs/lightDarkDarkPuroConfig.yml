@@ -33,12 +33,12 @@ column_mapping: ["Puromycin", "Fraction", "LightDark", "Replicate"]
 design: "~ Replicate + Fraction"
 
 # Will be zipped together in order to run for multiple conditions. Must be levels of last Factor
-conditions: ["M", "M", "C"]
-baselines: ["C", "TC", "TC"]
+conditions: ["M"]
+baselines: ["C"]
 
 # If your initial table contains  columns that you don´t want to use instead of using DESeqs correction via the design
 # formula. You can specify them via the name form the column mapping and the level to drop.
-drop_condition: {"Puromycin": ["minusP"], "LightDark": ["L"]}
+drop_condition: {"Puromycin": ["minP"], "LightDark": ["L"], "Fraction": ["TC"]}
 
 # You can use a list of sample names that you don´t want to use. e.g. if this sample doesn´t cluster well with others
 # e.g. you can remove the sample mentioned above via putting: ["minusP_TotalCell_R1"] here. If you don´t want to remove
