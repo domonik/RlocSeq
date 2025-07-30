@@ -3,6 +3,7 @@ from DEplots.readCount import plot_precomputed_coverage
 from DEplots.gff_helper import read_gff3, read_gff_via_gffutils, optimize_gff_lines
 import plotly.graph_objs as go
 
+
 def main(design, gff, db_name, output_path, cfg):
     gff = read_gff_via_gffutils(gff, dbname="foofile.db", fix=False)
     lmap, attributes = optimize_gff_lines(gff)
@@ -12,11 +13,15 @@ def main(design, gff, db_name, output_path, cfg):
     cupA_start = 935409
     cupA_end = 936704
 
-    fusb_start = 1915274
+    rnpb_start = 153165
 
-    fusb_end = 1918608
+    rnpb_end = 153603
 
+    t13_start = 1329163
 
+    t13_end = 1329236
+
+    #design["Size factors"] = 1
 
 
     seqid = "BA000022.2"
@@ -60,8 +65,8 @@ def main(design, gff, db_name, output_path, cfg):
     f3 = plot_precomputed_coverage(
         design,
         contig=seqid,
-        wstart=fusb_start - 200,
-        wend=fusb_end + 100,
+        wstart=t13_start - 50,
+        wend=t13_end + 50,
         strand="-",
         gff=gff,
         gff_name="gene",
@@ -75,12 +80,12 @@ def main(design, gff, db_name, output_path, cfg):
 
 
     fig.update_layout(cfg["LayoutDefault"])
-    fig.data = [d for d in fig.data if d.name not in ("5'UTR-5'UTR_274", "5'UTR-5'UTR_275") and not d.name.startswith("ncRNA") and not d.name.startswith("gene-ncRNA")]
+    fig.data = [d for d in fig.data if d.name not in ("5'UTR-5'UTR_274", "5'UTR-5'UTR_275") ]
     already = set()
     for trace in fig.data:
         if trace.legendgroup == "Annotations":
             type = trace.name.split("-")[0]
-            if type not in already and type != "gene" and type != "ncRNA":
+            if type not in already and type != "gene":
                 trace.update(name=type)
                 already.add(type)
             else:
@@ -109,9 +114,9 @@ def main(design, gff, db_name, output_path, cfg):
             trace.update(showlegend=False)
             fig.add_trace(trace, col=3, row=2)
     for anno in f3.layout.annotations:
-        anno.update(xref="x6", yref="y6")
+        anno.update(xref="x6", yref="y6", text="tRNA13")
         fig.add_annotation(anno)
-    fig.update_xaxes(range=[fusb_start - 100, fusb_end + 100],  col=3, )
+    fig.update_xaxes(range=[t13_start - 25, t13_end + 25],  col=3, )
     fig.update_yaxes(range=[-.5, .5], row=2)
     fig.update_yaxes(title=None, col=2)
     fig.update_yaxes(title=None, col=3)
@@ -176,7 +181,10 @@ def main(design, gff, db_name, output_path, cfg):
 
         )
     )
+    fig.update_layout(cfg["LayoutDefault"])
+
     fig.update_layout(cfg["MinusPuroCoverage"]["layout"])
+
     fig.write_image(output_path)
 
     p = 0

@@ -35,7 +35,6 @@ rule memeMotif:
         dir=directory(os.path.join(config["RUN_DIR"],"MEME/Motif_up/"))
     shell:
         """
-        mkdir -p {output.dir}
         streme --p {input.up_fasta} --o {output.dir} --n {input.bg_fasta} --evalue --minw 5 --align left || true
         """
 

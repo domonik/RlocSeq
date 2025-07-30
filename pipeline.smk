@@ -52,9 +52,52 @@ with open(config["lightDarkDarkPuroConfig"], "r") as handle:
     config["RUNS"]["lightDarkDarkPuro"] = yaml.safe_load(handle)
 
 with open(config["lightDarkLightTCConfig"], "r") as handle:
-    config["lightDarkLightTC"] = yaml.safe_load(handle)
+    config["RUNS"]["lightDarkLightTC"] = yaml.safe_load(handle)
 
-configs = []
+with open(config["lightDarkLightvsLightTCConfig"], "r") as handle:
+    config["RUNS"]["lightDarkLightvsLightTC"] = yaml.safe_load(handle)
+
+with open(config["lightDarkLightvsLightPlusPuroTCConfig"], "r") as handle:
+    config["RUNS"]["lightDarkLightvsLightPlusPuroTC"] = yaml.safe_load(handle)
+
+
+
+
+
+rule joinLandLDL:
+    input:
+        light = config["RUNS"]["primary"]["CountFile"],
+        light_dark = config["RUNS"]["lightDarkLightTC"]["CountFile"],
+    output:
+        file = "Pipeline/BothDatasetsJoined.tsv"
+    run:
+        import pandas as pd
+        import re
+        df1 = pd.read_csv(input.light, sep=",")
+        df2 = pd.read_csv(input.light_dark, sep=",")
+        def rename_col(col):
+            # Step 1: Replace 'minusP' with 'minP'
+            col = col.replace('minusP','minP')
+
+            # Step 2: Insert 'HL' between region and replicate
+            # Pattern: (prefix)_(region)_(replicate)
+            match = re.match(r"(.+P)_(\w+)_(R\d+)",col)
+            if match:
+                prefix, region, replicate = match.groups()
+                return f"{prefix}_{region}_HL_{replicate}"
+            else:
+                return col
+
+
+        df1.columns = [rename_col(col) for col in df1.columns]
+        df1.index = df1.iloc[:, 0]
+        df2.index = df2.iloc[:, 0]
+        df1 = df1[[col for col in df1.columns[1:]]]
+        df2 = df2[[col for col in df2.columns[1:]]]
+        df_all = df1.merge(df2,left_index=True,right_index=True)
+        df_all.to_csv(output.file, sep=",")
+
+
 
 rule coLocateTranscripts:
     input:
@@ -160,6 +203,23 @@ def checkLocusTagspvals(other_df, col):
         return d
 
     return check
+
+
+rule create_uniprot_annotation:
+    input:
+        uniprot = rules.other_downloadOrganismGOTerms.output.go_terms,
+        df = config["RUNS"]["primary"]["CountFile"]
+    output:
+        tsv = "Pipeline/uniprotMapping.tsv"
+    run:
+        import pandas as pd
+        uprot = pd.read_csv(input.uniprot, sep="\t")
+        uprot = uprot.assign(**{"Gene Names (ordered locus)": uprot["Gene Names (ordered locus)"].str.split(r"\s*[;/]\s*")})
+        uprot = uprot.explode("Gene Names (ordered locus)").reset_index(drop=True)
+        df = pd.read_csv(input.df, sep=config["RUNS"]["primary"]["initial_sep"])
+        mapping = df.merge(uprot, left_on="Geneid", right_on="Gene Names (ordered locus)")
+        mapping = mapping[["Geneid", "Entry"]]
+        mapping.to_csv(output.tsv, sep="\t", index=False)
 
 def any_sig(data):
     pvals = data["padjs"]
@@ -587,294 +647,7 @@ rule checkProteinLocalization:
         tsv = "Pipeline/SubcellularLoc/{condition}vs{baseline}SubcellLoc.tsv",
     script: "scripts/checkMembraneDistribution.py"
 
-rule refineVolcano:
-    input:
-        json = rules.other_volcanoPlot.output.json
-    output:
-        svg = "Pipeline/DFGAntrag/VolcanoPlotminusP_c_{condition}vs{baseline}.svg"
-    run:
-        import plotly.graph_objects as go
-        from plotly.io import read_json
-        fig = read_json(input.json)
-        fig.update_layout(
-            title=None,
-            width=624/2,
-            height=250,
-            font=dict(size=10,color="black"),
-            margin=dict(r=10,l=10,t=10,b=10),
-            bargap=0.3,
-            plot_bgcolor='white',
-            yaxis=dict(title="-Log10(p.adj)"),
-            legend=dict(itemsizing="constant", itemwidth=30)
-        )
-        print(fig.layout.shapes)
-        for idx, shape in enumerate(fig.layout.shapes):
-            if idx==0:
-                shape.update(fillcolor="#2ca02c", opacity=0.1)
-            elif idx == 1:
-                shape.update(fillcolor="#002695", opacity=0.1)
 
-        fig.update_traces(
-            marker=dict(size=3),
-        )
-        fig.layout.annotations = None
-        fig.add_annotation(
-            text="Cytosol",
-            font=dict(color="#002695"),
-            showarrow=False,
-            x=0,
-            y=1,
-            xref="x domain",
-            yref="y domain",
-            xanchor="left",
-            yanchor="top"
-        )
-        fig.add_annotation(
-            text="Membrane",
-            font=dict(color="#2ca02c"),
-            showarrow=False,
-            x=1,
-            y=1,
-            xref="x domain",
-            yref="y domain",
-            xanchor="right",
-            yanchor="top"
-        )
-        fig.data[0].update(name="mRNA", showlegend=True)
-        fig.write_image(output.svg)
-
-
-rule refineVolcano3:
-    input:
-        json = rules.second_volcanoPlot.output.json
-    output:
-        svg = "Pipeline/DFGAntrag/VolcanoPlotplusP_c_{condition}vs{baseline}.svg"
-    run:
-        import plotly.graph_objects as go
-        from plotly.io import read_json
-        fig = read_json(input.json)
-        fig.update_layout(
-            title=None,
-            width=360,
-            height=250,
-            font=dict(size=10,color="black"),
-            margin=dict(r=10,l=10,t=10,b=10),
-            bargap=0.3,
-            plot_bgcolor='white',
-            yaxis=dict(title="-Log10(p.adj)"),
-            legend=dict(itemsizing="constant", itemwidth=30)
-        )
-        print(fig.layout.shapes)
-        for idx, shape in enumerate(fig.layout.shapes):
-            if idx==0:
-                shape.update(fillcolor="#2ca02c", opacity=0.1)
-            elif idx == 1:
-                shape.update(fillcolor="#002695", opacity=0.1)
-
-        fig.update_traces(
-            marker=dict(size=3),
-        )
-        fig.add_annotation(
-            text="Cytosol",
-            font=dict(color="#002695"),
-            showarrow=False,
-            x=0,
-            y=1,
-            xref="x domain",
-            yref="y domain",
-            xanchor="left",
-            yanchor="top"
-        )
-        fig.add_annotation(
-            text="Membrane",
-            font=dict(color="#2ca02c"),
-            showarrow=False,
-            x=1,
-            y=1,
-            xref="x domain",
-            yref="y domain",
-            xanchor="right",
-            yanchor="top"
-        )
-        fig.data[0].update(name="mRNA", showlegend=True)
-        fig.write_image(output.svg)
-
-rule refineVolcano2:
-    input:
-        json = rules.tc_volcanoPlot.output.json
-    output:
-        svg = "Pipeline/DFGAntrag/VolcanoPlotTC_c_{condition}vs{baseline}.svg"
-    run:
-        import plotly.graph_objects as go
-        from plotly.io import read_json
-        fig = read_json(input.json)
-        fig.update_layout(
-            title=None,
-            width=360,
-            height=250,
-            font=dict(size=10,color="black"),
-            margin=dict(r=10,l=10,t=10,b=10),
-            bargap=0.3,
-            plot_bgcolor='white',
-            yaxis=dict(title="-Log10(p.adj)"),
-            legend=dict(itemsizing="constant", itemwidth=30)
-        )
-        print(fig.layout.shapes)
-        for idx, shape in enumerate(fig.layout.shapes):
-            if idx==0:
-                shape.update(fillcolor="#2ca02c", opacity=0.1)
-            elif idx == 1:
-                shape.update(fillcolor="#002695", opacity=0.1)
-
-        fig.update_traces(
-            marker=dict(size=3),
-        )
-        fig.add_annotation(
-            text="-Puromycin",
-            font=dict(color="#002695"),
-            showarrow=False,
-            x=0,
-            y=1,
-            xref="x domain",
-            yref="y domain",
-            xanchor="left",
-            yanchor="top"
-        )
-        fig.add_annotation(
-            text="+Puromycin",
-            font=dict(color="#2ca02c"),
-            showarrow=False,
-            x=1,
-            y=1,
-            xref="x domain",
-            yref="y domain",
-            xanchor="right",
-            yanchor="top"
-        )
-        fig.data[0].update(name="mRNA", showlegend=True)
-        fig.update_xaxes(dtick=2)
-        fig.write_image(output.svg)
-
-rule refineGOEnrichment:
-    input:
-        json = rules.other_ClusteredEnrichmentPlot.output.json
-    output:
-        svg = "Pipeline/DFGAntrag/ClusteredEnrichment_c_{condition}vs{baseline}_ud_{updown}.svg"
-    run:
-        from plotly.io import read_json
-
-        fig = read_json(input.json)
-        fig.update_layout(
-            title=None,
-            width=400,
-            height=250 + 150,
-            font=dict(size=10,color="black"),
-            margin=dict(r=10,l=10,t=10,b=10),
-            bargap=0.3,
-            plot_bgcolor='white',
-        )
-        fig.layout.coloraxis.colorbar.update(thickness=10)
-        fig.write_image(output.svg)
-
-rule refineGOEnrichment2:
-    input:
-        json = rules.other_EnrichmentPlot.output.json
-    output:
-        svg = "Pipeline/DFGAntrag/RawEnrichment_c_{condition}vs{baseline}_ud_{updown}.svg"
-    run:
-        from plotly.io import read_json
-
-        fig = read_json(input.json)
-        fig.update_layout(
-            title=None,
-            width=400,
-            height=250 + 150,
-            font=dict(size=10,color="black"),
-            margin=dict(r=10,l=10,t=10,b=10),
-            bargap=0.3,
-            plot_bgcolor='white',
-        )
-        fig.layout.coloraxis.colorbar.update(thickness=10)
-        fig.write_image(output.svg)
-
-rule plotRAPDOR:
-    input:
-        file = rules.third_runDESeq.output.normalized_counts,
-        annotation = "initialData/locusTagtoGeneName.csv"
-    output:
-        svg = "Pipeline/DFGAntrag/DFGResult.svg",
-    run:
-        from helper import generateRDPMSpecInput
-        from RAPDOR.datastructures import RAPDORData
-        from RAPDOR.plots import plot_protein_distributions
-
-        design, df = generateRDPMSpecInput(
-            input.file,
-            sep="\t",
-            annotation=input.annotation,
-
-        )
-
-        rbpmdata = RAPDORData(df=df,design=design,control="Puromycin-",measure="Counts",measure_type="Gene",min_replicates=3)
-        print(rbpmdata.df.RAPDORid)
-        rbpmdata.normalize_and_get_distances(method="Jensen-Shannon-Distance")
-        cmpc = "cmpC"
-        rnpb = "rnpB"
-        psba = "psbA1"
-        psba2 = "psbA2"
-        psba3 = "psbA3"
-        ids = psba, psba2, psba3, cmpc, rnpb
-        fig = plot_protein_distributions(
-            ids,
-            rapdordata=rbpmdata,
-            title_col="Gene",
-            mode="bar",
-            plot_type="raw",
-            colors=["#cf0608", "#f5c315"],
-            horizontal_spacing=0.05,
-            vertical_spacing=0.1,
-            rows=1,
-            cols=5,
-
-        )
-        for annotation in fig.layout.annotations[2:]:
-            annotation.update(
-                x=0.5,
-                y=1,
-                xanchor="center",
-                yanchor="bottom",
-                textangle=0,
-                font=dict(size=12),
-
-            )
-        fig.layout.annotations[1].update(text="normalized gene counts")
-        fig.layout.annotations = fig.layout.annotations[1:]
-        fig.update_traces(
-            showlegend=False,
-            legend="legend"
-        )
-        for i, data in enumerate((fig.data[0], fig.data[2])):
-            data.update(
-                showlegend=True,
-                name="+Puromycin" if i else "-Puromycin"
-            )
-        fig.update_layout(
-            legend=dict(
-                orientation="v",
-                y=1,
-                x=1,
-                title=None,
-                yref="paper"
-            ),
-            width=796,
-            height=200,
-            font=dict(size=10, color="black"),
-            plot_bgcolor='white',
-            margin=dict(r=10,l=70,t=10,b=50),
-        )
-        fig.update_xaxes(showline=True, linecolor="black", mirror=True)
-        fig.update_yaxes(showline=True, linecolor="black", mirror=True)
-        fig.write_image(output.svg)
 
 rule compareTotalCell:
     input:
@@ -1031,9 +804,21 @@ use rule * from ld_dark_puro_workflow as lightDarkDarkPuro_*
 
 module ld_light_tc_workflow:
     snakefile: snakefile
-    config: config["lightDarkLightTC"]
+    config: config["RUNS"]["lightDarkLightTC"]
 
 use rule * from ld_light_tc_workflow as lightDarkLightTC_*
+
+module ld_light_vs_light_tc_workflow:
+    snakefile: snakefile
+    config: config["RUNS"]["lightDarkLightvsLightTC"]
+
+use rule * from ld_light_vs_light_tc_workflow as lightDarkLightvsLightTC_*
+
+module ld_light_vs_light_plus_puro_tc_workflow:
+    snakefile: snakefile
+    config: config["RUNS"]["lightDarkLightvsLightPlusPuroTC"]
+
+use rule * from ld_light_vs_light_plus_puro_tc_workflow as lightDarkLightvsLightPlusPuroTC_*
 
 rule extractOverlap:
     input:
@@ -1362,15 +1147,6 @@ rule Figure1toPNG:
 
 
 
-rule plotCoveragesFig5:
-    input:
-        design = "initialData/testDesign.tsv",
-        gff = "initialData/annotationFiltered.gff",
-        sf = rules.second_runDESeq.output.size_factors,
-    output:
-        svg = "Pipeline/Paper/Figure5/Coverages.svg",
-        db = "Pipeline/GFFDB/gff_database.db",
-    script: "scripts/plotCoveragesFigure5.py"
 
 
 rule plotCoveragesFig2:
@@ -1380,29 +1156,11 @@ rule plotCoveragesFig2:
         sf = rules.other_runDESeq.output.size_factors,
         db= "Pipeline/GFFDB/gff_database.db",
     output:
-        svg = "Pipeline/Paper/Figure2/Coverages.svg",
+        svg = config["MinusPuroCoverage"]["file"]
     script: "scripts/plotCoveragesFigure2.py"
 
-rule plotVolcanoFigure5:
-    input:
-        tsv=expand(rules.second_extractDESeqResult.output.result_table,condition="M",baseline="C")[0],
-        go=expand(rules.second_GOEnrichment.output.up, condition="M", baseline="C")[0],
-        add_data = "initialData/locusTagtoGeneName.csv"
-    output:
-        svg = "Pipeline/Paper/Figure5/F5Volcano.svg",
-        html="Pipeline/Paper/Figure5/F5Volcano.html"
-    params:
-        figureConfig = "VolcanoFigure5"
-    #conda: "envs/matplotlibPlotly.yml"
-    script: "scripts/VolcanoFigure5.py"
 
-rule plotVennsFigure5:
-    input:
-        tsv=expand(rules.joinTables.output.tsv,condition="M",baseline="C")[0],
-    conda: "envs/matplotlibPlotly.yml"
-    output:
-        svg = "Pipeline/Paper/Figure5/F5Venns.svg",
-    script: "scripts/VennOverlap.py"
+
 
 # rule plotGOTermEnrichments:
 #     input:
@@ -1410,6 +1168,123 @@ rule plotVennsFigure5:
 #     output:
 #         svg =
 
+
+rule processFISHImages:
+    output:
+        tsv = "Pipeline/FISH/all_distributions.tsv"
+    threads: 10
+    notebook:
+        "scripts/generateFISHDistribution.ipynb"
+
+
+rule plotFISHFigure2:
+    input:
+        tsv = rules.processFISHImages.output.tsv
+    output:
+        svg = config["F2FISH"]["file"]
+    params:
+        probes = [("psaA", "untreated", "Replicate 1"), ("cupA", "untreated", "Replicate 1"), ("rnpB", "untreated", "Replicate 1"), ("fusB", "Puromycin", "Replicate 1") ],
+        layout= config["F2FISH"]["layout"],
+        subplot=dict(vertical_spacing=0.05, column_titles=["psaA", "cupA", "rnpB", "fusB"])
+
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/plotFISH.py"
+
+
+rule joinFig2:
+    input:
+        coverage = rules.plotCoveragesFig2.output.svg,
+        fish = rules.plotFISHFigure2.output.svg
+    params:
+        figures = config["F2"],
+        ges_y = 450
+    conda: "envs/svgutils.yml"
+    output:
+        svg = "Pipeline/Paper/Figure2/Figure2.svg"
+    script:
+        "scripts/paperFigure.py"
+
+rule Figure2toPNG:
+    input:
+        svg = rules.joinFig2.output.svg
+    output:
+        png = "Pipeline/Paper/Figure2/Figure2.png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
+
+
+rule plotVennsFigure5:
+    input:
+        tsv=expand(rules.joinTables.output.tsv,condition="M",baseline="C")[0],
+    conda: "envs/matplotlibPlotly.yml"
+    output:
+        svg = config["Fig5Venn"]["file"],
+    script: "scripts/VennOverlap.py"
+
+
+
+rule plotVolcanoFigure5:
+    input:
+        tsv=expand(rules.second_extractDESeqResult.output.result_table,condition="M",baseline="C")[0],
+        go=expand(rules.second_GOEnrichment.output.up, condition="M", baseline="C")[0],
+        add_data = "initialData/locusTagtoGeneName.csv"
+    output:
+        svg = config["VolcanoFigure5"]["file"],
+        html="Pipeline/Paper/Figure5/F5Volcano.html"
+    params:
+        figureConfig = "VolcanoFigure5"
+    #conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/VolcanoFigure5.py"
+
+
+rule plotCoveragesFig5:
+    input:
+        design = "initialData/testDesign.tsv",
+        gff = "initialData/annotationFiltered.gff",
+        sf = rules.second_runDESeq.output.size_factors,
+    output:
+        svg = config["PlusPuroCoverage"]["file"],
+        db = "Pipeline/GFFDB/gff_database.db",
+    script: "scripts/plotCoveragesFigure5.py"
+
+
+
+rule plotFISHFigure5:
+    input:
+        tsv=rules.processFISHImages.output.tsv
+    output:
+        svg = config["F5FISH"]["file"]
+    params:
+        probes =[("psbA2","untreated","Replicate 1"), ("psbA2","Puromycin","Replicate 1"), ("rpl10_12", "untreated", "Replicate 1"), ("rpl10_12", "Puromycin", "Replicate 1")],
+        layout= config["F5FISH"]["layout"],
+        subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
+                              column_titles=["- Puromycin", "+ Puromycin", "- Puromycin", "+ Puromycin"])
+
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/plotFISHFigure5.py"
+
+
+rule joinFig5:
+    input:
+        coverage = rules.plotCoveragesFig5.output.svg,
+        fish = rules.plotFISHFigure5.output.svg,
+        volcano = rules.plotVolcanoFigure5.output.svg,
+        venn = rules.plotVennsFigure5.output.svg
+    params:
+        figures = config["F5"],
+        ges_y = 750
+    conda: "envs/svgutils.yml"
+    output:
+        svg = "Pipeline/Paper/Figure5/Figure5.svg"
+    script:
+        "scripts/paperFigure.py"
+
+
+rule Figure5toPNG:
+    input:
+        svg = rules.joinFig5.output.svg
+    output:
+        png = "Pipeline/Paper/Figure5/Figure5.png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
 
 rule plotVolcanoFigure4:
     input:
@@ -1442,7 +1317,6 @@ rule plotGOTermEnrichmentFig6:
         html = "Pipeline/Paper/Figure6/F6Enrichment.html",
     script: "scripts/plotEnrichmentPlots.py"
 
-
 rule all:
     default_target: True
     input:
@@ -1459,26 +1333,21 @@ rule all:
         tu2 = expand(rules.createTUTable2.output, condition=["M"], baseline=["C"]),
         #tu3 = expand(rules.plotHistogramm.output,zip, condition=["M"], baseline=["C"]),
         stayedGO = expand(rules.GOTermEnrichmentStayed.output, condition=["M"], baseline=["C"]),
-        df = expand(rules.summarizeResult.output, condition=["M"], baseline=["C"]),
         transintramembrane = expand(rules.joinTables.output, condition=["M"], baseline=["C"]),
         dfr = expand(rules.checkProteinLocalization.output, condition=["M"], baseline=["C"]),
         size_factors = rules.third_runDESeq.output,
         #protloc = expand(rules.correlationRNAvsProteins.output, condition="M", baseline="C"),
         summary_fig = expand(rules.compareResults.output, condition="M", baseline="C"),
         summary_fig2 = expand(rules.compareTotalCell.output, condition="plusP", baseline="minusP"),
-        dfg_rapdor= rules.plotRAPDOR.output.svg,
-        dfg_volcano = expand(rules.refineVolcano.output, condition="M", baseline="C"),
-        dfg_volcano2 = expand(rules.refineVolcano2.output, condition="plusP", baseline="minusP"),
-        dfg_volcano3 = expand(rules.refineVolcano3.output, condition="M", baseline="C"),
-        dfg_go = expand(rules.refineGOEnrichment.output, condition="M", baseline="C", updown="up"),
-        dfg_go2 = expand(rules.refineGOEnrichment2.output, condition="M", baseline="C", updown="up"),
         #overlap= expand(rules.extractOverlap.output, zip, condition=config["primary"]["conditions"],baseline=config["primary"]["baselines"]),
         ldl = rules.lightDarkLight_all.input,
         ldd = rules.lightDarkDark_all.input,
         ldl_puro = rules.lightDarkLightPuro_all.input,
         ldd_puro = rules.lightDarkDarkPuro_all.input,
         ldd_tc = rules.lightDarkLightTC_all.input,
-        test = expand(rules.plotGSEA.output, condition="M", baseline="C", run_dir=[os.path.basename(config["RUNS"][run]["RUN_DIR"]) for run in config["RUNS"]]),
+        ldd_vsl_tc = rules.lightDarkLightvsLightTC_all.input,
+        ldd_vsl_plusp_tc = rules.lightDarkLightvsLightPlusPuroTC_all.input,
+        test = expand(rules.plotGSEA.output, condition="M", baseline="C", run_dir=[os.path.basename(config["RUNS"][run]["RUN_DIR"]) for run in config["RUNS"] if "TC" not in run]),
         subcell = rules.download_subcell.output,
         rbp3 = expand(rules.plotRBP3GSEA.output, puro=["plusPuromycin", ]),
         rbp3venn = rules.joinRBP3Plot.output,
@@ -1495,4 +1364,6 @@ rule all:
         f4enrich = rules.plotGOTermEnrichmentFig4.output,
         f6enrich = rules.plotGOTermEnrichmentFig6.output,
         f5venn = rules.plotVennsFigure5.output,
+        fish = rules.Figure2toPNG.output,
+        fish5 = rules.Figure5toPNG.output
 

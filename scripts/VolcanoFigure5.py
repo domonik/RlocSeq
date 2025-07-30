@@ -56,8 +56,7 @@ def main(tsv, add_data, go_terms, output, config, params):
     fig.update_traces(
         marker=dict(size=3),
     )
-
-    fig.data[0].update(name="not sig.", showlegend=True)
+    fig.data[0].update(name="not sig.", showlegend=False)
     fig.write_image(output.svg)
     fig.write_html(output.html)
 

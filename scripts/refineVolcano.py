@@ -9,7 +9,6 @@ def main(tsv, gsea, output, params, config):
     df = pd.read_csv(tsv, sep="\t")
     gsea = pd.read_csv(gsea, sep="\t")
     highlight = {key: (color, df[df[key] == True].index) for key, color in config["RNA_TYPE_COLORS"].items() if key in gsea.ID.tolist()}
-    other = " & ".join([key for key in config["RNA_TYPE_COLORS"] if key not in gsea.ID.tolist()])
     df = df.rename({
         "log2FoldChange_minusPuromycin": "log2FoldChange",
         "padj_minusPuromycin": "padj"
