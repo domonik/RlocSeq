@@ -112,7 +112,7 @@ LayoutDefault:
   width: 624
   height: 400
   font:
-    size: 10
+    size: 9.33
     family: "Arial"
 
   legend:
@@ -128,12 +128,12 @@ LayoutDefault:
     gridwidth: 0.75
     title:
       font:
-        size: 10
+        size: 8
   xaxis:
     gridwidth: 0.75
     title:
       font:
-        size: 10
+        size: 8
 
 
 fonts:
@@ -247,15 +247,7 @@ F1GSEA:
 
 
 
-F3A:
-  layout:
-    width: 624
-    height: 200
-    xaxis:
-      title:
-        text: "transcript abundance [%]"
-    legend:
-      orientation: "h"
+
 
 RBP3A:
   layout:
@@ -485,12 +477,50 @@ F6FISH:
 
 
 
-F3FISH:
-  file: "Pipeline/Paper/Figure3/F3FISH.svg"
+
+F3SubCellLoc:
+  file: "Pipeline/Paper/Figure3/F3SubCellLoc.svg"
   x: 0
   y: 0
   layout:
-    width: 416
+    width: 624
+    height: 200
+    margin:
+      t: 30
+      b: 50
+    xaxis:
+      title:
+        text: "fraction of transcripts [%]"
+        standoff: 1
+    legend:
+      orientation: "h"
+      y: -0.25
+
+
+F3ClusteredGO:
+  file: "Pipeline/Paper/Figure3/F3CluteredGO.svg"
+  x: 0
+  y: 200
+  layout:
+    width: 312
+    height: 300
+    legend:
+      title:
+        font:
+          size: 10
+    margin:
+      r: 50
+      t: 30
+      b: 50
+
+
+
+F3FISH:
+  file: "Pipeline/Paper/Figure3/F3FISH.svg"
+  x: 312
+  y: 200
+  layout:
+    width: 312
     height: 300
     legend:
       title:
@@ -501,19 +531,23 @@ F3FISH:
       t: 30
       b: 50
     xaxis:
+      title_standoff: 1
+    yaxis3:
       title_standoff: 1
     annotations:
       font:
         size: 10
 
 
-F3QTPCR:
-  file: "Pipeline/Paper/Figure3/F3QTPCR.svg"
-  x: 416
-  y: 0
+
+
+F3GSEA:
+  file: "Pipeline/Paper/Figure3/F3GSEA.svg"
+  x: 0
+  y: 300
   layout:
-    width: 208
-    height: 300
+    width: 612
+    height: 200
     legend:
       title:
         font:
@@ -527,9 +561,45 @@ F3QTPCR:
 
 
 
+F4QTPCR:
+  file: "Pipeline/Paper/Figure4/F4QPCR.svg"
+  x: 416
+  y: 0
+  layout:
+    width: 312
+    height: 300
+    legend:
+      title:
+        font:
+          size: 10
+    margin:
+      r: 20
+      t: 30
+      b: 50
+    xaxis:
+      title_standoff: 1
+
+
+F4ClusteredGO:
+  file: "Pipeline/Paper/Figure4/F4ClusteredGO.svg"
+  x: 0
+  y: 200
+  layout:
+    width: 312
+    height: 300
+    legend:
+      title:
+        font:
+          size: 10
+    margin:
+      r: 50
+      t: 30
+      b: 50
+
 F3:
-  a: "F3FISH"
-  b: "F3QTPCR"
+  a: "F3SubCellLoc"
+  b: "F3ClusteredGO"
+  c: "F3FISH"
 
 EnrichFigure6:
   layout:

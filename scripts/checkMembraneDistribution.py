@@ -106,7 +106,7 @@ def check_membrane_dist(uniprot_file, deseq_table, config, output, uni_col="Gene
 
     )
     fig.update_layout(
-        **config["F3A"]["layout"]
+        config["F3SubCellLoc"]["layout"]
     )
     fig.update_xaxes(range=[-1, 101])
     fig.show()

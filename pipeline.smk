@@ -694,11 +694,11 @@ rule checkProteinLocalization:
 
 
 
-rule cpF1A:
+rule cpF3SubCellLoc:
     input:
         file = expand(rules.checkProteinLocalization.output.svg, condition=["M"], baseline=["C"])[0]
     output:
-        svg = "Pipeline/Paper/Figure3/F3A.svg"
+        svg = config["F3SubCellLoc"]["file"]
     shell:
         "cp {input.file} {output.svg}"
 
@@ -721,7 +721,7 @@ rule compareTotalCell:
         html="Pipeline/DFGAntrag/summary_total_cell_c_{condition}vs{baseline}.html",
     run:
         from helper import compare_results
-        cfg = snakemake.config
+        cfg = config
         for (idx, (inputs, outputs)) in enumerate([(input.file, (output.svg, output.html))]):
             puro = "Total cell"
             fig = compare_results(
@@ -937,6 +937,20 @@ rule extractFasta:
         bedtools getfasta -s -fi {input.fasta} -bed {input.gff} > {output.fasta}
         """
 
+
+rule plotGSEARibosome:
+    input:
+        tsv = expand(rules.other_GSEAGO.output.enriched, condition=["M"], baseline=["C"])[0],
+        info_tsv = expand(rules.other_GSEAGO.output.gsdata, condition=["M"], baseline=["C"])[0]
+    params:
+        base_name="Cytosol",
+        condition_name="Membrane",
+        layout=config["F3GSEA"]["layout"]
+    output:
+        svg = config["F3GSEA"]["file"]
+    conda: "envs/matplotlibPlotly.yml"
+    script:
+        "scripts/GOGSEA.py"
 
 rule addFastatoTSV:
     input:
@@ -1284,21 +1298,32 @@ rule plotFISHFigure3:
     output:
         svg = config["F3FISH"]["file"]
     params:
-        probes =[("16S rRNA", "untreated", "Replicate 1"), ("16S rRNA", "Puromycin", "Replicate 1"),],
+        probes =[("16S rRNA", "untreated", "Replicate 1")],
         layout= config["F3FISH"]["layout"],
-        subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
-                              column_titles=["- Puromycin", "+ Puromycin"])
+        subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,)
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISHFigure3.py"
 
-
-rule plotQTPCRFigure3:
+rule F4ClusteredGO:
+    input:
+        tsv = expand(rules.tc_ClusterSemSim.output.table, condition="plusP", baseline="minusP", updown="up")[0],
+    params:
+        layout = config["F4ClusteredGO"]["layout"]
     output:
-        svg = "Pipeline/Paper/Figure3/QTPCR.svg"
+        svg = config["F4ClusteredGO"]["file"]
     conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/plotClusteredEnrichment.py"
 
-    script: "scripts/QTPCR.py"
+rule plotQPCR:
+    input:
+        tsv = "initialData/QPCRTotalCellPuro.tsv"
+    conda: "envs/matplotlibPlotly.yml"
+    output:
+        svg = config["F4QTPCR"]["file"]
+    script:
+        "scripts/QTPCR.py"
+
 
 
 rule plotFISHFigure6:
@@ -1435,6 +1460,16 @@ rule plotGOTermEnrichmentFig6:
     script: "scripts/plotEnrichmentPlots.py"
 
 
+rule F3ClusteredGO:
+    input:
+        tsv = expand(rules.other_ClusterSemSim.output.table, condition="M", baseline="C", updown="up")[0],
+    params:
+        layout = config["F3ClusteredGO"]["layout"]
+    output:
+        svg = config["F3ClusteredGO"]["file"]
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/plotClusteredEnrichment.py"
+
 rule F3QTPCR:
     output:
         svg = "Pipeline/Paper/Figure3/F3QTPCR.svg",
@@ -1443,11 +1478,10 @@ rule F3QTPCR:
 
 rule joinFig3:
     input:
-        qt = rules.F3QTPCR.output.svg,
-        fish = rules.plotFISHFigure3.output.svg,
+        files = [config[val]["file"] for key, val in config["F3"].items()]
     params:
         figures = config["F3"],
-        ges_y = 300
+        ges_y = 500
     conda: "envs/svgutils.yml"
     output:
         svg = "Pipeline/Paper/Figure3/Figure3.svg"
@@ -1512,6 +1546,9 @@ rule all:
         fish3 = rules.Figure6toPNG.output,
         f3 = rules.Figure3toPNG.output,
         t1 = rules.Table1.output,
+        f3ribo = rules.plotGSEARibosome.output,
+        qpcr = rules.plotQPCR.output,
+        clusteredF4 = rules.F4ClusteredGO.output,
         summary = expand(rules.summarizeResult.output, condition="M", baseline="C"),
         transmemgsea = expand(rules.TransmembraneGSEA.output.enriched, puro=["minusPuromycin", "plusPuromycin"], condition="M", baseline="C")
 

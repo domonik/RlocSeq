@@ -1,26 +1,27 @@
 import plotly.graph_objects as go
 import yaml
+import pandas as pd
 
-def main(cfg, outfile):
-    x = ["Control", "Puromycin"]
-    y = [156.575, 169.039]
-    std = [6.52287, 7.00263]
+
+
+def main(tsv, cfg, outfile):
+    df = pd.read_csv(tsv, sep="\t")
     fig = go.Figure()
     fig.add_trace(
         go.Bar(
-            x=x,
-            y=y,
+            x=df["Target"],
+            y=df["log2FC"],
             error_y=dict(
                 type='data',
                 visible=True,
-                array=std
+                array=df["Std. Dev.1"]
             ),
             marker=dict(line=dict(color="black", width=1), color=cfg["cytosolColor"])
         )
     )
-    fig.update_yaxes(title=dict(text="2<sup>–ΔΔCt</sup>"))
+    fig.update_yaxes(title=dict(text="log<sub>2</sub>(fold change)"))
     fig.update_layout(cfg["LayoutDefault"])
-    fig.update_layout(cfg["F3QTPCR"]["layout"])
+    fig.update_layout(cfg["F4QTPCR"]["layout"])
 
     fig.write_image(outfile)
 
@@ -31,4 +32,5 @@ if __name__ == '__main__':
         cfg = yaml.safe_load(f)
     cfg = snakemake.config
     outfile = snakemake.output.svg
-    main(cfg, outfile)
+    tsv = snakemake.input.tsv
+    main(tsv, cfg, outfile)
