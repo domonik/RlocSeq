@@ -53,8 +53,9 @@ def main(tsv, config, svg):
             'layer': 'above'
         }
     )
-    f1 = venn_to_plotly([minus_p_m, plus_p_m, ], L_labels=["- Puromycin", "+ Puromyin"])
-    f2 = venn_to_plotly([minus_p_c, plus_p_c,], L_labels=["- Puromycin", "+ Puromyin"])
+    colors = ["rgba(105, 190, 40, 0.6)", "rgba(0, 34, 68, 0.6)"]
+    f1 = venn_to_plotly([minus_p_m, plus_p_m, ], L_labels=["- Puromycin", "+ Puromyin"], L_color=colors)
+    f2 = venn_to_plotly([minus_p_c, plus_p_c,], L_labels=["- Puromycin", "+ Puromyin"], L_color=colors)
     figures = [[f2, f1]]
     multi_fig = copy_to_subfigures(figures, cols=2, multi_fig=multi_fig, n_sets=2)
 
@@ -62,12 +63,16 @@ def main(tsv, config, svg):
     multi_fig.update_layout(config["Fig5Venn"]["layout"])
     multi_fig.update_xaxes(showgrid=False, zeroline=False)
     multi_fig.update_yaxes(showgrid=False, zeroline=False)
+    white_annos = ["80", "28", "512"]
     for annotation in multi_fig.layout.annotations:
         if annotation.text.isnumeric():
             annotation.update(font=dict(size=8))
+            if annotation.text in white_annos:
+                annotation.update(font=dict(color="white"))
+            elif annotation.text == "135":
+                annotation.update(showarrow=True, ax=annotation.x+7, ay=annotation.y-25, arrowcolor="black", arrowwidth=.5, arrowhead=0)
         else:
             annotation.update(font=dict(size=12))
-
     multi_fig.add_trace(
         go.Scatter(
             x=df["log2FoldChange_minusPuromycin"],
@@ -122,7 +127,7 @@ def main(tsv, config, svg):
         bgcolor="white"
 
     )
-    multi_fig.show()
+    #multi_fig.show()
     multi_fig.write_image(svg)
 
     p = 0

@@ -86,7 +86,7 @@ def compare_results(files, sep, condition, base, padj_cutoff, lfc_cutoff, colors
     df = {"Enriched in": [], "Percentage": [], y: []}
     for name, file in files:
         df1 = pd.read_csv(file, sep=sep)
-        df1 = df1.dropna()
+        df1 = df1[df1["baseMean"] > 0]
         df1_up = df1[(df1["padj"] <= padj_cutoff) & (df1["log2FoldChange"] >= lfc_cutoff)]
         df1_down = df1[(df1["padj"] <= padj_cutoff) & (df1["log2FoldChange"] <= -lfc_cutoff)]
         lup = len(df1_up)

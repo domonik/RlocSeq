@@ -45,7 +45,6 @@ def main(file, probes, cfg, layout, subplot_params):
     summary = summary[summary["variable"] != "max"]
     summary = summary[summary["variable"].astype(int) <= 20]
     col_titles = [p[0] for p in probes]
-    print(probes)
     fig = make_subplots(
         rows=2,
         cols=len(probes),
@@ -57,13 +56,12 @@ def main(file, probes, cfg, layout, subplot_params):
     )
     fig.update_layout(cfg["LayoutDefault"])
 
-
-    color_map = {"Replicate 1": "rgb( 0, 160, 130)", "Replicate 2": "rgb(52, 74, 154)", "Replicate 3": "rgb( 111, 160, 130)"}
+    color_map = {"Replicate 1": "rgb(0, 106, 56)", "Replicate 2": "rgb(0, 48, 135)", "Replicate 3": "rgb( 111, 160, 130)"}
     for i, (probe, treatment, replicate) in enumerate(probes):
         traces = []
         errors = []
         image_dir = f"initialData/AllFISHData/{probe}/{replicate}"
-        files = [f for f in os.listdir(image_dir) if f.endswith(f"{treatment}_green.tif")]
+        files = [f for f in os.listdir(image_dir) if f.endswith(f"{treatment}_green.tif") and "Image" in f]
         print(image_dir)
         image_file = os.path.join(image_dir, files[0])
         img = tifffile.imread(image_file)
@@ -71,19 +69,15 @@ def main(file, probes, cfg, layout, subplot_params):
         fig.add_trace(tmp.data[0], row=1, col=i + 1)
         amaxes = []
         text = "<b>n: </b>"
-        for j, f in enumerate(sorted(summary["Figure"].unique())):
+        subdf = summary[summary["Probe"] == probe]
+        subdf = subdf[subdf["Treatment"] == treatment]
 
-            p = df[df["Figure"] == f]
-            p = p[p["Probe"] == probe]
-            p = p[p["Mask"] == "Measured"]
-            p = p[p["Treatment"] == treatment]
+        print(subdf)
+        for j, f in enumerate(sorted(subdf["Figure"].unique())):
             color = color_map[f]
-
-            sdf = summary[summary["Figure"] == f]
-            sdf = sdf[sdf["Probe"] == probe]
+            sdf = subdf[subdf["Figure"] == f]
             sdf = sdf[sdf["Mask"] == "Measured"]
-            sdf = sdf[sdf["Treatment"] == treatment]
-
+            print(sdf)
             if len(sdf) == 0:
                 continue
             if j > 0:
@@ -131,9 +125,9 @@ def main(file, probes, cfg, layout, subplot_params):
             showarrow=False,
             bgcolor="white",
             opacity=1,
+
         )
         fig.add_vline(vint, col=i+1, row=2, line=dict(dash="dash", color="black", width=1), layer="above")
-
     colors = list(color_map.values())
     fig.add_traces(
         [
@@ -144,7 +138,7 @@ def main(file, probes, cfg, layout, subplot_params):
                 name=f"{i+1}",
                 marker=dict(color=colors[i], symbol="square", size=10),
                 legendgroup="rep",
-                legendgrouptitle=dict(text="Replicate"),
+                legendgrouptitle=dict(text="Replicate", font=dict(size=10)),
 
                 legendrank=2
 
@@ -156,7 +150,7 @@ def main(file, probes, cfg, layout, subplot_params):
             x=[None],
             y=[None],
             legendgroup="Data",
-            legendgrouptitle=dict(text="Data"),
+            legendgrouptitle=dict(text="Data", font=dict(size=10)),
             mode="lines",
             name=f"Mean",
             line=dict(color='black'),
@@ -169,7 +163,7 @@ def main(file, probes, cfg, layout, subplot_params):
             x=[None],
             y=[None],
             mode="lines",
-            name=f"95% CI'",
+            name=f"95% CI",
             fill="toself",
             fillcolor='rgba(0,0,0,0.4)',
             line=dict(color='rgba(255,255,255,0)'),
@@ -207,7 +201,6 @@ def main(file, probes, cfg, layout, subplot_params):
         annotation.update(
             layout["annotations"]
         )
-
     return fig
 
 
@@ -228,11 +221,13 @@ if __name__ == '__main__':
     else:
         import yaml
         file = "Pipeline/FISH/all_distributions.tsv"
-        probes = [("psaA", "untreated", "Replicate 1"), ("cupA", "untreated", "Replicate 1"), ("rnpB", "untreated", "Replicate 1"), ("fusB", "Puromycin", "Replicate 1") ]
+        probes = [("psaA", "untreated", "Replicate 1"), ("cupA", "untreated", "Replicate 1"), ("rnpB", "untreated", "Replicate 1"), ("fusB", "untreated", "Replicate 1") ]
         outfile = "foo.svg"
-        subplot_params = dict(vertical_spacing=0.05, )
+        subplot_params = dict(vertical_spacing=0.05, column_titles=[p[0] for p in probes],)
         with open("configFile.yml", 'r') as f:
             cfg = yaml.safe_load(f)
         layout = cfg["F2FISH"]["layout"]
     fig = main(file, probes, cfg, layout, subplot_params)
+    if "snakemake" not in globals():
+        fig.show()
     fig.write_image(outfile)

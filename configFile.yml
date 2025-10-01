@@ -11,8 +11,8 @@ lightDarkLightTCConfig: "run_configs/lightDarkLightTCConfig.yml"
 lightDarkLightvsLightTCConfig: "run_configs/lightDarkLightvsLightTCConfig.yml"
 lightDarkLightvsLightPlusPuroTCConfig: "run_configs/lightDarkLightvsLightplusPuroTCConfig.yml"
 
-membraneColor: "#2ca02c"
-cytosolColor: "#002695"
+membraneColor: "#046A38"
+cytosolColor: "#003087"
 
 TRACE_COLORS:
   "-p M": "#2ca02c"
@@ -204,7 +204,7 @@ F1Volcano:
 
 
 F1Percent:
-  file: "Pipeline/Paper/Subfigures/Fig1Percentage.svg"
+  file: "Pipeline/Paper/Figure1/Fig1Percentage.svg"
   x: 312
   y: 0
   layout:
@@ -247,10 +247,13 @@ F1GSEA:
 
 
 
-CCFigure:
+F3A:
   layout:
     width: 624
     height: 200
+    xaxis:
+      title:
+        text: "transcript abundance [%]"
     legend:
       orientation: "h"
 
@@ -453,12 +456,80 @@ F5FISH:
 
 
 
-
 F5:
   a: "Fig5Venn"
   b: "VolcanoFigure5"
   c: "PlusPuroCoverage"
   d: "F5FISH"
+
+
+
+F6FISH:
+  file: "Pipeline/Paper/Figure6/F6FISH.svg"
+  x: 0
+  y: 450
+  layout:
+    width: 624
+    height: 550
+    legend:
+      title:
+        font:
+          size: 10
+    annotations:
+      font:
+        size: 10
+    margin:
+      r: 50
+      t: 50
+      b: 50
+
+
+
+F3FISH:
+  file: "Pipeline/Paper/Figure3/F3FISH.svg"
+  x: 0
+  y: 0
+  layout:
+    width: 416
+    height: 300
+    legend:
+      title:
+        font:
+          size: 10
+    margin:
+      r: 50
+      t: 30
+      b: 50
+    xaxis:
+      title_standoff: 1
+    annotations:
+      font:
+        size: 10
+
+
+F3QTPCR:
+  file: "Pipeline/Paper/Figure3/F3QTPCR.svg"
+  x: 416
+  y: 0
+  layout:
+    width: 208
+    height: 300
+    legend:
+      title:
+        font:
+          size: 10
+    margin:
+      r: 50
+      t: 30
+      b: 50
+    xaxis:
+      title_standoff: 1
+
+
+
+F3:
+  a: "F3FISH"
+  b: "F3QTPCR"
 
 EnrichFigure6:
   layout:

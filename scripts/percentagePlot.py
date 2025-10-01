@@ -10,7 +10,7 @@ def main(file, params, config, outfile):
         base=params["baseline"],
         padj_cutoff=params["pAdjCutOff"],
         lfc_cutoff=params["log2FCCutOff"],
-        colors=("#002695", "#eaeaea", "#2ca02c"),
+        colors=(config["cytosolColor"], "#B2B4B2", config["membraneColor"]),
         y="Name")
 
     fig.update_layout(config["LayoutDefault"])

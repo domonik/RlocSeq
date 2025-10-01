@@ -1,6 +1,6 @@
 import pandas as pd
-from DEplots.readCount import plot_precomputed_coverage
-from DEplots.gff_helper import read_gff3, read_gff_via_gffutils, optimize_gff_lines
+from scripts.readCount import plot_precomputed_coverage
+from scripts.gff_helper import read_gff3, read_gff_via_gffutils, optimize_gff_lines
 import plotly.graph_objs as go
 
 
@@ -44,7 +44,6 @@ def main(design, gff, db_name, output_path, cfg):
 
     )
     fig.update_layout(cfg["LayoutDefault"])
-
 
 
     f2 = plot_precomputed_coverage(
@@ -93,6 +92,7 @@ def main(design, gff, db_name, output_path, cfg):
         else:
             trace.update(line=dict(width=1), showlegend=False)
     fig.layout.annotations = [anno for anno in fig.layout.annotations if not anno.text.startswith("ncRNA")]
+    fig.update_yaxes(title=None)
     fig.update_yaxes(title="normalized read count", row=1, col=1)
     fig.update_yaxes(row=2, showgrid=False)
     for trace in f2.data:

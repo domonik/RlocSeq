@@ -6,6 +6,8 @@ dependencies:
  - pandas
  - plotly
  - matplotlib-venn
- - python-kaleido
+ - python-kaleido=0.2.1
  - pip:
     - git+https://github.com/domonik/DEplots.git@main
+    - gffutils
+    - pysam

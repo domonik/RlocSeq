@@ -125,11 +125,8 @@ rule coLocateTranscripts:
         df.to_csv(output.tus, sep="\t", index=False)
 
 
-module tc_workflow:
-    snakefile: snakefile
-    config: config["puromycinTC"]
 
-use rule * from tc_workflow as tc_*
+
 
 module other_workflow:
     snakefile: snakefile
@@ -422,8 +419,8 @@ rule summarizeResult:
         gff = pd.read_csv(input.gff, sep="\t", names=["chr", "feature", "type", "start", "end", "dot", 	"strand", "score", "add_info"], skiprows=1)
 
         mapping = pd.read_csv(input.mapping, sep="\t")
-        mapping.index = mapping[config["primary"]["id_column"]]
-        mapping = mapping.drop(config["primary"]["id_column"], axis=1)
+        mapping.index = mapping["Gene Names (ordered locus)"]
+        mapping = mapping.drop("Gene Names (ordered locus)", axis=1)
         df_minus = df_minus.merge(mapping, left_index=True, right_index=True, how="left")
         df_plus = df_plus.merge(mapping, left_index=True, right_index=True, how="left")
         out_d = {
@@ -471,7 +468,7 @@ rule joinTables:
     run:
         df_minus = pd.read_csv(input.deseqResMinus, sep="\t")
         df_plus = pd.read_csv(input.deseqResPlus, sep="\t")
-        df = df_minus.join(df_plus, rsuffix="_plusPuromycin", lsuffix="_minusPuromycin")
+        df = df_minus.join(df_plus, rsuffix="_plusPuromycin", lsuffix="_minusPuromycin", how="outer")
         df = df[~df.index.str.contains("6803r")]
 
         df["minusPMembran"] = (df["log2FoldChange_minusPuromycin"] >= config["primary"]["log2FCCutOff"]) & (df["padj_minusPuromycin"] <= config["primary"]["pAdjCutOff"])
@@ -499,6 +496,7 @@ rule joinTables:
         df["Ribosome mRNA"] = df.gene_name.str.contains("rpl|rps")
         df = df[df.columns[-2:].to_list() + df.columns[:-2].to_list()]
         df.to_csv(output.tsv, sep="\t", index=False)
+
         rtkeys = [key for key in list(config["RNA_TYPE_COLORS"].keys()) if key in df.columns]
         df_for_r = df[["locus_tag", "stayedAtMembrane", "stayedInCytosol", "mRNA", "log2FoldChange_plusPuromycin", "log2FoldChange_minusPuromycin"] + rtkeys]
 
@@ -506,6 +504,51 @@ rule joinTables:
 
         df.to_csv(output.stayed, sep="\t", index=False)
         df_for_r.to_csv(output.output_for_R_because_this_stupid_language_cannot_even_read_tsv_files, sep="\t", index=False)
+
+
+rule Table1:
+    input:
+        tsv = expand(rules.joinTables.output.tsv, condition=["M"], baseline=["C"])[0],
+    output:
+        csv = "Pipeline/Paper/Table1/Table1.csv"
+    run:
+        df = pd.read_csv(input.tsv, sep="\t")
+        names = ["mRNA", "5UTR", "3UTR", "tRNA", "asRNA", "Photosystem mRNA", "Ribosome mRNA", "CRISPR", "ncRNA"]
+        summary = [
+            {
+                "RNA type": "All",
+                "minus Puromycin Total":  df[~(df["baseMean_minusPuromycin"] == 0)].shape[0],
+                "minus Puromycin Cytosol": df["minusPCytosol"].sum(),
+                "minus Puromycin Membrane": df["minusPMembran"].sum(),
+                "plus Puromycin Total": df[~(df["baseMean_plusPuromycin"] == 0)].shape[0],
+                "plus Puromycin Membrane": df["plusPMembran"].sum(),
+                "plus Puromycin Cytosol": df["plusPCytosol"].sum(),
+            }
+        ]
+
+        for col in names:
+            subset = df[df[col] == True]  # rows where this RNA type is True
+            summary.append({
+                "RNA type": col,
+                "minus Puromycin Total":  subset[~(subset["baseMean_minusPuromycin"] == 0)].shape[0],
+                "minus Puromycin Cytosol": subset["minusPCytosol"].sum(),
+                "minus Puromycin Membrane": subset["minusPMembran"].sum(),
+                "plus Puromycin Total": subset[~(subset["baseMean_plusPuromycin"] == 0)].shape[0],
+                "plus Puromycin Membrane": subset["plusPMembran"].sum(),
+                "plus Puromycin Cytosol": subset["plusPCytosol"].sum(),
+
+            })
+
+        out_df = pd.DataFrame(summary)
+        for puro in ["minus", "plus"]:
+            loc = [f"{puro} Puromycin Cytosol", f"{puro} Puromycin Membrane"]
+            arr = out_df.loc[:, loc].to_numpy()
+            percent = np.round(( arr / out_df[f"{puro} Puromycin Total"].to_numpy().reshape(arr.shape[0], 1)) * 100, decimals=1)
+            percent = np.char.add(percent.astype(str), "%)")
+            percent = np.char.add(" (", percent)
+            out_df.loc[:, loc] = out_df.loc[:, loc].astype(str)
+            out_df.loc[:, loc] = np.char.add(out_df.loc[:, loc].values.astype(str), percent)
+        out_df.to_csv(output.csv, sep=",", index=False)
 
 
 rule GOTermEnrichmentStayed:
@@ -643,10 +686,31 @@ rule checkProteinLocalization:
         uniprot = rules.download_subcell.output.tsv,
         deseq_res = rules.joinTables.output.tsv,
     output:
-        png = "Pipeline/SubcellularLoc/{condition}vs{baseline}SubcellLoc.png",
+        svg = "Pipeline/SubcellularLoc/{condition}vs{baseline}SubcellLoc.svg",
         tsv = "Pipeline/SubcellularLoc/{condition}vs{baseline}SubcellLoc.tsv",
+        r_is_not_a_valid_programming_language_and_no_one_should_use_this_bullshit = "Pipeline/SubcellularLoc/{condition}vs{baseline}SubcellLocSameBullshitButCauseRCantReadDataframesItNeedsToBePreprocessed.tsv"
+
     script: "scripts/checkMembraneDistribution.py"
 
+
+
+rule cpF1A:
+    input:
+        file = expand(rules.checkProteinLocalization.output.svg, condition=["M"], baseline=["C"])[0]
+    output:
+        svg = "Pipeline/Paper/Figure3/F3A.svg"
+    shell:
+        "cp {input.file} {output.svg}"
+
+
+rule TransmembraneGSEA:
+    input:
+        tsv = rules.checkProteinLocalization.output.r_is_not_a_valid_programming_language_and_no_one_should_use_this_bullshit
+    output:
+        enriched="Pipeline/customGSEA/tsv/TransmembraneGSEA_p{puro}_c{condition}_vs_b{baseline}.tsv",
+    params:
+        terms=["Transmembrane", "NonTransmembrane"]
+    script: "scripts/TransmembraneGSEA.R"
 
 
 rule compareTotalCell:
@@ -657,6 +721,7 @@ rule compareTotalCell:
         html="Pipeline/DFGAntrag/summary_total_cell_c_{condition}vs{baseline}.html",
     run:
         from helper import compare_results
+        cfg = snakemake.config
         for (idx, (inputs, outputs)) in enumerate([(input.file, (output.svg, output.html))]):
             puro = "Total cell"
             fig = compare_results(
@@ -666,7 +731,7 @@ rule compareTotalCell:
                 base=NAMEMapping[wildcards.baseline],
                 padj_cutoff=config["primary"]["log2FCCutOff"],
                 lfc_cutoff=config["primary"]["log2FCCutOff"],
-                colors=("#002695", "#eaeaea", "#2ca02c"),
+                colors=(cfg["cytosolColor"], "#eaeaea", cfg["membraneColor"]),
                 y="Name")
             fig.update_yaxes(title=None,showticklabels=False,showline=True,mirror=True,linewidth=1,linecolor="black")
             fig.update_xaxes(title="Fraction of transcriptome [%]",showline=True,mirror=True,linewidth=1,linecolor="black",gridcolor="black",dtick=20)
@@ -884,6 +949,8 @@ rule addFastatoTSV:
     script:
         "scripts/addFastaToTSV.py"
 
+
+
 rule getFastaForMotif:
     input:
         tsv = rules.addFastatoTSV.output.tsv
@@ -911,55 +978,52 @@ rule memeMotifStayed:
 
 rule checkMotifDistribution:
     input:
-        dir = rules.memeMotifStayed.output.dir,
-        tsv = expand(rules.checkProteinLocalization.output.tsv, condition=["M"], baseline=["C"]),
-        fasta = rules.getFastaForMotif.output.stayed,
-        bg_fasta = rules.getFastaForMotif.output.bg
+        tsv = rules.addFastatoTSV.output.tsv,
     conda: "envs/biopython.yml"
 
     output:
-        tsv = "Pipeline/stayedMotif/motifDistribution_t{type}.tsv"
+        tsv = "Pipeline/Uracil/UracilDistribution.tsv"
     script: "scripts/checkMotifDistribution.py"
 
+#
+# rule prepareForGSEAMotif:
+#     input:
+#         motifs = rules.checkMotifDistribution.output.tsv,
+#         deseq = expand(rules.joinTables.output.output_for_R_because_this_stupid_language_cannot_even_read_tsv_files, condition=["M"], baseline=["C"])
+#     output:
+#         file = "Pipeline/MotifGSEA/preparedFile_t{type}.tsv"
+#     run:
+#         import pandas as pd
+#         import os
+#         deseq = pd.read_csv(input.deseq[0], sep="\t")
+#         motifs = pd.read_csv(input.motifs, sep="\t", comment="#")
+#
+#         for motif_id in motifs.motif_ID.unique():
+#             seqs = motifs[motifs["motif_ID"] == motif_id]["seq_ID"]
+#             deseq["Motif" + motif_id.replace("-", "_") ] = deseq.locus_tag.isin(seqs)
+#         deseq = deseq[deseq["mRNA"]]
+#         deseq.to_csv(output.file, sep="\t", index=False)
+#
+#
+#
+# rule motifGSEA:
+#     input:
+#         tsv = rules.prepareForGSEAMotif.output.file
+#     output:
+#         enrichedFile = "Pipeline/MotifGSEA/enrichedFile_t{type}.tsv",
+#         gsFile = "Pipeline/MotifGSEA/gsFile_t{type}.tsv"
+#     conda: "envs/clusterprofiler.yml",
+#     script: "scripts/motifGSEA.R"
 
-rule prepareForGSEAMotif:
-    input:
-        motifs = rules.checkMotifDistribution.output.tsv,
-        deseq = expand(rules.joinTables.output.output_for_R_because_this_stupid_language_cannot_even_read_tsv_files, condition=["M"], baseline=["C"])
-    output:
-        file = "Pipeline/MotifGSEA/preparedFile_t{type}.tsv"
-    run:
-        import pandas as pd
-        import os
-        deseq = pd.read_csv(input.deseq[0], sep="\t")
-        motifs = pd.read_csv(input.motifs, sep="\t", comment="#")
-
-        for motif_id in motifs.motif_ID.unique():
-            seqs = motifs[motifs["motif_ID"] == motif_id]["seq_ID"]
-            deseq["Motif" + motif_id.replace("-", "_") ] = deseq.locus_tag.isin(seqs)
-        deseq = deseq[deseq["mRNA"]]
-        deseq.to_csv(output.file, sep="\t", index=False)
-
-
-
-rule motifGSEA:
-    input:
-        tsv = rules.prepareForGSEAMotif.output.file
-    output:
-        enrichedFile = "Pipeline/MotifGSEA/enrichedFile_t{type}.tsv",
-        gsFile = "Pipeline/MotifGSEA/gsFile_t{type}.tsv"
-    conda: "envs/clusterprofiler.yml",
-    script: "scripts/motifGSEA.R"
-
-rule plotMotifGSEA:
-    input:
-        df = rules.motifGSEA.output.gsFile,
-        info = rules.motifGSEA.output.enrichedFile
-    output:
-        html = "Pipeline/MotifGSEA/GSEAMotif_t{type}.html",
-    conda: "envs/matplotlibPlotly.yml"
-    script:
-        "scripts/GSEAPlot.py"
+# rule plotMotifGSEA:
+#     input:
+#         df = rules.motifGSEA.output.gsFile,
+#         info = rules.motifGSEA.output.enrichedFile
+#     output:
+#         html = "Pipeline/MotifGSEA/GSEAMotif_t{type}.html",
+#     conda: "envs/matplotlibPlotly.yml"
+#     script:
+#         "scripts/GSEAPlot.py"
 
 
 rule ntFreqs:
@@ -1133,7 +1197,7 @@ rule joinFig1:
         ges_y = 520
     conda: "envs/svgutils.yml"
     output:
-        svg = "Pipeline/Paper/Figure1.svg"
+        svg = "Pipeline/Paper/Figure1/Figure1.svg"
     script:
         "scripts/paperFigure.py"
 
@@ -1141,7 +1205,7 @@ rule Figure1toPNG:
     input:
         svg = rules.joinFig1.output.svg
     output:
-        png = "Pipeline/Paper/Figure1.png"
+        png = "Pipeline/Paper/Figure1/Figure1.png"
     shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
 
 
@@ -1157,6 +1221,8 @@ rule plotCoveragesFig2:
         db= "Pipeline/GFFDB/gff_database.db",
     output:
         svg = config["MinusPuroCoverage"]["file"]
+    conda: "envs/matplotlibPlotly.yml"
+
     script: "scripts/plotCoveragesFigure2.py"
 
 
@@ -1212,6 +1278,51 @@ rule Figure2toPNG:
     shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
 
 
+rule plotFISHFigure3:
+    input:
+        tsv=rules.processFISHImages.output.tsv
+    output:
+        svg = config["F3FISH"]["file"]
+    params:
+        probes =[("16S rRNA", "untreated", "Replicate 1"), ("16S rRNA", "Puromycin", "Replicate 1"),],
+        layout= config["F3FISH"]["layout"],
+        subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
+                              column_titles=["- Puromycin", "+ Puromycin"])
+
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/plotFISHFigure3.py"
+
+
+rule plotQTPCRFigure3:
+    output:
+        svg = "Pipeline/Paper/Figure3/QTPCR.svg"
+    conda: "envs/matplotlibPlotly.yml"
+
+    script: "scripts/QTPCR.py"
+
+
+rule plotFISHFigure6:
+    input:
+        tsv=rules.processFISHImages.output.tsv
+    output:
+        svg = config["F6FISH"]["file"]
+    params:
+        probes =["16S rRNA", "cupA", "psaA", "psbA2", "fusB"],
+        layout=config["F6FISH"]["layout"],
+        subplot=dict(vertical_spacing=0.01, horizontal_spacing=0.02,
+                              column_titles=["16S rRNA", "cupA", "psaA", "psbA2", "fusB"],),
+
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/plotFISHFigure6.py"
+
+
+rule Figure6toPNG:
+    input:
+        svg = rules.plotFISHFigure6.output.svg
+    output:
+        png = "Pipeline/Paper/Figure6/Figure6.png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
+
 rule plotVennsFigure5:
     input:
         tsv=expand(rules.joinTables.output.tsv,condition="M",baseline="C")[0],
@@ -1232,7 +1343,7 @@ rule plotVolcanoFigure5:
         html="Pipeline/Paper/Figure5/F5Volcano.html"
     params:
         figureConfig = "VolcanoFigure5"
-    #conda: "envs/matplotlibPlotly.yml"
+    conda: "envs/matplotlibPlotly.yml"
     script: "scripts/VolcanoFigure5.py"
 
 
@@ -1244,6 +1355,8 @@ rule plotCoveragesFig5:
     output:
         svg = config["PlusPuroCoverage"]["file"],
         db = "Pipeline/GFFDB/gff_database.db",
+    conda: "envs/matplotlibPlotly.yml"
+
     script: "scripts/plotCoveragesFigure5.py"
 
 
@@ -1296,7 +1409,7 @@ rule plotVolcanoFigure4:
     output:
         svg = "Pipeline/Paper/Figure4/F4Volcano.svg",
         html="Pipeline/Paper/Figure4/F4Volcano.html"
-    #conda: "envs/matplotlibPlotly.yml"
+    conda: "envs/matplotlibPlotly.yml"
     script: "scripts/VolcanoFigure5.py"
 
 rule plotGOTermEnrichmentFig4:
@@ -1305,6 +1418,8 @@ rule plotGOTermEnrichmentFig4:
     output:
         svg = "Pipeline/Paper/Figure4/F4Enrichment.svg",
         html = "Pipeline/Paper/Figure4/F4Enrichment.html",
+    conda: "envs/matplotlibPlotly.yml"
+
     script: "scripts/enrichmentTotalCell.py"
 
 rule plotGOTermEnrichmentFig6:
@@ -1315,7 +1430,36 @@ rule plotGOTermEnrichmentFig6:
     output:
         svg = "Pipeline/Paper/Figure6/F6Enrichment.svg",
         html = "Pipeline/Paper/Figure6/F6Enrichment.html",
+    conda: "envs/matplotlibPlotly.yml"
+
     script: "scripts/plotEnrichmentPlots.py"
+
+
+rule F3QTPCR:
+    output:
+        svg = "Pipeline/Paper/Figure3/F3QTPCR.svg",
+    script: "scripts/QTPCR.py"
+
+
+rule joinFig3:
+    input:
+        qt = rules.F3QTPCR.output.svg,
+        fish = rules.plotFISHFigure3.output.svg,
+    params:
+        figures = config["F3"],
+        ges_y = 300
+    conda: "envs/svgutils.yml"
+    output:
+        svg = "Pipeline/Paper/Figure3/Figure3.svg"
+    script:
+        "scripts/paperFigure.py"
+
+rule Figure3toPNG:
+    input:
+        svg = rules.joinFig3.output.svg
+    output:
+        png =  "Pipeline/Paper/Figure3/Figure3.png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
 
 rule all:
     default_target: True
@@ -1351,9 +1495,8 @@ rule all:
         subcell = rules.download_subcell.output,
         rbp3 = expand(rules.plotRBP3GSEA.output, puro=["plusPuromycin", ]),
         rbp3venn = rules.joinRBP3Plot.output,
-        prep = expand(rules.plotMotifGSEA.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
         rbp3fimo = expand(rules.fimoRBP3.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
-        prdwep = expand(rules.checkMotifDistribution.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
+        #prdwep = expand(rules.checkMotifDistribution.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
         fig1 = rules.joinFig1.output,
         fig1png = rules.Figure1toPNG.output,
         rnatypegsea = expand(rules.rnatypeGSEA.output, puro=["minusPuromycin", ]),
@@ -1365,5 +1508,11 @@ rule all:
         f6enrich = rules.plotGOTermEnrichmentFig6.output,
         f5venn = rules.plotVennsFigure5.output,
         fish = rules.Figure2toPNG.output,
-        fish5 = rules.Figure5toPNG.output
+        fish5 = rules.Figure5toPNG.output,
+        fish3 = rules.Figure6toPNG.output,
+        f3 = rules.Figure3toPNG.output,
+        t1 = rules.Table1.output,
+        summary = expand(rules.summarizeResult.output, condition="M", baseline="C"),
+        transmemgsea = expand(rules.TransmembraneGSEA.output.enriched, puro=["minusPuromycin", "plusPuromycin"], condition="M", baseline="C")
+
 

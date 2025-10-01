@@ -3,6 +3,8 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 import numpy as np
 import re
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 def translate(seq):
     rna = Seq(seq.replace("T", "U"))
@@ -28,7 +30,6 @@ def extract_transmem_ranges(text):
     # Find all occurrences of the pattern
     if pd.isna(text):
         return pd.NA
-    print(text)
     matches = re.findall(r'TRANSMEM (\d+)\.\.(\d+)', text)
     # Convert them into a list of tuples with integers
     return [(int(start), int(end)) for start, end in matches]
@@ -50,49 +51,74 @@ def check_if_hit_inside_membrane(row):
             overlap = True
     return overlap
 
+def get_rna_indices(intervals):
+    if not isinstance(intervals, list):
+        return pd.NA
+    rna_intervals = []
+    for interval in intervals:
+        start, end = interval
+        rna_start = (start - 1) * 3
+        rna_end = (end - 1) * 3
+        rna_intervals.append([rna_start, rna_end])
+    return rna_intervals
+
+def uracil_content(row):
+    seq = row["RNASequence"]
+    sequences = ""
+    intervals = row["RNA_intervals"]
+    if not isinstance(intervals, list):
+        return pd.NA
+    for interval in intervals:
+        start, end = interval
+        subseq = seq[start:end]
+        sequences += subseq
+    return seq.count("U") / len(seq)
+
+def test_with_offset(row):
+    return row[""]
+
+def main(tsv, outfile):
+    df = pd.read_csv(tsv, sep="\t", comment="#")
+    df = df[~pd.isna(df["Transmembrane"])]
+    df = df[df["mRNA"]]
 
 
+    df["ProteinSeqFromRNA"] = df["RNASequence"].apply(translate)
 
-def main(motifs_file, anno_file, fastas, outfile):
-    motifs = pd.read_csv(motifs_file, sep="\t", comment="#")
-    anno = pd.read_csv(anno_file, sep="\t", comment="#")
-    motifs = motifs.sort_values(by="motif_ALT_ID")
+    test = df["ProteinSeqFromRNA"].str[1:] == df["Sequence"].str[1:]
+    df = df[test]
+    df["Transmembrane_intervals"] = df["Transmembrane"].apply(extract_transmem_ranges)
+    df["RNA_intervals"] = df["Transmembrane_intervals"].apply(get_rna_indices)
+    df["Uracil_content"] = df.apply(uracil_content, axis=1)
 
-    seq = {
-        "locus_tag": [],
-        "Nt_sequence": []
-    }
-    for fasta in fastas:
-        for seq_record in SeqIO.parse(fasta, "fasta"):
-            seq["locus_tag"].append(seq_record.id)
-            seq["Nt_sequence"].append(str(seq_record.seq))
+    #df = df[~pd.isna(df["Uracil_content"])]
+    treats = ["minusPuromycin", "plusPuromycin"]
+    fig = make_subplots(rows=1, cols=2, column_titles=treats, shared_yaxes=True, x_title="log2FoldChange")
+    for idx, puro in enumerate(treats):
+        sdf = df[df[f"padj_{puro}"] < 0.05]
+        fig.add_trace(
+            go.Scatter(
+                x=sdf[f"log2FoldChange_{puro}"],
+                y=sdf["Uracil_content"],
+                mode="markers",
+            ), col=idx+1, row=1
 
-    seq = pd.DataFrame(seq)
-    df = motifs.merge(anno, left_on="seq_ID", right_on="locus_tag")
+        )
+    fig.update_layout(
 
-    # df = df.merge(seq, left_on="locus_tag", right_on="locus_tag")
-    # df["ProteinSeqFromRNA"] = df["Nt_sequence"].apply(translate)
-    #
-    # test = df["ProteinSeqFromRNA"] == df["Sequence"]
-    # print(df[~test][["ProteinSeqFromRNA", "Sequence"]])
-    # df[~test].loc["ProteinSeqFromRNA"] = pd.NA
-    # df = df.apply(extract_protein_site, axis=1)
-    # df["Transmembrane_intervals"] = df["Transmembrane"].apply(extract_transmem_ranges)
-    # df["overlap"] = df.apply(check_if_hit_inside_membrane, axis=1)
-    #
-    # df["UFreq"] = df["Nt_sequence"].apply(lambda x: x.count("U") / len(x))
-    df.to_csv(outfile, sep="\t", index=False)
+        yaxis=dict(title="Uracil_content")
+    )
+    breakpoint()
+    fig.show()
+
 
 
 
 
 
 if __name__ == '__main__':
-    import os
-    file = os.path.join(snakemake.input.dir, "sequences.tsv")
+
     main(
-        motifs_file=file,
-        anno_file=snakemake.input.tsv[0],
-        fastas=[snakemake.input.fasta, snakemake.input.bg_fasta],
+        tsv=snakemake.input.tsv,
         outfile=snakemake.output.tsv
     )

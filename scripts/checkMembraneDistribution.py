@@ -47,12 +47,18 @@ def check_membrane_dist(uniprot_file, deseq_table, config, output, uni_col="Gene
     #odf = odf[["locus_tag_x", "Gene Names", "mRNA", "UTR", "antisense", "non-coding"] + list(x)]
     odf = odf.rename({"locus_tag_x": "locus_tag"}, axis=1)
     odf.to_csv(output.tsv, sep="\t", index=False)
+    rdf = odf.copy()
+    rdf["Transmembrane"] = ~rdf["Transmembrane"].isna()
+    rdf = rdf[~rdf["tRNA"]]
+    rdf = rdf[rdf["mRNA"]]
+    rdf = rdf[["locus_tag", "log2FoldChange_minusPuromycin", "log2FoldChange_plusPuromycin", "Transmembrane", "padj_plusPuromycin", "padj_minusPuromycin"]]
+    rdf.to_csv(output.r_is_not_a_valid_programming_language_and_no_one_should_use_this_bullshit, sep="\t", index=False)
+    df = df[df["baseMean_minusPuromycin"] > 0]
+    df = df[df["mRNA"]]
 
-    df["-Puromycin Membrane"] = df["minusPMembran"] & ~df["stayedAtMembrane"]
-    df["+Puromycin Membrane"] = df["plusPMembran"] & ~df["stayedAtMembrane"]
-    df["-Puromycin Cytosol"] = df["minusPCytosol"] & ~df["stayedInCytosol"]
-    df["+Puromycin Cytosol"] = df["plusPCytosol"] & ~df["stayedInCytosol"]
-    df["nowhere significant"] = ~(df["plusPCytosol"] | df["minusPCytosol"] | df["minusPMembran"] | df["plusPMembran"])
+    df["Membrane enriched"] = df["minusPMembran"]
+    df["Cytosol enriched"] = df["minusPCytosol"]
+    df["not significant"] = ~(df["minusPCytosol"] | df["minusPMembran"])
 
     cell_membrane = df[df["Cell membrane"] == True]
     membrane = df[df["Membrane"] == True]
@@ -66,13 +72,9 @@ def check_membrane_dist(uniprot_file, deseq_table, config, output, uni_col="Gene
     all = np.asarray([cytoplasm.shape[0], membrane.shape[0], cell_membrane.shape[0], inner_membrane.shape[0], thylakoid.shape[0]])
     traces = []
     parts = {
-        "stayedInCytosol": ("rgb(0, 38, 149)", None) ,
-        "-Puromycin Cytosol": ("rgba(0, 38, 149, 0.8)", "."),
-        "+Puromycin Cytosol": ("rgba(0, 38, 149, 0.8)", "x"),
-        "nowhere significant": ("rgb(234, 234, 234)", None),
-        "+Puromycin Membrane": ("rgba(44, 160, 44, 0.8)", "x"),
-        "-Puromycin Membrane": ("rgba(44, 160, 44, 0.8)", "."),
-        "stayedAtMembrane": ("rgb(44, 160, 44)", None)
+        "Cytosol enriched": (config["cytosolColor"], None),
+        "not significant": ("rgb(234, 234, 234)", None),
+        "Membrane enriched": (config["membraneColor"], None),
 
     }
     for part, (color, pattern) in parts.items():
@@ -104,11 +106,11 @@ def check_membrane_dist(uniprot_file, deseq_table, config, output, uni_col="Gene
 
     )
     fig.update_layout(
-        **config["CCFigure"]["layout"]
+        **config["F3A"]["layout"]
     )
     fig.update_xaxes(range=[-1, 101])
-
-    fig.write_image(output.png, scale=6)
+    fig.show()
+    fig.write_image(output.svg, scale=6)
 
 
 

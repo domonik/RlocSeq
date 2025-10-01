@@ -100,7 +100,7 @@ def venn_to_plotly(L_sets, L_labels=None, title=None, L_color = None):
             y1=v.centers[i].y + v.radii[i],
             fillcolor=L_color[i],
             line=dict(width=0.5, color=L_color[i]),
-            opacity=0.75
+            opacity=1
         )
         final_shapes.append(
             go.layout.Shape(

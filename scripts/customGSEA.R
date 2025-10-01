@@ -35,17 +35,23 @@ gsInfo <- function(object, geneSetID) {
 }
 
 customGSEA <- function(table, geneList, terms, enrichedFile, gsFile, pval_cutoff, minGSSize = 5) {
-
+  print("TERMS")
+  print(terms)
   TERM2GENE <- data.frame(TERM = character(0), GENE = character(0), stringsAsFactors = FALSE)
   for (term in terms) {
+    print("term")
     mask <- table[[term]]
+    print(mask)
+
     term_names <- rownames(table)[mask]
     if (length(term_names) > 0) {
       TERM2GENE <- rbind(TERM2GENE, data.frame(TERM = term, GENE = term_names, stringsAsFactors = FALSE))
     }
 
   }
+  print("GENEList")
   print(head(geneList))
+  print("TERM2Gene")
   print(head(TERM2GENE))
 
   ego <- GSEA(geneList = geneList,

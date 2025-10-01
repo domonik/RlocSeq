@@ -35,20 +35,21 @@ def main(tsv, add_data, go_terms, output, config, params):
             sdf = df[df["gene_name"] == anno]
             print(data)
             for _, n in sdf.iterrows():
-                fig.add_annotation(
-                    x=n["log2FoldChange"],
-                    y=-1 * np.log10(n["padj"]),
-                    ax=data["x"],
-                    ay=data["y"],
-                    text=anno,
-                    showarrow=True,
-                    axref="x",
-                    ayref="y",
-                    arrowwidth=1,
-                    arrowsize=0.5,
-                    arrowcolor="black",
+                if "UTR" not in n.name:
+                    fig.add_annotation(
+                        x=n["log2FoldChange"],
+                        y=-1 * np.log10(n["padj"]),
+                        ax=data["x"],
+                        ay=data["y"],
+                        text=anno,
+                        showarrow=True,
+                        axref="x",
+                        ayref="y",
+                        arrowwidth=1,
+                        arrowsize=0.5,
+                        arrowcolor="black",
 
-                )
+                    )
     fig.update_layout(config["LayoutDefault"])
     fig.update_xaxes(dtick=2)
 
