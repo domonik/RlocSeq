@@ -11,8 +11,8 @@ def main(df, info, config, output, params):
     descs = df["Description"].unique()
     to_display = len(descs)
 
-    rh = [0.4] + [0.6 / to_display for _ in range(to_display)]
-    colors = [config["RNA_TYPE_COLORS"][key] if key in config["RNA_TYPE_COLORS"] else px.colors.DEFAULT_PLOTLY_COLORS[idx] for idx, key in enumerate(df["Description"].unique()) ]
+    rh = [0.7] + [0.3 / to_display for _ in range(to_display)]
+    colors = [config["membraneColor"], config["cytosolColor"]]
     fig = plot_gsea(
         df, info, show_zero_lfc=params["show_zero_lfc"],
         condition_name=params["condition_name"],
@@ -59,7 +59,13 @@ def main(df, info, config, output, params):
         )
 
     fig.layout.annotations = [annotation for annotation in fig.layout.annotations if annotation.text != "0 L2FC"]
-
+    fig.update_traces(
+        showlegend=False,  # hide legend for these traces
+    )
+    fig.update_traces(
+        selector=dict(type="bar"),  # only line traces
+        showlegend=True,  # hide legend for these traces
+    )
     fig.write_image(output.svg)
     fig.write_html(output.html)
 

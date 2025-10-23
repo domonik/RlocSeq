@@ -260,10 +260,18 @@ RBP3A:
 
 RBP3GSEA:
   layout:
-    height: 400
+    height: 200
+    width: 624
+    margin:
+      r: 50
+      t: 10
+      b: 5
 
     legend:
       orientation: "h"
+      title:
+        font:
+          size: 10
 
 
 
@@ -273,14 +281,20 @@ RBP3GSEA:
 RBP3Venn:
   layout:
     height: 200
+    width: 624
     margin:
       r: 20
       l: 20
+      t: 40
+
 
     legend:
       orientation: "h"
       y: 0
       yanchor: "top"
+      title:
+        font:
+          size: 10
 
 
 
@@ -427,24 +441,6 @@ PlusPuroCoverage:
 
 
 
-F5FISH:
-  file: "Pipeline/Paper/Figure5/F5FISH.svg"
-  x: 0
-  y: 450
-  layout:
-    width: 624
-    height: 300
-    legend:
-      title:
-        font:
-          size: 10
-    annotations:
-      font:
-        size: 10
-    margin:
-      r: 50
-      t: 50
-      b: 50
 
 
 
@@ -561,11 +557,46 @@ F3GSEA:
 
 
 
-F4QTPCR:
-  file: "Pipeline/Paper/Figure4/F4QPCR.svg"
-  x: 416
-  y: 0
+F3:
+  a: "F3SubCellLoc"
+  b: "F3ClusteredGO"
+  c: "F3FISH"
+
+
+
+EnrichFigure6:
   layout:
+    height: 1000
+
+
+
+F4Volcano:
+  file: "Pipeline/Paper/Figure4/F4Volcano.svg"
+  x: 0
+  y: 300
+  highlight_go_term:
+    ribosome: "#8f6b30"
+    "unfolded protein binding": "#ffe863"
+  layout:
+    width: 312
+    height: 300
+    legend:
+      orientation: "h"
+    xaxis:
+      title:
+        standoff: 1
+
+
+F4CupAIntensities:
+  file: "Pipeline/Paper/Figure4/F4cupAIntensities.svg"
+  x: 312
+  y: 600
+  annotations:
+    font:
+      size: 10
+  layout:
+    showlegend: False
+
     width: 312
     height: 300
     legend:
@@ -573,17 +604,15 @@ F4QTPCR:
         font:
           size: 10
     margin:
-      r: 20
+      r: 50
       t: 30
       b: 50
-    xaxis:
-      title_standoff: 1
 
 
 F4ClusteredGO:
   file: "Pipeline/Paper/Figure4/F4ClusteredGO.svg"
-  x: 0
-  y: 200
+  x: 312
+  y: 300
   layout:
     width: 312
     height: 300
@@ -596,29 +625,58 @@ F4ClusteredGO:
       t: 30
       b: 50
 
-F3:
-  a: "F3SubCellLoc"
-  b: "F3ClusteredGO"
-  c: "F3FISH"
-
-EnrichFigure6:
+F4FISH:
+  file: "Pipeline/Paper/Figure4/F4FISH.svg"
+  x: 0
+  y: 0
   layout:
-    height: 1000
+    width: 624
+    height: 300
+    legend:
+      title:
+        font:
+          size: 10
+    annotations:
+      font:
+        size: 10
+    margin:
+      r: 50
+      t: 50
+      b: 50
 
 
-EnrichFigure4:
-  layout:
-    height: 1000
-    width: 312
-
-VolcanoFigure4:
-  highlight_go_term:
-    ribosome: "#8f6b30"
-    "unfolded protein binding": "#ffe863"
+F4QTPCR:
+  file: "Pipeline/Paper/Figure4/F4QPCR.svg"
+  x: 0
+  y: 600
   layout:
     width: 312
     height: 300
     legend:
+      title:
+        font:
+          size: 10
       orientation: "h"
 
+    margin:
+      r: 50
+      t: 30
+      b: 50
+    xaxis:
+      title_standoff: 1
+    yaxis3:
+      title_standoff: 1
+
+
+
+
+
+
+
+F4:
+  a: "F4FISH"
+  b: "F4Volcano"
+  c: "F4ClusteredGO"
+  d: "F4QTPCR"
+  e: "F4CupAIntensities"
 

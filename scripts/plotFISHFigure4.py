@@ -19,7 +19,7 @@ if __name__ == '__main__':
         with open("configFile.yml", 'r') as f:
             cfg = yaml.safe_load(f)
         probes = [("psbA2", "untreated", "Replicate 1"), ("psbA2", "Puromycin", "Replicate 1"),
-                  ("rpl10_12", "untreated", "Replicate 1"), ("rpl10_12", "Puromycin", "Replicate 1")]
+                  ("16S rRNA", "untreated", "Replicate 1"), ("16S rRNA", "Puromycin", "Replicate 1")]
 
         layout = cfg["F5FISH"]["layout"]
         subplot_params = dict(vertical_spacing=0.05, horizontal_spacing=0.05,

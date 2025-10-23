@@ -16,7 +16,7 @@ def main(tsv, config, svg, html):
     )
 
     fig.update_layout(config["LayoutDefault"])
-    fig.update_layout(config["EnrichFigure4"]["layout"])
+    fig.update_layout(config["F4ClusteredGO"]["layout"])
     fig.update_layout(coloraxis=dict(colorbar=dict(title=dict(text="-log<sub>10</sub>(p.adjust)"))))
 
 

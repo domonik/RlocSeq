@@ -19,11 +19,11 @@ def main(file, config, output):
         rbp3_set = set(sdf[sdf["RBP3_Target"] == True]["locus_tag"])
         minusp_set = set(sdf[sdf["minusPMembran"] == True]["locus_tag"])
         plusp_set = set(sdf[sdf["plusPMembran"] == True]["locus_tag"])
-        subfig = venn_to_plotly((minusp_set, rbp3_set, plusp_set), ("-Puromycin at membrane", "RBP3 Target", "+Puromycin at membrane"))
+        subfig = venn_to_plotly((minusp_set, rbp3_set, plusp_set), ("-Puromycin at membrane", "RBP3 Target", "+Puromycin at membrane"), L_color=["rgba(0, 106, 56, 0.6)", "rgba(0, 48, 135, 0.6)", "rgb(138, 141, 143, 0.6)"])
         row = idx // cols
         figures[row].append(subfig)
-    stitels = ["All", "Cytoplasm", "Cell membrane", "Thylakoid membrane"]
-    multi_fig = make_subplots(rows=rows, cols=cols, horizontal_spacing=0.05, vertical_spacing=0.01, subplot_titles=stitels)
+    stitels = ["All", "Cytoplasm", "Cell<br>membrane", "Thylakoid<br>membrane"]
+    multi_fig = make_subplots(rows=rows, cols=cols, horizontal_spacing=0, vertical_spacing=0, subplot_titles=stitels)
     for row, subfigs in enumerate(figures, 1):
         for idx, fig in enumerate(subfigs, 1):
             running_idx = (row -1) * cols + idx
@@ -71,7 +71,7 @@ def main(file, config, output):
         if annotation.text.isnumeric():
             annotation.update(font=dict(size=8))
         else:
-            annotation.update(font=dict(size=12))
+            annotation.update(font=dict(size=10))
     multi_fig.write_html(output.html)
     multi_fig.write_image(output.svg)
 

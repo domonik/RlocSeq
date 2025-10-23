@@ -1,22 +1,67 @@
 import plotly.graph_objects as go
 import yaml
 import pandas as pd
+from scipy.stats import ttest_ind
+import numpy as np
 
-
+def significance_label(p):
+    if pd.isna(p): return ""
+    elif p < 0.001: return "***"
+    elif p < 0.01: return "**"
+    elif p < 0.05: return "*"
+    else: return ""
 
 def main(tsv, cfg, outfile):
     df = pd.read_csv(tsv, sep="\t")
+    reference = "16S rRNA"
+    ref_values = df.loc[df["Probe"] == reference, "log2FoldChange"].dropna()
     fig = go.Figure()
+    order = ["16S rRNA", "rnpB", "psaC", "rimO", "psbA2", "rps21", "rpl10", "rpl17", "psaA", "pilA9-11", "sll0772", "sll0662", "fusB", "cupA"]
+    df["Probe"] = pd.Categorical(df["Probe"], categories=order, ordered=True)
+    df = df.sort_values("Probe")
+
+    results = []
+    for probe in df["Probe"].unique():
+        if probe == reference:
+            continue
+        probe_values = df.loc[df["Probe"] == probe, "log2FoldChange"].dropna()
+        if len(probe_values) == 0:
+            continue
+
+        t_stat, p_val = ttest_ind(probe_values, ref_values, equal_var=False)
+        results.append({"Probe": probe, "t_stat": t_stat, "p_value": p_val})
+    ttest_df = pd.DataFrame(results)
+    agg = (
+        df.groupby("Probe", as_index=False)
+        .agg(mean_log2FC=("log2FoldChange", "mean"),
+             std_log2FC=("log2FoldChange", "std"))
+    )
+    agg = agg.merge(ttest_df, on="Probe", how="left")
+    agg["significance"] = agg["p_value"].apply(significance_label)
     fig.add_trace(
         go.Bar(
-            x=df["Target"],
-            y=df["log2FC"],
+            x=agg["Probe"],
+            y=agg["mean_log2FC"],
             error_y=dict(
-                type='data',
-                visible=True,
-                array=df["Std. Dev.1"]
+                type="data",
+                array=agg["std_log2FC"],
+                visible=True
             ),
-            marker=dict(line=dict(color="black", width=1), color=cfg["cytosolColor"])
+            marker=dict(line=dict(color="black", width=1),
+                        color=cfg["cytosolColor"]),
+            showlegend=False# show significance above bars
+        )
+    )
+    y_max = (agg["mean_log2FC"] + agg["std_log2FC"]).max()
+    offset = y_max * 0.1
+    fig.add_trace(
+        go.Scatter(
+            x=agg["Probe"],
+            y=np.full(len(agg), y_max + offset),  # same height for all
+            text=agg["significance"],
+            mode="text",
+            textfont=dict(size=8),
+            showlegend=False
         )
     )
     fig.update_yaxes(title=dict(text="log<sub>2</sub>(fold change)"))
