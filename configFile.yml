@@ -570,16 +570,36 @@ EnrichFigure6:
 
 
 
+F4Percent:
+  file: "Pipeline/Paper/Figure4/F4Percentage.svg"
+  x: 0
+  y: 0
+  layout:
+    width: 312
+    height: 100
+    margin:
+      r: 10
+      t: 30
+      l: 10
+    legend:
+      orientation: "h"
+      y: 1.2
+      x: 0
+      yanchor: "bottom"
+      xanchor: "left"
+
+
+
 F4Volcano:
   file: "Pipeline/Paper/Figure4/F4Volcano.svg"
   x: 0
-  y: 300
+  y: 100
   highlight_go_term:
     ribosome: "#8f6b30"
     "unfolded protein binding": "#ffe863"
   layout:
     width: 312
-    height: 300
+    height: 200
     legend:
       orientation: "h"
     xaxis:
@@ -589,15 +609,14 @@ F4Volcano:
 
 F4CupAIntensities:
   file: "Pipeline/Paper/Figure4/F4cupAIntensities.svg"
-  x: 312
-  y: 600
+  x: 0
+  y: 500
   annotations:
     font:
       size: 10
   layout:
     showlegend: False
-
-    width: 312
+    width: 624
     height: 300
     legend:
       title:
@@ -605,14 +624,14 @@ F4CupAIntensities:
           size: 10
     margin:
       r: 50
-      t: 30
+      t: 40
       b: 50
 
 
 F4ClusteredGO:
   file: "Pipeline/Paper/Figure4/F4ClusteredGO.svg"
   x: 312
-  y: 300
+  y: 0
   layout:
     width: 312
     height: 300
@@ -648,10 +667,10 @@ F4FISH:
 F4QTPCR:
   file: "Pipeline/Paper/Figure4/F4QPCR.svg"
   x: 0
-  y: 600
+  y: 300
   layout:
-    width: 312
-    height: 300
+    width: 624
+    height: 200
     legend:
       title:
         font:
@@ -674,9 +693,48 @@ F4QTPCR:
 
 
 F4:
-  a: "F4FISH"
+  a: "F4Percent"
   b: "F4Volcano"
   c: "F4ClusteredGO"
   d: "F4QTPCR"
   e: "F4CupAIntensities"
 
+
+F5Percent:
+  file: "Pipeline/Paper/Figure5/Fig5Percentage.svg"
+  x: 0
+  y: 0
+  layout:
+    width: 312
+    height: 100
+    margin:
+      r: 10
+      t: 30
+      l: 10
+    legend:
+      orientation: "h"
+      y: 1.2
+      x: 0
+      yanchor: "bottom"
+      xanchor: "left"
+
+
+
+F5FISH:
+  file: "Pipeline/Paper/Figure5/F5FISH.svg"
+  x: 0
+  y: 0
+  layout:
+    width: 624
+    height: 300
+    legend:
+      title:
+        font:
+          size: 10
+    annotations:
+      font:
+        size: 10
+    margin:
+      r: 50
+      t: 50
+      b: 50

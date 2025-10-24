@@ -23,8 +23,8 @@ def main(tsv, add_data, go_terms, output, config, params):
         highlight=highlight,
         lfc_cutoff=config["RUNS"]["secondary"]["log2FCCutOff"],
         padj_cutoff=config["RUNS"]["secondary"]["pAdjCutOff"],
-        condition_name="Membrane",
-        base_name="Cytosol",
+        condition_name="+ Puromycin",
+        base_name="- Puromycin",
         highlight_up_color=config["membraneColor"],
         highlight_down_color=config["cytosolColor"],
         opacity=0.3

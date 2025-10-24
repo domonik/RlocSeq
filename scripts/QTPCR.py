@@ -16,7 +16,8 @@ def main(tsv, cfg, outfile):
     reference = "16S rRNA"
     ref_values = df.loc[df["Probe"] == reference, "log2FoldChange"].dropna()
     fig = go.Figure()
-    order = ["16S rRNA", "rnpB", "psaC", "rimO", "psbA2", "rps21", "rpl10", "rpl17", "psaA", "pilA9-11", "sll0772", "sll0662", "fusB", "cupA"]
+    order = ["16S rRNA", "rnpB", "psaC", "rimO", "psbA2", "rps21", "rpl10", "rpl17", "psaA", "pilA9-11", "fusB", "cupA"]
+    df = df[df["Probe"].isin(order)]
     df["Probe"] = pd.Categorical(df["Probe"], categories=order, ordered=True)
     df = df.sort_values("Probe")
 

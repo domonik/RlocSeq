@@ -1224,6 +1224,38 @@ rule refinePercentagePlot:
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/percentagePlot.py"
 
+rule PercentagePlotF4:
+    input:
+        tsv = expand(rules.tc_extractDESeqResult.output.result_table,condition=["minusP"], baseline=["plusP"])[0]
+    output:
+        svg = config["F4Percent"]["file"],
+    params:
+        condition="- Puromycin",
+        baseline="+ Puromycin",
+        figureConfig="F4Percent",
+        name="FOO",
+        log2FCCutOff=config["primary"]["log2FCCutOff"],
+        pAdjCutOff=config["primary"]["pAdjCutOff"]
+
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/percentagePlot.py"
+
+
+rule PercentagePlotF5:
+    input:
+        tsv = expand(rules.second_extractDESeqResult.output.result_table,condition=["M"], baseline=["C"])[0]
+    output:
+        svg = config["F5Percent"]["file"]
+    params:
+        condition="Membrane",
+        baseline="Cytosol",
+        figureConfig="F1Percent",
+        name="FOO",
+        log2FCCutOff=config["primary"]["log2FCCutOff"],
+        pAdjCutOff=config["primary"]["pAdjCutOff"]
+
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/percentagePlot.py"
 
 rule F1GSEA:
     input:
@@ -1392,7 +1424,9 @@ rule plotF4cupAIntensities:
     input:
         tsv=rules.processFISHImages.output.spots_df,
     output:
-        svg=config["F4CupAIntensities"]["file"]
+        svg=config["F4CupAIntensities"]["file"],
+        tsv= "Pipeline/Paper/Figure4/IntensitiesTestPval.tsv"
+
     script:
         "scripts/plotFISHIntensity.py"
 
@@ -1471,6 +1505,22 @@ rule plotFISHFigure4:
     script: "scripts/plotFISHFigure4.py"
 
 
+rule plotFISHFigure5:
+    input:
+        tsv=rules.processFISHImages.output.tsv
+    output:
+        svg = config["F5FISH"]["file"]
+    params:
+        probes =[("fusB","untreated","Replicate 1"), ("fusB","Puromycin","Replicate 1"), ("psaA", "untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")],
+        layout= config["F4FISH"]["layout"],
+        subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
+                              column_titles=["- Puromycin", "+ Puromycin", "- Puromycin", "+ Puromycin"])
+
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/plotFISHFigure4.py"
+
+
+
 # rule joinFig5:
 #     input:
 #         coverage = rules.plotCoveragesFig5.output.svg,
@@ -1486,6 +1536,13 @@ rule plotFISHFigure4:
 #     script:
 #         "scripts/paperFigure.py"
 
+rule checkTranscriptAbundanceGO:
+    input:
+        go  =expand(rules.other_GOEnrichment.output.up, condition="M", baseline="C")[0],
+        tsv =expand(rules.tc_extractDESeqResult.output.result_table,condition="plusP",baseline="minusP")[0],
+    output:
+        tsv = "Pipeline/SHIT/abundanceOfPlasmaMembrane.tsv"
+    script: "scripts/checkTranscriptAbundanceGO.py"
 
 # rule Figure5toPNG:
 #     input:
@@ -1571,7 +1628,7 @@ rule joinFig4:
         files=[config[val]["file"] for key, val in config["F4"].items()]
     params:
         figures = config["F4"],
-        ges_y = 900
+        ges_y = 800
     conda: "envs/svgutils.yml"
     output:
         svg = "Pipeline/Paper/Figure4/Figure4.svg"
@@ -1642,6 +1699,9 @@ rule all:
         qpcr = rules.Figure4toPNG.output,
         clusteredF4 = rules.F4ClusteredGO.output,
         summary = expand(rules.summarizeResult.output, condition="M", baseline="C"),
-        transmemgsea = expand(rules.TransmembraneGSEA.output.enriched, puro=["minusPuromycin", "plusPuromycin"], condition="M", baseline="C")
+        transmemgsea = expand(rules.TransmembraneGSEA.output.enriched, puro=["minusPuromycin", "plusPuromycin"], condition="M", baseline="C"),
+        f5perc = config["F5Percent"]["file"],
+        f5fish = config["F5FISH"]["file"],
+        #tpmemabundace = rules.checkTranscriptAbundanceGO.output
 
 
