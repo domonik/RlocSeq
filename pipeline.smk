@@ -458,19 +458,54 @@ rule summarizeResult:
 
 rule joinTables:
     input:
-        deseqResMinus = rules.other_extractDESeqResult.output.result_table,
-        deseqResPlus = rules.second_extractDESeqResult.output.result_table,
+        deseqResMinus = expand(rules.other_extractDESeqResult.output.result_table, condition="M", baseline="C")[0],
+        deseqResPlus = expand(rules.second_extractDESeqResult.output.result_table, condition="M", baseline="C",)[0],
+        deseqResTC = expand(rules.tc_extractDESeqResult.output.result_table, condition="plusP", baseline="minusP")[0],
         add_data = "initialData/locusTagtoGeneName.csv",
-        tu_info = rules.coLocateTranscripts.output.tus
+        tu_info = rules.coLocateTranscripts.output.tus,
+        uniprot= rules.download_subcell.output.tsv,
+
     output:
-        tsv = "Pipeline/Summary/joinedDESeq_c{condition}_vs_b{baseline}.tsv",
-        output_for_R_because_this_stupid_language_cannot_even_read_tsv_files = "Pipeline/Summary/joinedDESeqForstupidR_c{condition}_vs_b{baseline}.tsv",
-        stayed = "Pipeline/Summary/stayedAtMembrane_c{condition}_vs_b{baseline}.tsv",
+        tsv = "Pipeline/Summary/joinedDESeq_Table.tsv",
+        output_for_R_because_this_stupid_language_cannot_even_read_tsv_files = "Pipeline/Summary/joinedDESeqForstupidR.tsv",
+        stayed = "Pipeline/Summary/stayedAtMembrane.tsv",
     run:
         df_minus = pd.read_csv(input.deseqResMinus, sep="\t")
         df_plus = pd.read_csv(input.deseqResPlus, sep="\t")
+        df_puro = pd.read_csv(input.deseqResPlus, sep="\t")
         df = df_minus.join(df_plus, rsuffix="_plusPuromycin", lsuffix="_minusPuromycin", how="outer")
+        df_puro.columns = [f"{col}_tc" for col in df_puro.columns]
+        df = df.join(df_puro, rsuffix="_totalCell", lsuffix="_totalCell", how="outer")
         df = df[~df.index.str.contains("6803r")]
+
+        # Here uniprot is joined:
+        x = ("Cytoplasm", "Membrane", "Cell membrane", "Cell inner membrane", "Cellular thylakoid membrane")
+
+        uniprot = pd.read_csv(input.uniprot,sep="\t")
+        subcell = "Subcellular location [CC]"
+        uni_col = "Gene Names (ordered locus)"
+        uniprot = uniprot.rename({uni_col: "locus_tag"},axis=1)
+        uniprot["locus_tag"] = uniprot["locus_tag"].str.split("; ")
+        uniprot = uniprot.explode('locus_tag').reset_index(drop=True)
+
+        uniprot = uniprot[["locus_tag", "Gene Names", subcell, "Transmembrane", "Sequence"]]  # dont need intramembrane since there are zero annotated
+        uniprot['Cell membrane'] = uniprot[subcell].str.contains("Cell membrane")
+        uniprot["Cell inner membrane"] = uniprot[subcell].str.contains("Cell inner membrane")
+        uniprot['Cellular thylakoid membrane'] = uniprot[subcell].str.contains("Cellular thylakoid membrane")
+        uniprot['Cytoplasm'] = (uniprot[subcell].str.contains("Cytoplasm") == True)
+        uniprot['Cytoplasmic side'] = (uniprot[subcell].str.contains("Cytoplasmic side") == True)
+        uniprot.loc[uniprot[subcell].isna(), "Cytoplasm"] = pd.NA
+        uniprot['Membrane'] = (uniprot[subcell].str.contains("Membrane") == True) | uniprot['Cellular thylakoid membrane'] | uniprot[
+            'Cell membrane'] | uniprot["Cell inner membrane"] | uniprot["Cytoplasmic side"]
+        uniprot.loc[uniprot[subcell].isna(), "Membrane"] = pd.NA
+
+        df["merge_tag"] = df.index
+        df.loc[df["merge_tag"].str.contains("UTR"), "merge_tag"] = df.loc[df[
+            "merge_tag"].str.contains("UTR"), "merge_tag"].str[:-5]
+        old_index = df.index
+
+        df = df.merge(uniprot, left_on="merge_tag", right_on="locus_tag", how="left")
+        df.index = old_index
 
         df["minusPMembran"] = (df["log2FoldChange_minusPuromycin"] >= config["primary"]["log2FCCutOff"]) & (df["padj_minusPuromycin"] <= config["primary"]["pAdjCutOff"])
         df["minusPCytosol"] = (df["log2FoldChange_minusPuromycin"] <= -config["primary"]["log2FCCutOff"]) & (df["padj_minusPuromycin"] <= config["primary"]["pAdjCutOff"])
@@ -489,7 +524,6 @@ rule joinTables:
         df["CRISPR"] = df.index.str.contains("CRISPR")
         df["mRNA"] = (df.index.str.startswith("sll") | df.index.str.startswith("slr") | df.index.str.startswith("ssl") | df.index.str.startswith("ssr") | df.index.str.startswith("sml" )| df.index.str.startswith("smr") | df.index.str.startswith("sgl") | df.index.str.startswith("Norf")) & ~(df["UTR"] | df["asRNA"])
         add_data = pd.read_csv(input.add_data, sep=",")
-
         df = df.merge(add_data, left_index=True, right_on="locus_tag")
         df.loc[df["5UTR"], "gene_name"] = df.loc[df["5UTR"], "gene_name"] + " 5UTR"
         df.loc[df["3UTR"], "gene_name"] = df.loc[df["5UTR"], "gene_name"] + " 3UTR"
@@ -497,7 +531,6 @@ rule joinTables:
         df["Ribosome mRNA"] = df.gene_name.str.contains("rpl|rps")
         df = df[df.columns[-2:].to_list() + df.columns[:-2].to_list()]
         tus = pd.read_csv(input.tu_info, sep="\t")
-
         tus_expanded = (
             tus.assign(locus_tag=tus.loc[:, "locus_tags"].str.split(", "))
             .explode("locus_tag")
@@ -518,7 +551,6 @@ rule joinTables:
             how="left"
         )
         #df = df.merge( tus_expanded.rename(columns={"locus_tag": "locus_tag_norm"}),on="locus_tag_norm",how="left")
-
         df.to_csv(output.tsv, sep="\t", index=False)
 
         rtkeys = [key for key in list(config["RNA_TYPE_COLORS"].keys()) if key in df.columns]
@@ -532,7 +564,7 @@ rule joinTables:
 
 rule Table1:
     input:
-        tsv = expand(rules.joinTables.output.tsv, condition=["M"], baseline=["C"])[0],
+        tsv = rules.joinTables.output.tsv,
     output:
         csv = "Pipeline/Paper/Table1/Table1.csv"
     run:
@@ -598,8 +630,8 @@ rule GOTermEnrichmentStayed:
     params:
         cfg = config["primary"]
     output:
-        up = "Pipeline/Summary/GO/joinedDESeq_c{condition}_vs_b{baseline}_ud_up.tsv",
-        down = "Pipeline/Summary/GO/joinedDESeq_c{condition}_vs_b{baseline}_ud_down.tsv"
+        up = "Pipeline/Summary/GO/StayedAtMembrane_ud_up.tsv",
+        down = "Pipeline/Summary/GO/StayedAtMembrane_ud_down.tsv"
     conda:
         "envs/clusterprofiler.yml"
     script: "scripts/GOTermStayedAtMembrane.R"
@@ -665,79 +697,13 @@ rule extractMembraneAndSolubleProteins:
 hovertemplate = 'Gene: <b>%{text}</b><br>RNA padj: %{customdata[0]:.2e}<br>Protein padj: %{customdata[1]:.2e}'
 
 
-rule correlationRNAvsProteins:
-    input:
-        proteins = rules.extractMembraneAndSolubleProteins.output.tsv,
-        rna = rules.second_extractDESeqResult.output.result_table,
-        summary =  rules.joinTables.output.tsv
-    output:
-        html = "Pipeline/ProteinLocalization/correlation_c{condition}_vs_b{baseline}.html"
-    run:
-        import plotly.graph_objs as go
-        from scipy.stats import spearmanr
-        res = pd.read_csv(input.summary,sep="\t", index_col=0)
-        res_ids = res[res["stayedAtMembrane"]].index
-
-        rna_df = pd.read_csv(input.rna, sep="\t")
-        rna_df["Mean_membrane"] = rna_df["baseMean"] * rna_df["log2FoldChange"]
-        rna_df = rna_df.rename({"baseMean": "Mean_soluble"}, axis=1)
-
-        protein_df = pd.read_csv(input.proteins, sep="\t")
-        print(protein_df)
-        df = rna_df.merge(protein_df, left_index=True, right_on = "Accession", suffixes=["_RNA", "_Protein"])
-        df = df[~df["log2FoldChange_RNA"].isna() & ~df["log2FoldChange_Protein"].isna()]
-        #df  = df[(df["padj_RNA"] <= 0.05) & (df["padj_Protein"] <= 0.05)]
-        df["hover"] = df["Accession"] + "-" + df["Gene_symbol"]
-
-        r, pval = spearmanr(df["log2FoldChange_RNA"], df["log2FoldChange_Protein"])
-        print(r, pval)
-        fig = go.Figure()
-        cd = np.stack((df["padj_RNA"], df["padj_Protein"]),axis=1)
-        fig.add_annotation(
-            x=0,
-            y=1.1,
-            xref="x domain",
-            yref="y domain",
-            text=f"Spearman:\n\tR: {r:.2f}\n\tpval:{pval:.2e}",
-            showarrow=False,
-
-
-        )
-
-        stayed_df = df[df["Accession"].isin(res_ids)]
-
-        fig.add_trace(go.Scatter(
-            x=df["log2FoldChange_RNA"],
-            y=df["log2FoldChange_Protein"],
-            mode="markers",
-            text=df["hover"],
-            hovertemplate=hovertemplate,
-            customdata=cd
-        ))
-        cd = np.stack((stayed_df["padj_RNA"], stayed_df["padj_Protein"]),axis=1)
-
-        fig.add_trace(go.Scatter(
-            x=stayed_df["log2FoldChange_RNA"],
-            y=stayed_df["log2FoldChange_Protein"],
-            mode="markers",
-            text=stayed_df["hover"],
-            hovertemplate=hovertemplate,
-            customdata=cd,
-            name="Stayed at membrane"
-        ))
-        fig.update_yaxes(title="Protein l2FC")
-        fig.update_xaxes(title="RNA l2FC")
-        fig.write_html(output.html)
-
 
 rule checkProteinLocalization:
     input:
-        uniprot = rules.download_subcell.output.tsv,
         deseq_res = rules.joinTables.output.tsv,
     output:
-        svg = "Pipeline/SubcellularLoc/{condition}vs{baseline}SubcellLoc.svg",
-        tsv = "Pipeline/SubcellularLoc/{condition}vs{baseline}SubcellLoc.tsv",
-        r_is_not_a_valid_programming_language_and_no_one_should_use_this_bullshit = "Pipeline/SubcellularLoc/{condition}vs{baseline}SubcellLocSameBullshitButCauseRCantReadDataframesItNeedsToBePreprocessed.tsv"
+        svg = "Pipeline/SubcellularLoc/SubcellLoc.svg",
+        r_is_not_a_valid_programming_language_and_no_one_should_use_this_bullshit = "Pipeline/SubcellularLoc/SubcellLocSameBullshitButCauseRCantReadDataframesItNeedsToBePreprocessed.tsv"
 
     script: "scripts/checkMembraneDistribution.py"
 
@@ -745,7 +711,7 @@ rule checkProteinLocalization:
 
 rule cpF3SubCellLoc:
     input:
-        file = expand(rules.checkProteinLocalization.output.svg, condition=["M"], baseline=["C"])[0]
+        file = rules.checkProteinLocalization.output.svg,
     output:
         svg = config["F3SubCellLoc"]["file"]
     shell:
@@ -1005,7 +971,7 @@ rule addFastatoTSV:
     input:
         fasta = rules.extractFasta.output.fasta,
         gff = config["gff"],
-        tsv = expand(rules.checkProteinLocalization.output.tsv, condition="M", baseline="C")[0]
+        tsv = rules.joinTables.output.tsv
     output:
         tsv="Pipeline/TableWithSequences.tsv",
     conda: "envs/biopython.yml"
@@ -1115,7 +1081,7 @@ rule addRBP3Data:
 
 rule rnatypeGSEA:
     input:
-        tsv = expand(rules.joinTables.output.output_for_R_because_this_stupid_language_cannot_even_read_tsv_files, condition="M", baseline="C")[0]
+        tsv = rules.joinTables.output.output_for_R_because_this_stupid_language_cannot_even_read_tsv_files
     output:
         enrichedFile = "Pipeline/rnaTypeGSEA/gseaEnrich_puro{puro}.tsv",
         gsFile = "Pipeline/rnaTypeGSEA/gseaInfo_puro{puro}.tsv"
@@ -1196,8 +1162,8 @@ rule fimoRBP3:
 
 rule minusPVolcanoForFig1:
     input:
-        tsv = expand(rules.joinTables.output.tsv, condition="M", baseline="C")[0],
-        gsea = expand(rules.rnatypeGSEA.output.enrichedFile, puro="minusPuromycin")[0]
+        tsv = rules.joinTables.output.tsv, condition="M", baseline="C",
+        gsea = rules.rnatypeGSEA.output.enrichedFile, puro="minusPuromycin"
     params:
         condition="Membrane",
         baseline= "Cytosol",
@@ -1435,7 +1401,7 @@ rule plotF4cupAIntensities:
 
 rule plotVennsFigure5:
     input:
-        tsv=expand(rules.joinTables.output.tsv,condition="M",baseline="C")[0],
+        tsv=rules.joinTables.output.tsv,
     conda: "envs/matplotlibPlotly.yml"
     output:
         svg = config["Fig5Venn"]["file"],
@@ -1693,7 +1659,6 @@ rule all:
         #tu3 = expand(rules.plotHistogramm.output,zip, condition=["M"], baseline=["C"]),
         stayedGO = expand(rules.GOTermEnrichmentStayed.output, condition=["M"], baseline=["C"]),
         transintramembrane = expand(rules.joinTables.output, condition=["M"], baseline=["C"]),
-        dfr = expand(rules.checkProteinLocalization.output, condition=["M"], baseline=["C"]),
         size_factors = rules.third_runDESeq.output,
         #protloc = expand(rules.correlationRNAvsProteins.output, condition="M", baseline="C"),
         summary_fig = expand(rules.compareResults.output, condition="M", baseline="C"),

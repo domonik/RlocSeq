@@ -16,38 +16,13 @@ def extract_terms_before_brackets(text):
 # Assuming your DataFrame is named 'df' and the column is 'text_column'
 
 
-def check_membrane_dist(uniprot_file, deseq_table, config, output, uni_col="Gene Names (ordered locus)"):
+def check_membrane_dist(table, config, output, uni_col="Gene Names (ordered locus)"):
+    df = pd.read_csv(table, sep="\t")
     x = ("Cytoplasm", "Membrane", "Cell membrane", "Cell inner membrane", "Cellular thylakoid membrane")
 
-    df = pd.read_csv(uniprot_file, sep="\t")
-    subcell = "Subcellular location [CC]"
-    df = df.rename({uni_col: "locus_tag"}, axis=1)
-    df["locus_tag"] = df["locus_tag"].str.split("; ")
-    df = df.explode('locus_tag').reset_index(drop=True)
-    print(df)
-
-    df = df[["locus_tag", "Gene Names", subcell, "Transmembrane", "Sequence"]] # dont need intramembrane since there are zero annotated
-    df['Cell membrane'] = df[subcell].str.contains("Cell membrane") | df[subcell].str.contains("Cell inner membrane")
-    df["Cell inner membrane"] = df[subcell].str.contains("Cell inner membrane")
-    df['Cellular thylakoid membrane'] = df[subcell].str.contains("Cellular thylakoid membrane")
-    df['Cytoplasm'] = (df[subcell].str.contains("Cytoplasm") == True) & (~(df[subcell].str.contains("Cytoplasmic side") == True))
-    df.loc[df[subcell].isna(), "Cytoplasm"] = pd.NA
-    df['Membrane'] = (df[subcell].str.contains("Membrane") == True) | df['Cellular thylakoid membrane'] | df['Cell membrane'] | df["Cell inner membrane"]
-    df.loc[df[subcell].isna(), "Membrane"] = pd.NA
-
-
-    deseq_res = pd.read_csv(deseq_table, sep="\t")
-    deseq_res = deseq_res.rename({"Unnamed: 0": "locus_tag"}, axis=1)
-    deseq_res["merge_tag"] = deseq_res["locus_tag"]
-    deseq_res.loc[deseq_res["locus_tag"].str.contains("UTR"), "merge_tag"] = deseq_res.loc[deseq_res["locus_tag"].str.contains("UTR"), "merge_tag"].str[:-5]
-
-    odf = deseq_res.merge(df, left_on="merge_tag", right_on="locus_tag", how="left")
-    df = deseq_res.merge(df, left_on="locus_tag", right_on="locus_tag")
-
     #odf = odf[["locus_tag_x", "Gene Names", "mRNA", "UTR", "antisense", "non-coding"] + list(x)]
-    odf = odf.rename({"locus_tag_x": "locus_tag"}, axis=1)
-    odf.to_csv(output.tsv, sep="\t", index=False)
-    rdf = odf.copy()
+
+    rdf = df.copy()
     rdf["Transmembrane"] = ~rdf["Transmembrane"].isna()
     rdf = rdf[~rdf["tRNA"]]
     rdf = rdf[rdf["mRNA"]]
@@ -116,7 +91,6 @@ def check_membrane_dist(uniprot_file, deseq_table, config, output, uni_col="Gene
 
 if __name__ == '__main__':
     check_membrane_dist(
-        snakemake.input.uniprot,
         snakemake.input.deseq_res,
         snakemake.config,
         snakemake.output
