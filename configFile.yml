@@ -17,8 +17,8 @@ cytosolColor: "#003087"
 TRACE_COLORS:
   "-p M": "#2ca02c"
   "-p C": "#002695"
-  "+p M": "#2ca02c"
-  "+p C": "#002695"
+  "+p C": "#002244"
+  "+p M": "#69BE28"
 
 
 RNA_TYPE_COLORS:
@@ -354,48 +354,10 @@ F2:
 
 
 
-PlusPuroCoverage:
-  file: "Pipeline/Paper/Figure5/Coverages.svg"
-  x: 0
-  y: 300
-  layout:
-    width: 624
-    height: 150
-    legend:
-      title:
-        font:
-          size: 10
-    yaxis:
-      title_standoff: 1
-    margin:
-      r: 50
-      t: 30
-      b: 5
 
 
 
 
-
-
-
-F6FISH:
-  file: "Pipeline/Paper/Figure6/F6FISH.svg"
-  x: 0
-  y: 450
-  layout:
-    width: 624
-    height: 550
-    legend:
-      title:
-        font:
-          size: 10
-    annotations:
-      font:
-        size: 10
-    margin:
-      r: 50
-      t: 50
-      b: 50
 
 
 
@@ -742,3 +704,69 @@ F5:
   b: "VolcanoFigure5"
   c: "Fig5Venn"
   d: "F5FISH"
+
+
+
+F6ClusteredGO:
+  file: "Pipeline/Paper/Figure6/F6CluteredGO.svg"
+  x: 0
+  y: 0
+  layout:
+    width: 312
+    height: 300
+    legend:
+      title:
+        font:
+          size: 10
+    margin:
+      r: 50
+      t: 30
+      b: 50
+
+
+
+F6Coverage:
+  file: "Pipeline/Paper/Figure6/Coverages.svg"
+  x: 0
+  y: 300
+  layout:
+    width: 624
+    height: 150
+    legend:
+      title:
+        font:
+          size: 10
+      tracegroupgap: 0
+    yaxis:
+      title_standoff: 1
+    margin:
+      r: 50
+      t: 5
+      b: 5
+
+
+F6FISH:
+  file: "Pipeline/Paper/Figure6/F6FISH.svg"
+  x: 0
+  y: 450
+  layout:
+    width: 624
+    height: 300
+    legend:
+      title:
+        font:
+          size: 10
+    annotations:
+      font:
+        size: 10
+
+    margin:
+      r: 50
+      t: 50
+      b: 50
+
+
+F6:
+  a: "F6ClusteredGO"
+  b: "F6Coverage"
+  c: "F6FISH"

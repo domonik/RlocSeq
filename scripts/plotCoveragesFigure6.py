@@ -82,15 +82,15 @@ def main(design, gff, db_name, output_path, cfg):
 
     fig.update_yaxes(title="normalized read count", row=1, col=1)
     fig.update_yaxes(title=None, col=2)
-    lgroup = "Read Counts"
     fig.add_trace(
         go.Scatter(
             x=[None],
             y=[None],
             mode="markers",
             name=f"Membrane",
-            marker=dict(color=cfg["membraneColor"], symbol="square", size=10),
-            legendgroup=lgroup,
+            marker=dict(color=cfg["TRACE_COLORS"]["-p M"], symbol="square", size=10),
+            legendgroup="- Puromycin",
+            legendgrouptitle=dict(text="- Puromycin"),
 
         )
     )
@@ -100,8 +100,8 @@ def main(design, gff, db_name, output_path, cfg):
             y=[None],
             mode="markers",
             name=f"Cytosol",
-            marker=dict(color=cfg["cytosolColor"], symbol="square", size=10),
-            legendgroup=lgroup,
+            marker=dict(color=cfg["TRACE_COLORS"]["-p C"], symbol="square", size=10),
+            legendgroup="- Puromycin",
             legendrank=1
 
         )
@@ -110,8 +110,35 @@ def main(design, gff, db_name, output_path, cfg):
         go.Scatter(
             x=[None],
             y=[None],
-            legendgroup=lgroup,
-            legendgrouptitle=dict(text=lgroup),
+            mode="markers",
+            name=f"Membrane",
+            marker=dict(color=cfg["TRACE_COLORS"]["+p M"], symbol="square", size=10),
+            legendgroup="+ Puromycin",
+            legendrank=2
+
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=[None],
+            y=[None],
+            mode="markers",
+            name=f"Cytosol",
+            marker=dict(color=cfg["TRACE_COLORS"]["+p C"], symbol="square", size=10),
+            legendgroup="+ Puromycin",
+            legendgrouptitle=dict(text="+ Puromycin"),
+
+            legendrank=1
+
+        )
+    )
+    lgroup = "Lines"
+    fig.add_trace(
+        go.Scatter(
+            x=[None],
+            y=[None],
+            legendgroup="Lines",
+            legendgrouptitle=dict(text="Lines"),
             mode="lines",
             name=f"Mean",
             line=dict(color='black'),
@@ -144,7 +171,7 @@ def main(design, gff, db_name, output_path, cfg):
     )
 
     fig.update_xaxes(range=[rpl10_12start - 50, rpl10_12end + 50],  col=2, )
-    fig.update_layout(cfg["PlusPuroCoverage"]["layout"])
+    fig.update_layout(cfg["F6Coverage"]["layout"])
     fig.write_image(output_path)
 
     p = 0

@@ -1430,27 +1430,8 @@ rule plotF4cupAIntensities:
     script:
         "scripts/plotFISHIntensity.py"
 
-rule plotFISHFigure6:
-    input:
-        tsv=rules.processFISHImages.output.tsv
-    output:
-        svg = config["F6FISH"]["file"]
-    params:
-        probes =["16S rRNA", "cupA", "psaA", "psbA2", "fusB"],
-        layout=config["F6FISH"]["layout"],
-        subplot=dict(vertical_spacing=0.01, horizontal_spacing=0.02,
-                              column_titles=["16S rRNA", "cupA", "psaA", "psbA2", "fusB"],),
-
-    conda: "envs/matplotlibPlotly.yml"
-    script: "scripts/plotFISHFigure6.py"
 
 
-rule Figure6toPNG:
-    input:
-        svg = rules.plotFISHFigure6.output.svg
-    output:
-        png = "Pipeline/Paper/Figure6/Figure6.png"
-    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
 
 rule plotVennsFigure5:
     input:
@@ -1476,17 +1457,7 @@ rule plotVolcanoFigure5:
     script: "scripts/VolcanoFigure5.py"
 
 
-rule plotCoveragesFig5:
-    input:
-        design = "initialData/testDesign.tsv",
-        gff = "initialData/annotationFiltered.gff",
-        sf = rules.second_runDESeq.output.size_factors,
-    output:
-        svg = config["PlusPuroCoverage"]["file"],
-        db = "Pipeline/GFFDB/gff_database.db",
-    conda: "envs/matplotlibPlotly.yml"
 
-    script: "scripts/plotCoveragesFigure5.py"
 
 
 
@@ -1521,20 +1492,69 @@ rule plotFISHFigure5:
     script: "scripts/plotFISHFigure4.py"
 
 
-rule plotFISHFigure5:
+
+
+rule plotFISHFigure6:
     input:
         tsv=rules.processFISHImages.output.tsv,
     output:
-        svg = config["F5FISH"]["file"]
+        svg = config["F6FISH"]["file"]
     params:
         probes =[("psbA2","untreated","Replicate 1"), ("psbA2","Puromycin","Replicate 1"), ("rpl10_12", "untreated", "Replicate 1"), ("rpl10_12", "Puromycin", "Replicate 1")],
-        layout= config["F5FISH"]["layout"],
+        layout= config["F6FISH"]["layout"],
         subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
                               column_titles=["- Puromycin", "+ Puromycin", "- Puromycin", "+ Puromycin"])
 
     conda: "envs/matplotlibPlotly.yml"
-    script: "scripts/plotFISHFigure4.py"
+    script: "scripts/plotFISHFigure6.py"
 
+rule plotCoveragesFig6:
+    input:
+        design = "initialData/testDesign.tsv",
+        gff = "initialData/annotationFiltered.gff",
+        sf = rules.third_runDESeq.output.size_factors,
+    output:
+        svg = config["F6Coverage"]["file"],
+        db = "Pipeline/GFFDB/gff_database.db",
+    conda: "envs/matplotlibPlotly.yml"
+
+    script: "scripts/plotCoveragesFigure6.py"
+
+rule plotGOFigure6:
+    input:
+        tsv=expand(rules.second_ClusterSemSim.output.table,condition="M",baseline="C",updown="up")[0],
+    params:
+        layout=config["F6ClusteredGO"]["layout"]
+    output:
+        svg=config["F6ClusteredGO"]["file"]
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/plotClusteredEnrichment.py"
+
+
+
+
+
+
+
+rule joinFig6:
+    input:
+        files = [config[val]["file"] for key, val in config["F6"].items()]
+    params:
+        figures = config["F6"],
+        ges_y = 750
+    conda: "envs/svgutils.yml"
+    output:
+        svg = "Pipeline/Paper/Figure6/Figure6.svg"
+    script:
+        "scripts/paperFigure.py"
+
+
+rule Figure6toPNG:
+    input:
+        svg = rules.joinFig6.output.svg
+    output:
+        png = "Pipeline/Paper/Figure6/Figure6.png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
 
 rule joinFig5:
     input:
@@ -1586,14 +1606,14 @@ rule plotGOTermEnrichmentFig4:
 
     script: "scripts/enrichmentTotalCell.py"
 
-rule plotGOTermEnrichmentFig6:
+rule plotFULLGOTermEnrichment:
     input:
         tsv1 =expand(rules.other_GOEnrichment.output.up, condition="M", baseline="C")[0],
         tsv2= expand(rules.second_GOEnrichment.output,condition=["M"],baseline=["C"])[0],
         tsv3= expand(rules.GOTermEnrichmentStayed.output,condition=["M"],baseline=["C"])[0],
     output:
-        svg = "Pipeline/Paper/Figure6/F6Enrichment.svg",
-        html = "Pipeline/Paper/Figure6/F6Enrichment.html",
+        svg = "Pipeline/Paper/Supplementary/FullEnrichment.svg",
+        html = "Pipeline/Paper/Supplementary/FullEnrichment.html",
     conda: "envs/matplotlibPlotly.yml"
 
     script: "scripts/plotEnrichmentPlots.py"
@@ -1695,12 +1715,11 @@ rule all:
         fig1 = rules.joinFig1.output,
         fig1png = rules.Figure1toPNG.output,
         rnatypegsea = expand(rules.rnatypeGSEA.output, puro=["minusPuromycin", ]),
-        cov = rules.plotCoveragesFig5.output,
         cov2 = rules.plotCoveragesFig2.output,
         f5volc = rules.plotVolcanoFigure5.output,
         f4volc = rules.plotVolcanoFigure4.output,
         f4enrich = rules.plotGOTermEnrichmentFig4.output,
-        f6enrich = rules.plotGOTermEnrichmentFig6.output,
+        f6enrich = rules.plotFULLGOTermEnrichment.output,
         f5venn = rules.plotVennsFigure5.output,
         fish = rules.Figure2toPNG.output,
         fig5 = rules.Figure5toPNG.output,
