@@ -7,24 +7,24 @@ import os
 import tifffile
 import plotly.express as px
 import plotly.io as pio
-from scipy.stats import ttest_rel
+from scipy.stats import ttest_rel, ttest_ind
 from statsmodels.stats.multitest import multipletests
 
 
-def main(spots_df, cfg, outfile, outtsv):
-    probes = ["psbA2", "cupA"]
-    treatments = ["untreated", "Puromycin"]
+def calc_summary_and_pval(spots_df, probes):
     spots_df = spots_df[spots_df.Treatment != "Kasugamycin"]
     # Filter dataframe for selected probe
     df = spots_df[spots_df["Probe"].isin(probes)]
-    df = df.groupby(["Treatment","Probe",  "Figure", ])["ProbeIntensity"].mean().reset_index()
+    df = df.groupby(["Treatment", "Probe", "Figure", ])["ProbeIntensity"].mean().reset_index()
     # Run Welch’s t-test for each probe
     results = []
     for probe in df['Probe'].unique():
         untreated = df.query("Treatment == 'untreated' and Probe == @probe")['ProbeIntensity']
         puromycin = df.query("Treatment == 'Puromycin' and Probe == @probe")['ProbeIntensity']
-
-        tstat, pval = ttest_rel(untreated, puromycin,)
+        if len(untreated) == len(puromycin):
+            tstat, pval = ttest_rel(untreated, puromycin, )
+        else:
+            tstat, pval = ttest_ind(untreated, puromycin, equal_var=False)
         results.append({'Probe': probe, 't-statistic': tstat, 'p-value': pval})
 
     results_df = pd.DataFrame(results)
@@ -32,6 +32,15 @@ def main(spots_df, cfg, outfile, outtsv):
 
     results_df['adj p-value (FDR)'] = pvals_corr
     results_df['significant (FDR<0.05)'] = reject
+    return df, results_df
+
+
+
+
+def main(spots_df, cfg, outfile, outtsv):
+    probes = ["psbA2", "cupA"]
+    treatments = ["untreated", "Puromycin"]
+    df, results_df = calc_summary_and_pval(spots_df, probes)
     # Create subplot grid: 2 rows, 2 columns
     fig = make_subplots(
         rows=2,

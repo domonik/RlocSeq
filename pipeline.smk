@@ -1507,12 +1507,13 @@ rule plotFISHFigure4:
 
 rule plotFISHFigure5:
     input:
-        tsv=rules.processFISHImages.output.tsv
+        tsv=rules.processFISHImages.output.tsv,
+        intensities=rules.processFISHImages.output.spots_df
     output:
         svg = config["F5FISH"]["file"]
     params:
         probes =[("fusB","untreated","Replicate 1"), ("fusB","Puromycin","Replicate 1"), ("psaA", "untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")],
-        layout= config["F4FISH"]["layout"],
+        layout= config["F5FISH"]["layout"],
         subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
                               column_titles=["- Puromycin", "+ Puromycin", "- Puromycin", "+ Puromycin"])
 
@@ -1520,21 +1521,32 @@ rule plotFISHFigure5:
     script: "scripts/plotFISHFigure4.py"
 
 
+rule plotFISHFigure5:
+    input:
+        tsv=rules.processFISHImages.output.tsv,
+    output:
+        svg = config["F5FISH"]["file"]
+    params:
+        probes =[("psbA2","untreated","Replicate 1"), ("psbA2","Puromycin","Replicate 1"), ("rpl10_12", "untreated", "Replicate 1"), ("rpl10_12", "Puromycin", "Replicate 1")],
+        layout= config["F5FISH"]["layout"],
+        subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
+                              column_titles=["- Puromycin", "+ Puromycin", "- Puromycin", "+ Puromycin"])
 
-# rule joinFig5:
-#     input:
-#         coverage = rules.plotCoveragesFig5.output.svg,
-#         fish = rules.plotFISHFigure5.output.svg,
-#         volcano = rules.plotVolcanoFigure5.output.svg,
-#         venn = rules.plotVennsFigure5.output.svg
-#     params:
-#         figures = config["F5"],
-#         ges_y = 750
-#     conda: "envs/svgutils.yml"
-#     output:
-#         svg = "Pipeline/Paper/Figure5/Figure5.svg"
-#     script:
-#         "scripts/paperFigure.py"
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/plotFISHFigure4.py"
+
+
+rule joinFig5:
+    input:
+        files=[config[val]["file"] for key, val in config["F5"].items()]
+    params:
+        figures = config["F5"],
+        ges_y = 700
+    conda: "envs/svgutils.yml"
+    output:
+        svg = "Pipeline/Paper/Figure5/Figure5.svg"
+    script:
+        "scripts/paperFigure.py"
 
 rule checkTranscriptAbundanceGO:
     input:
@@ -1544,12 +1556,12 @@ rule checkTranscriptAbundanceGO:
         tsv = "Pipeline/SHIT/abundanceOfPlasmaMembrane.tsv"
     script: "scripts/checkTranscriptAbundanceGO.py"
 
-# rule Figure5toPNG:
-#     input:
-#         svg = rules.joinFig5.output.svg
-#     output:
-#         png = "Pipeline/Paper/Figure5/Figure5.png"
-#     shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
+rule Figure5toPNG:
+    input:
+        svg = rules.joinFig5.output.svg
+    output:
+        png = "Pipeline/Paper/Figure5/Figure5.png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
 
 rule plotVolcanoFigure4:
     input:
@@ -1691,7 +1703,7 @@ rule all:
         f6enrich = rules.plotGOTermEnrichmentFig6.output,
         f5venn = rules.plotVennsFigure5.output,
         fish = rules.Figure2toPNG.output,
-        #fish5 = rules.Figure5toPNG.output,
+        fig5 = rules.Figure5toPNG.output,
         fish3 = rules.Figure6toPNG.output,
         f3 = rules.Figure3toPNG.output,
         t1 = rules.Table1.output,

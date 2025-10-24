@@ -354,73 +354,6 @@ F2:
 
 
 
-
-Fig5Venn:
-  file: "Pipeline/Paper/Figure5/F5Venns.svg"
-  x: 0
-  y: 0
-  layout:
-    height: 300
-    width: 312
-    margin:
-      t: 30
-      r: 10
-      b: 50
-
-    legend:
-      orientation: "h"
-      y: 0.67
-      x: 0.5
-      xref: "paper"
-      yref: "paper"
-      yanchor: "top"
-      xanchor: "center"
-      bgcolor: "rgba(0, 0, 0, 0)"
-      font:
-        size: 10
-      title:
-        font:
-          size: 10
-
-
-VolcanoFigure5:
-  file: "Pipeline/Paper/Figure5/F5Volcano.svg"
-  x: 312
-  y: 0
-  highlight_go_term:
-    photosystem: "#ffe863"
-    ribosome: "#8f6b30"
-  layout:
-    width: 312
-    height: 300
-    margin:
-      t: 30
-      r: 30
-      b: 50
-
-    xaxis:
-      title_standoff: 1
-      title:
-        text: "Log<sub>2</sub>(FoldChange)"
-    yaxis:
-      title_standoff: 1
-      title:
-        text: "-Log<sub>10</sub>(pval)"
-    legend:
-      orientation: "h"
-  annotations:
-    psbA2:
-      x: 0.2
-      y: 18
-
-    rpl10:
-      x: -0.2
-      y: 10
-
-    rpl12:
-      x: 1.
-      y: 23
-
 PlusPuroCoverage:
   file: "Pipeline/Paper/Figure5/Coverages.svg"
   x: 0
@@ -442,13 +375,6 @@ PlusPuroCoverage:
 
 
 
-
-
-F5:
-  a: "Fig5Venn"
-  b: "VolcanoFigure5"
-  c: "PlusPuroCoverage"
-  d: "F5FISH"
 
 
 
@@ -720,13 +646,82 @@ F5Percent:
 
 
 
+
+
+Fig5Venn:
+  file: "Pipeline/Paper/Figure5/F5Venns.svg"
+  x: 312
+  y: 0
+  layout:
+    height: 300
+    width: 312
+    margin:
+      t: 30
+      r: 10
+      b: 50
+
+    legend:
+      orientation: "h"
+      y: 0.67
+      x: 0.5
+      xref: "paper"
+      yref: "paper"
+      yanchor: "top"
+      xanchor: "center"
+      bgcolor: "rgba(0, 0, 0, 0)"
+      font:
+        size: 10
+      title:
+        font:
+          size: 10
+
+
+VolcanoFigure5:
+  file: "Pipeline/Paper/Figure5/F5Volcano.svg"
+  x: 0
+  y: 100
+  highlight_go_term:
+    photosystem: "#ffe863"
+    ribosome: "#8f6b30"
+  layout:
+    width: 312
+    height: 200
+    margin:
+      t: 30
+      r: 30
+      b: 50
+
+    xaxis:
+      title_standoff: 1
+      title:
+        text: "Log<sub>2</sub>(FoldChange)"
+    yaxis:
+      title_standoff: 1
+      title:
+        text: "-Log<sub>10</sub>(pval)"
+    legend:
+      orientation: "h"
+  annotations:
+    psbA2:
+      x: 0.2
+      y: 18
+
+    rpl10:
+      x: -0.2
+      y: 10
+
+    rpl12:
+      x: 1.
+      y: 23
+
+
 F5FISH:
   file: "Pipeline/Paper/Figure5/F5FISH.svg"
   x: 0
-  y: 0
+  y: 300
   layout:
     width: 624
-    height: 300
+    height: 400
     legend:
       title:
         font:
@@ -738,3 +733,12 @@ F5FISH:
       r: 50
       t: 50
       b: 50
+
+
+
+
+F5:
+  a: "F5Percent"
+  b: "VolcanoFigure5"
+  c: "Fig5Venn"
+  d: "F5FISH"

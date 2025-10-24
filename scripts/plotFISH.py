@@ -8,6 +8,7 @@ import plotly.express as px
 import numpy as np
 import plotly.io as pio
 from scipy import stats
+from scripts.plotFISHIntensity import calc_summary_and_pval
 
 pio.renderers.default = "browser"
 
@@ -16,8 +17,22 @@ def _color_to_calpha(color: str, alpha: float = 0.2):
     color = color.split("(")[-1].split(")")[0]
     return f"rgba({color}, {alpha})"
 
-def main(file, probes, cfg, layout, subplot_params):
+def main(file, probes, cfg, layout, subplot_params, intensities=None):
     df = pd.read_csv(file, sep="\t")
+    if intensities is not None:
+        intensities = pd.read_csv(intensities, sep="\t")
+        probe_names = [probe[0] for probe in probes]
+        intensities, results_df = calc_summary_and_pval(intensities, probe_names)
+        specs = [
+            [{"type": "image"} for _ in range(len(probes))],
+            [{"type": "box", "colspan": 4}, None, None, None] ,# Row 2: one boxplot spanning both cols
+            # Row 1: two image plots
+            [{"type": "xy"} for _ in range(len(probes))],  # Row 1: two image plots
+        ]
+        row = 3
+    else:
+        specs = None
+        row = 2
     id_vars = ["Mask", "Image", "Probe", "Figure", "Treatment"]
     mode = "mean"
     cols = [col for col in df.columns if mode in col and "bg_mean" not in col]
@@ -46,10 +61,11 @@ def main(file, probes, cfg, layout, subplot_params):
     summary = summary[summary["variable"].astype(int) <= 20]
     col_titles = [p[0] for p in probes]
     fig = make_subplots(
-        rows=2,
+        rows=2 if intensities is None else 3,
         cols=len(probes),
-        row_heights=[0.6, 0.4],
+        row_heights=[0.6, 0.4]if intensities is None else [0.4, 0.3, 0.3],
         x_title="distance to probe [nm]",
+        specs=specs,
         **subplot_params
 
 
@@ -71,8 +87,6 @@ def main(file, probes, cfg, layout, subplot_params):
         text = "<b>n: </b>"
         subdf = summary[summary["Probe"] == probe]
         subdf = subdf[subdf["Treatment"] == treatment]
-
-        print(subdf)
         for j, f in enumerate(sorted(subdf["Figure"].unique())):
             color = color_map[f]
             sdf = subdf[subdf["Figure"] == f]
@@ -111,10 +125,36 @@ def main(file, probes, cfg, layout, subplot_params):
                 showlegend=False,
             ))
         fig.add_traces(
-            traces + errors, cols=i+1, rows=2
+            traces + errors, cols=i+1, rows=2 if intensities is None else 3
         )
+        if intensities is not None:
+            group = intensities[(intensities.Treatment == treatment) & (intensities.Probe == probe)]
+            values = group["ProbeIntensity"].tolist()
+            mean_val = np.mean(values)
+            std_val = np.std(values)
+            fig.add_trace(
+                go.Bar(
+                    x=[f"{treatment} – {probe}"],
+                    y=[mean_val],
+                    name=f"{treatment} – {probe}",
+                    marker=dict(color="#69BE28"),
+                    showlegend=False,
+
+                    error_y=dict(
+                        type="data",
+                        array=[std_val],
+                        visible=True,
+                        color="black",  # <-- sets error bar line color
+                        thickness=1.5,  # optional: makes the line a bit thicker
+                        width=4
+                    )
+                ),
+                row=2,
+                col=1
+            )
         vint = float(np.median(np.asarray(amaxes)))
-        domain = f"{i+1+len(probes)} domain"
+        didx = i+1+len(probes) if intensities is None else i+1 + len(probes) + 1
+        domain = f"{didx} domain"
         fig.add_annotation(
             x=1, y=1,
             yref=f"y{domain}",
@@ -127,7 +167,7 @@ def main(file, probes, cfg, layout, subplot_params):
             opacity=1,
 
         )
-        fig.add_vline(vint, col=i+1, row=2, line=dict(dash="dash", color="black", width=1), layer="above")
+        fig.add_vline(vint, col=i+1, row=row, line=dict(dash="dash", color="black", width=1), layer="above")
     colors = list(color_map.values())
     fig.add_traces(
         [
@@ -158,6 +198,29 @@ def main(file, probes, cfg, layout, subplot_params):
 
         )
     )
+    if intensities is not None:
+        fig.add_trace(
+            go.Bar(
+                x=[None],
+                y=[None],
+                name=f"Intensity",
+                marker=dict(color="#69BE28"),
+                showlegend=True,
+                legendgroup="Intensities",
+                legendgrouptitle=dict(text="Intensities"),
+
+            ),
+            row=2,
+            col=1
+        )
+        fig.update_xaxes(
+            showticklabels=False, row=2
+        )
+        fig.update_yaxes(
+            title=dict(text="mean<br>Intensity"), row=2
+        )
+
+
     fig.add_trace(
         go.Scatter(
             x=[None],
@@ -176,11 +239,12 @@ def main(file, probes, cfg, layout, subplot_params):
     fig.update_xaxes(
         showgrid=False, showticklabels=False, row=1
     )
+
     fig.update_yaxes(
         showgrid=False, showticklabels=False, row=1
     )
     fig.update_yaxes(
-        range=[0, 1], row=2, showticklabels=False,
+        range=[0, 1], row=row, showticklabels=False,
     )
 
     fig.update_layout(
@@ -189,8 +253,8 @@ def main(file, probes, cfg, layout, subplot_params):
     )
 
     fig.update_yaxes(
-        title=dict(text="normalized intensity"),
-        row=2,
+        title=dict(text="normalized<br>intensity"),
+        row=row,
         col=1,
         showticklabels=True,
     )

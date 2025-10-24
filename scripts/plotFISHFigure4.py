@@ -12,14 +12,15 @@ if __name__ == '__main__':
         cfg = snakemake.config
         outfile = snakemake.output.svg
         subplot_params = snakemake.params.subplot
+        intensities = snakemake.input.intensities
     else:
         import yaml
         file = "Pipeline/FISH/all_distributions.tsv"
+        intensities = "Pipeline/FISH/single_spots.tsv"
         outfile = "foo.svg"
         with open("configFile.yml", 'r') as f:
             cfg = yaml.safe_load(f)
-        probes = [("psbA2", "untreated", "Replicate 1"), ("psbA2", "Puromycin", "Replicate 1"),
-                  ("16S rRNA", "untreated", "Replicate 1"), ("16S rRNA", "Puromycin", "Replicate 1")]
+        probes =[("fusB","untreated","Replicate 1"), ("fusB","Puromycin","Replicate 1"), ("psaA", "untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")]
 
         layout = cfg["F5FISH"]["layout"]
         subplot_params = dict(vertical_spacing=0.05, horizontal_spacing=0.05,
@@ -27,7 +28,7 @@ if __name__ == '__main__':
 
     hs = subplot_params["horizontal_spacing"]
     l = (1- (len(probes)-1)*hs) / len(probes)
-    fig = main(file, probes, cfg, layout, subplot_params)
+    fig = main(file, probes, cfg, layout, subplot_params, intensities=intensities)
     y = 1.1
     fig.add_shape(
         type="line",
