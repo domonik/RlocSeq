@@ -48,7 +48,7 @@ def main(spots_df, cfg, outfile, outtsv):
         row_heights=[0.6, 0.4],  # top row for images, bottom for boxplot
         specs=[
             [{"type": "image"}, {"type": "image"}, {"type": "image"}, {"type": "image"}],  # Row 1: two image plots
-            [{"type": "box", "colspan": 4}, None, None, None]  # Row 2: one boxplot spanning both cols
+            [{"type": "box", "colspan": 2}, None, {"type": "box", "colspan": 2}, None]  # Row 2: one boxplot spanning both cols
         ],
         horizontal_spacing=0.05,
         vertical_spacing=0.02,
@@ -74,7 +74,7 @@ def main(spots_df, cfg, outfile, outtsv):
             )
     colors = {"untreated": cfg["membraneColor"], "Puromycin": cfg["cytosolColor"]}
     # Add boxplot spanning both columns
-    for probe in probes:
+    for pidx , probe in enumerate(probes):
         for treatment in treatments:
             group = df[(df.Treatment == treatment) & (df.Probe == probe)]
             name = "- Puromycin" if treatment == "untreated" else "+ Puromycin"
@@ -87,11 +87,11 @@ def main(spots_df, cfg, outfile, outtsv):
                     marker=dict(color=colors.get(treatment, "black")),
                 ),
                 row=2,
-                col=1
+                col=1 if pidx == 0 else 3
             )
     fig.update_xaxes(showticklabels=False, row=1)
     fig.update_yaxes(showticklabels=False, row=1)
-    fig.update_yaxes(title=dict(text="mean Intensities"), row=2)
+    fig.update_yaxes(title=dict(text="mean Intensities"), row=2, col=1)
 
 
     hs = 0.1

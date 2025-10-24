@@ -472,7 +472,7 @@ rule joinTables:
     run:
         df_minus = pd.read_csv(input.deseqResMinus, sep="\t")
         df_plus = pd.read_csv(input.deseqResPlus, sep="\t")
-        df_puro = pd.read_csv(input.deseqResPlus, sep="\t")
+        df_puro = pd.read_csv(input.deseqResTC, sep="\t")
         df = df_minus.join(df_plus, rsuffix="_plusPuromycin", lsuffix="_minusPuromycin", how="outer")
         df_puro.columns = [f"{col}_tc" for col in df_puro.columns]
         df = df.join(df_puro, rsuffix="_totalCell", lsuffix="_totalCell", how="outer")
