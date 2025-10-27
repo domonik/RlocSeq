@@ -1072,7 +1072,7 @@ rule ntFreqs:
 rule addRBP3Data:
     input:
         rbp3  = "initialData/rbp3data.tsv",
-        joined = rules.addFastatoTSV.output.tsv
+        joined = rules.joinTables.output.tsv
     output:
         trash_tsv_for_R = "Pipeline/RBP3Check/trashTSVForR.tsv",
         useful_tsv = "Pipeline/RBP3Check/rbp3joined.tsv",
@@ -1100,63 +1100,6 @@ rule rbp3GSEA:
         gsFile = "Pipeline/RBP3Check/gseaInfo_puro{puro}.tsv"
     conda: "envs/clusterprofiler.yml",
     script: "scripts/RBP3GSEA.R"
-
-rule plotRBP3GSEA:
-    input:
-        df=rules.rbp3GSEA.output.gsFile,
-        info=rules.rbp3GSEA.output.enrichedFile,
-    output:
-        html = "Pipeline/RBP3Check/RBP3_GSEA_{puro}.html",
-        svg = "Pipeline/RBP3Check/RBP3_GSEA_{puro}.svg",
-    params:
-        figureConfig="RBP3GSEA",
-        show_zero_lfc=True,
-        condition_name=None,
-        base_name=None
-    conda: "envs/matplotlibPlotly.yml"
-    script:
-        "scripts/RBP3GSEAPlot.py"
-
-rule plotRBP3Venns:
-    input:
-        tsv = rules.addRBP3Data.output.useful_tsv
-    output:
-        html = "Pipeline/RBP3Check/RBP3_Venn.html",
-        svg = "Pipeline/RBP3Check/RBP3_Venn.svg",
-    conda: "envs/matplotlibPlotly.yml"
-    script: "scripts/rbp3Venns.py"
-
-
-rule joinRBP3Plot:
-    input:
-        f1 = rules.plotRBP3Venns.output.svg,
-        f2 = expand(rules.plotRBP3GSEA.output.svg, puro=["plusPuromycin"])[0],
-    output:
-        svg = "Pipeline/Paper/RBP3Figure.svg"
-    conda: "envs/svgutils.yml"
-    script: "scripts/joinPlots.py"
-
-
-rule extractRBP3Seqs:
-    input:
-        tsv = rules.addRBP3Data.output.useful_tsv
-    params:
-        type= "RBP3_Target"
-    output:
-        fasta = "Pipeline/RBP3Check/rbp3Seqs.fa"
-    conda: "envs/biopython.yml"
-    script: "scripts/extractRBP3Fasta.py"
-
-rule fimoRBP3:
-    input:
-        fasta = rules.extractRBP3Seqs.output.fasta,
-        motifs = rules.memeMotifStayed.output.dir
-    output:
-        dir = directory("Pipeline/RBP3Check/FIMO_t{type}/")
-    conda:
-        "envs/meme.yml"
-    shell:
-        "fimo  --oc {output.dir}  --thresh 1.0E-4 --bfile --motif-- {input.motifs}/streme.txt {input.fasta}"
 
 
 
@@ -1642,6 +1585,53 @@ rule Figure4toPNG:
 
 
 
+rule plotRBP3GSEA:
+    input:
+        df=expand(rules.rbp3GSEA.output.gsFile, puro="plusPuromycin")[0],
+        info=expand(rules.rbp3GSEA.output.enrichedFile, puro="plusPuromycin")[0],
+    output:
+        html = "Pipeline/RBP3Check/RBP3_GSEA_plusP.html",
+        svg = config["RBP3GSEA"]["file"],
+    params:
+        figureConfig="RBP3GSEA",
+        show_zero_lfc=True,
+        condition_name=None,
+        base_name=None
+    conda: "envs/matplotlibPlotly.yml"
+    script:
+        "scripts/RBP3GSEAPlot.py"
+
+rule plotRBP3Venns:
+    input:
+        tsv = rules.addRBP3Data.output.useful_tsv
+    output:
+        html = "Pipeline/Figure8/RBP3_Venn.html",
+        svg = config["RBP3Venn"]["file"]
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/rbp3Venns.py"
+
+
+
+rule joinFig8:
+    input:
+        files=[config[val]["file"] for key, val in config["F8"].items()]
+    params:
+        ges_y= 400,
+        figures= config["F8"],
+
+    output:
+        svg = "Pipeline/Paper/Figure8/Figure8.svg"
+    conda: "envs/svgutils.yml"
+    script: "scripts/paperFigure.py"
+
+rule Figure8toPNG:
+    input:
+        svg = rules.joinFig8.output.svg
+    output:
+        png =  "Pipeline/Paper/Figure8/Figure8.png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
+
+
 rule all:
     default_target: True
     input:
@@ -1674,8 +1664,6 @@ rule all:
         test = expand(rules.plotGSEA.output, condition="M", baseline="C", run_dir=[os.path.basename(config["RUNS"][run]["RUN_DIR"]) for run in config["RUNS"] if "TC" not in run]),
         subcell = rules.download_subcell.output,
         rbp3 = expand(rules.plotRBP3GSEA.output, puro=["plusPuromycin", ]),
-        rbp3venn = rules.joinRBP3Plot.output,
-        rbp3fimo = expand(rules.fimoRBP3.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
         #prdwep = expand(rules.checkMotifDistribution.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
         fig1 = rules.joinFig1.output,
         fig1png = rules.Figure1toPNG.output,
@@ -1698,6 +1686,8 @@ rule all:
         transmemgsea = expand(rules.TransmembraneGSEA.output.enriched, puro=["minusPuromycin", "plusPuromycin"], condition="M", baseline="C"),
         f5perc = config["F5Percent"]["file"],
         f5fish = config["F5FISH"]["file"],
-        #tpmemabundace = rules.checkTranscriptAbundanceGO.output
+        rbp3venn= rules.Figure8toPNG.output,
+
+#tpmemabundace = rules.checkTranscriptAbundanceGO.output
 
 

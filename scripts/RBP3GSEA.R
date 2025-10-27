@@ -13,7 +13,6 @@ terms <- grep("RBP3_Target", colnames(df_sorted), value = TRUE)
 print(head(df_sorted))
 # Convert these columns to logical (boolean)
 df_sorted[, terms] <- lapply(df_sorted[, terms], function(x) x == "True") # why the fuck is this necessary
-
 # Convert these columns to logical (boolean)
 # why the fuck is this necessary
 efile <- snakemake@output[["enrichedFile"]]
@@ -25,7 +24,7 @@ customGSEA(
   terms = terms,
   enrichedFile = efile,
   gsFile = gsfile,
-  pval_cutoff = 0.05
+  pval_cutoff = 1
 )
 
 

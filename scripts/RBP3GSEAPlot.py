@@ -12,7 +12,7 @@ def main(df, info, config, output, params):
     to_display = len(descs)
 
     rh = [0.7] + [0.3 / to_display for _ in range(to_display)]
-    colors = [config["membraneColor"], config["cytosolColor"]]
+    colors = [config["membraneColor"], config["cytosolColor"], "#002244"]
     fig = plot_gsea(
         df, info, show_zero_lfc=params["show_zero_lfc"],
         condition_name=params["condition_name"],

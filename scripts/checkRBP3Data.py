@@ -6,13 +6,12 @@ from scipy.stats import mannwhitneyu
 
 def main(snakemake_input, config, output):
     df = pd.read_csv(snakemake_input.rbp3, sep="\t")
-    df = df[~df.Gene.str.contains("’")]
     joined = pd.read_csv(snakemake_input.joined, sep="\t")
     joined = joined.merge(df, on="locus_tag", how="left")
     joined["RBP3_Target"] = (~pd.isna(joined["log2FC"])) == True
     joined_out = joined[~(joined["UTR"] | joined["asRNA"])]  # filter because they are not in the rbp3 dataset
     p=0
-    loc = ["Cytoplasm", "Cell membrane", "Cellular thylakoid membrane"]
+    loc = ["Cellular thylakoid membrane"]
     cols = []
     for l in loc:
         col = f"RBP3 Target and {l}".replace(" ", "_")
@@ -92,7 +91,7 @@ def main(snakemake_input, config, output):
     fig.update_xaxes(type='category')
     fig.update_layout(config["LayoutDefault"])
     fig.update_layout(
-        config["RBP3A"]["layout"]
+        config["RBP3GSEA"]["layout"]
     )
 
     joined = joined[~pd.isna(joined["log2FC"])]
