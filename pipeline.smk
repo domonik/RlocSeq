@@ -325,7 +325,7 @@ rule joinTables:
         uniprot= rules.download_subcell.output.tsv,
 
     output:
-        tsv = "Pipeline/Summary/joinedDESeq_Table.tsv",
+        tsv = "Pipeline/Paper/Supplementary/SummaryTable.tsv",
         output_for_R_because_this_stupid_language_cannot_even_read_tsv_files = "Pipeline/Summary/joinedDESeqForstupidR.tsv",
         stayed = "Pipeline/Summary/stayedAtMembrane.tsv",
     run:
@@ -366,6 +366,7 @@ rule joinTables:
         df = df.merge(uniprot, left_on="merge_tag", right_on="locus_tag", how="left")
         df.index = old_index
 
+        df = df.rename({"Cell inner membrane": "Plasmamembrane"}, axis=1)
 
         df["minusPMembran"] = (df["log2FoldChange_minusPuromycin"] >= config["primary"]["log2FCCutOff"]) & (df["padj_minusPuromycin"] <= config["primary"]["pAdjCutOff"])
         df["minusPCytosol"] = (df["log2FoldChange_minusPuromycin"] <= -config["primary"]["log2FCCutOff"]) & (df["padj_minusPuromycin"] <= config["primary"]["pAdjCutOff"])
@@ -584,7 +585,7 @@ rule checkProteinLocalization:
     input:
         deseq_res = rules.joinTables.output.tsv,
     output:
-        svg = "Pipeline/SubcellularLoc/SubcellLoc.svg",
+        svg = config["F3SubCellLoc"]["file"],
         r_is_not_a_valid_programming_language_and_no_one_should_use_this_bullshit = "Pipeline/SubcellularLoc/SubcellLocSameBullshitButCauseRCantReadDataframesItNeedsToBePreprocessed.tsv"
 
     script: "scripts/checkMembraneDistribution.py"
@@ -1052,7 +1053,7 @@ rule plotFISHFigure3:
     params:
         probes =[("16S rRNA", "untreated", "Replicate 1")],
         layout= config["F3FISH"]["layout"],
-        subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,)
+        subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05, column_titles=["16S rRNA"],)
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISHFigure3.py"

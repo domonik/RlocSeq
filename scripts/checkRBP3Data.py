@@ -97,7 +97,7 @@ def main(snakemake_input, config, output):
     joined = joined[~pd.isna(joined["log2FC"])]
     df = joined
     fig = go.Figure()
-    for i in ("Cytoplasm", "Membrane", "Cell membrane", "Cell inner membrane", "Cellular thylakoid membrane"):
+    for i in ("Cytoplasm", "Membrane", "Cell membrane", "Plasmamembrane", "Cellular thylakoid membrane"):
         sdf = df[df[i] == True]
         ssdf = sdf[sdf["stayedAtMembrane"] == True]
         nsdf = sdf[~(sdf["stayedAtMembrane"] == True)]

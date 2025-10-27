@@ -18,7 +18,7 @@ def extract_terms_before_brackets(text):
 
 def check_membrane_dist(table, config, output, uni_col="Gene Names (ordered locus)"):
     df = pd.read_csv(table, sep="\t")
-    x = ("Cytoplasm", "Membrane", "Cell membrane", "Cell inner membrane", "Cellular thylakoid membrane")
+    x = ("Cytoplasm", "Plasmamembrane", "Cellular thylakoid membrane")
 
     #odf = odf[["locus_tag_x", "Gene Names", "mRNA", "UTR", "antisense", "non-coding"] + list(x)]
 
@@ -37,14 +37,14 @@ def check_membrane_dist(table, config, output, uni_col="Gene Names (ordered locu
 
     cell_membrane = df[df["Cell membrane"] == True]
     membrane = df[df["Membrane"] == True]
-    inner_membrane = df[df["Cell inner membrane"] == True]
+    inner_membrane = df[df["Plasmamembrane"] == True]
     thylakoid = df[df["Cellular thylakoid membrane"] == True]
     cytoplasm = df[df["Cytoplasm"] == True]
     fig = go.Figure()
 
 
 
-    all = np.asarray([cytoplasm.shape[0], membrane.shape[0], cell_membrane.shape[0], inner_membrane.shape[0], thylakoid.shape[0]])
+    all = np.asarray([cytoplasm.shape[0], inner_membrane.shape[0], thylakoid.shape[0]])
     traces = []
     parts = {
         "Cytosol enriched": (config["cytosolColor"], None),
@@ -53,7 +53,7 @@ def check_membrane_dist(table, config, output, uni_col="Gene Names (ordered locu
 
     }
     for part, (color, pattern) in parts.items():
-        t = np.asarray([cytoplasm[part].sum(), membrane[part].sum(), cell_membrane[part].sum(), inner_membrane[part].sum(), thylakoid[part].sum()])
+        t = np.asarray([cytoplasm[part].sum(), inner_membrane[part].sum(), thylakoid[part].sum()])
         print(t)
         trace = (t / all) * 100
         if np.all(trace == 0):
