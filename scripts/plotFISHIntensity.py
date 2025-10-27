@@ -11,6 +11,9 @@ from scipy.stats import ttest_rel, ttest_ind
 from statsmodels.stats.multitest import multipletests
 
 
+pio.renderers.default = "browser"
+
+
 def calc_summary_and_pval(spots_df, probes):
     spots_df = spots_df[spots_df.Treatment != "Kasugamycin"]
     # Filter dataframe for selected probe
@@ -52,9 +55,11 @@ def main(spots_df, cfg, outfile, outtsv):
         ],
         horizontal_spacing=0.05,
         vertical_spacing=0.02,
-        subplot_titles=[f"- Puromycin", "+ Puromycin", "- Puromycin", "+ Puromycin"]
+        subplot_titles=[f"untreated", "Puromycin", "untreated", "Puromycin"]
     )
-
+    spots_df["z_intensity"] = spots_df.groupby("Image")["ProbeIntensity"].transform(
+        lambda x: (x - x.min()) / (x.max() - x.min())
+    )
     # Add images for each treatment
     idx = 0
     for probe in probes:
@@ -72,7 +77,7 @@ def main(spots_df, cfg, outfile, outtsv):
                 row=1,
                 col=idx
             )
-    colors = {"untreated": cfg["membraneColor"], "Puromycin": cfg["cytosolColor"]}
+    colors = {"untreated": cfg["cytosolColor"], "Puromycin": cfg["membraneColor"]}
     # Add boxplot spanning both columns
     for pidx , probe in enumerate(probes):
         for treatment in treatments:
@@ -82,7 +87,7 @@ def main(spots_df, cfg, outfile, outtsv):
             fig.add_trace(
                 go.Box(
                     y=group["ProbeIntensity"].tolist(),
-                    name=f"{treatment} – {probe}",
+                    name=f"{treatment} – <i>{probe}</i>",
                     boxmean=True,
                     marker=dict(color=colors.get(treatment, "black")),
                 ),
@@ -127,7 +132,7 @@ def main(spots_df, cfg, outfile, outtsv):
         xanchor="center",
         y=y,
         yanchor="bottom",
-        text=probes[0],
+        text=f"<i>{probes[0]}</i>",
         showarrow=False,
     )
     fig.add_annotation(
@@ -137,7 +142,7 @@ def main(spots_df, cfg, outfile, outtsv):
         xanchor="center",
         y=y,
         yanchor="bottom",
-        text=probes[1],
+        text=f"<i>{probes[1]}</i>",
         showarrow=False,
     )
 

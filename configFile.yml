@@ -415,9 +415,9 @@ F4Percent:
     width: 312
     height: 100
     margin:
-      r: 10
+      r: 5
       t: 30
-      l: 10
+      l: 5
     legend:
       orientation: "h"
       y: 1.2
@@ -428,6 +428,40 @@ F4Percent:
 
 
 F4Volcano:
+  annotations:
+    rnpB:
+      x: -0.3
+      y: 9.5
+
+    psaC:
+      x: -1.8
+      y: 9
+    rimO:
+      x: 0.9
+      y: 4
+    psbA2:
+      x: 4
+      y: 3
+    rps21:
+      x: 1.1
+      y: 11
+
+    rpl10:
+      x: 2
+      y: 13.5
+
+    rpl17:
+      x: 3.2
+      y: 6
+    pilA9:
+      x: 0.5
+      y: 7
+    pilA10:
+      x: -4.2
+      y: 8
+    pilA11:
+      x: -5
+      y: 3.2
   file: "Pipeline/Paper/Figure4/F4Volcano.svg"
   x: 0
   y: 100
@@ -545,9 +579,9 @@ F5Percent:
     width: 312
     height: 100
     margin:
-      r: 10
+      r: 5
       t: 30
-      l: 10
+      l: 5
     legend:
       orientation: "h"
       y: 1.2

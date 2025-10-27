@@ -366,6 +366,7 @@ rule joinTables:
         df = df.merge(uniprot, left_on="merge_tag", right_on="locus_tag", how="left")
         df.index = old_index
 
+
         df["minusPMembran"] = (df["log2FoldChange_minusPuromycin"] >= config["primary"]["log2FCCutOff"]) & (df["padj_minusPuromycin"] <= config["primary"]["pAdjCutOff"])
         df["minusPCytosol"] = (df["log2FoldChange_minusPuromycin"] <= -config["primary"]["log2FCCutOff"]) & (df["padj_minusPuromycin"] <= config["primary"]["pAdjCutOff"])
         df["plusPCytosol"] = (df["log2FoldChange_plusPuromycin"] <= -config["primary"]["log2FCCutOff"]) & (df["padj_plusPuromycin"] <= config["primary"]["pAdjCutOff"])
@@ -410,6 +411,8 @@ rule joinTables:
             how="left"
         )
         #df = df.merge( tus_expanded.rename(columns={"locus_tag": "locus_tag_norm"}),on="locus_tag_norm",how="left")
+        df.loc[df["gene_name"] == df["locus_tag"], "gene_name"] = df["Gene Names"].str.split(" ").str[0]
+
         df.to_csv(output.tsv, sep="\t", index=False)
 
         rtkeys = [key for key in list(config["RNA_TYPE_COLORS"].keys()) if key in df.columns]
@@ -879,8 +882,8 @@ rule PercentagePlotF4:
     output:
         svg = config["F4Percent"]["file"],
     params:
-        condition="- Puromycin",
-        baseline="+ Puromycin",
+        condition="untreated",
+        baseline="Puromycin",
         figureConfig="F4Percent",
         name="FOO",
         log2FCCutOff=config["primary"]["log2FCCutOff"],
@@ -1093,14 +1096,16 @@ rule plotVennsFigure5:
 
 rule plotVolcanoFigure5:
     input:
-        tsv=expand(rules.second_extractDESeqResult.output.result_table,condition="M",baseline="C")[0],
+        tsv=rules.joinTables.output.tsv,
         go=expand(rules.second_GOEnrichment.output.up, condition="M", baseline="C")[0],
-        add_data = "initialData/locusTagtoGeneName.csv"
     output:
         svg = config["VolcanoFigure5"]["file"],
-        html="Pipeline/Paper/Figure5/F5Volcano.html"
+        html="Pipeline/Paper/Figure5/F5Volcano.html",
     params:
-        figureConfig = "VolcanoFigure5"
+        figureConfig = "VolcanoFigure5",
+        suffix= "plusPuromycin",
+        basename= "Cytosol",
+        condition_name= "Membrane"
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/VolcanoFigure5.py"
 
@@ -1233,11 +1238,13 @@ rule Figure5toPNG:
 
 rule plotVolcanoFigure4:
     input:
-        tsv=expand(rules.tc_extractDESeqResult.output.result_table,condition="plusP",baseline="minusP")[0],
+        tsv=rules.joinTables.output.tsv,
         go=expand(rules.tc_GOEnrichment.output.up, condition="plusP", baseline="minusP")[0],
-        add_data= "initialData/locusTagtoGeneName.csv"
     params:
-        figureConfig = "F4Volcano"
+        figureConfig = "F4Volcano",
+        suffix = "tc",
+        basename = "untreated",
+        condition_name = "Puromycin"
     output:
         svg = config["F4Volcano"]["file"],
         html="Pipeline/Paper/Figure4/F4Volcano.html"

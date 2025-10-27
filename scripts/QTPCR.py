@@ -39,6 +39,7 @@ def main(tsv, cfg, outfile):
     )
     agg = agg.merge(ttest_df, on="Probe", how="left")
     agg["significance"] = agg["p_value"].apply(significance_label)
+    agg["Probe"] = "<i>" + agg["Probe"] + "</i>"
     fig.add_trace(
         go.Bar(
             x=agg["Probe"],

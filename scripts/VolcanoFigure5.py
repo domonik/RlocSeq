@@ -3,11 +3,14 @@ from DEplots.volcano import volcano_from_deseq_result
 import plotly.graph_objs as go
 import numpy as np
 
-def main(tsv, add_data, go_terms, output, config, params):
+def main(tsv, go_terms, output, config, params):
+    suffix = params.suffix
     df = pd.read_csv(tsv, sep="\t")
-    add_data = pd.read_csv(add_data, sep=",")
-    df = df.merge(add_data, left_index=True, right_on="locus_tag")
-    df = df.set_index("locus_tag")
+    df = df[["locus_tag", "gene_name", f"log2FoldChange_{suffix}", f"padj_{suffix}"]]
+    df = df.rename({
+        f"log2FoldChange_{suffix}": "log2FoldChange",
+        f"padj_{suffix}": "padj",
+    }, axis=1)
     go_df = pd.read_csv(go_terms, sep="\t")
     highlight = {}
     vc = params["figureConfig"]
@@ -23,8 +26,8 @@ def main(tsv, add_data, go_terms, output, config, params):
         highlight=highlight,
         lfc_cutoff=config["RUNS"]["secondary"]["log2FCCutOff"],
         padj_cutoff=config["RUNS"]["secondary"]["pAdjCutOff"],
-        condition_name="+ Puromycin",
-        base_name="- Puromycin",
+        condition_name=params.condition_name,
+        base_name=params.basename,
         highlight_up_color=config["membraneColor"],
         highlight_down_color=config["cytosolColor"],
         opacity=0.3
@@ -35,13 +38,13 @@ def main(tsv, add_data, go_terms, output, config, params):
             sdf = df[df["gene_name"] == anno]
             print(data)
             for _, n in sdf.iterrows():
-                if "UTR" not in n.name:
+                if "UTR" not in n.locus_tag:
                     fig.add_annotation(
                         x=n["log2FoldChange"],
                         y=-1 * np.log10(n["padj"]),
                         ax=data["x"],
                         ay=data["y"],
-                        text=anno,
+                        text=f"<i>{anno}</i>",
                         showarrow=True,
                         axref="x",
                         ayref="y",
@@ -64,7 +67,6 @@ def main(tsv, add_data, go_terms, output, config, params):
 if __name__ == '__main__':
     main(
         snakemake.input.tsv,
-        snakemake.input.add_data,
         snakemake.input.go,
         snakemake.output,
         snakemake.config,
