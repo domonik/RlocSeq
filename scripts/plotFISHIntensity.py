@@ -82,7 +82,7 @@ def main(spots_df, cfg, outfile, outtsv):
     for pidx , probe in enumerate(probes):
         for treatment in treatments:
             group = df[(df.Treatment == treatment) & (df.Probe == probe)]
-            name = "- Puromycin" if treatment == "untreated" else "+ Puromycin"
+            name = "untreated" if treatment == "untreated" else "Puromycin"
             name = name + f" {probe}"
             fig.add_trace(
                 go.Box(

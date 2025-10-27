@@ -5,7 +5,7 @@ import numpy as np
 
 def main(tsv1, tsv2, tsv3, config, svg, html):
     colorscale = ["purple", "yellow"]
-    fig = make_subplots(rows=1, cols=3, shared_yaxes=True, column_titles=["- Puromycin", "+ Puromycin", "intersection"])
+    fig = make_subplots(rows=1, cols=3, shared_yaxes=True, column_titles=["untreated", "+ Puromycin", "intersection"])
 
     for i, tsv in enumerate((tsv1, tsv2, tsv3)):
         df = pd.read_csv(tsv, sep="\t", )

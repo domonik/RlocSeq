@@ -756,6 +756,24 @@ F6:
 
 
 
+F7Scatter:
+  file: "Pipeline/Paper/Figure7/F7Scatter.svg"
+  x: 0
+  y: 450
+  layout:
+    width: 450
+    height: 400
+    legend:
+      title:
+        font:
+          size: 10
+
+    margin:
+      r: 50
+      t: 50
+      b: 50
+
+
 RBP3Venn:
   file: "Pipeline/Paper/Figure8/F8Venn.svg"
   x: 0

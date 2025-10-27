@@ -54,8 +54,8 @@ def main(tsv, config, svg):
         }
     )
     colors = ["rgba(105, 190, 40, 0.6)", "rgba(0, 34, 68, 0.6)"]
-    f1 = venn_to_plotly([minus_p_m, plus_p_m, ], L_labels=["- Puromycin", "+ Puromyin"], L_color=colors)
-    f2 = venn_to_plotly([minus_p_c, plus_p_c,], L_labels=["- Puromycin", "+ Puromyin"], L_color=colors)
+    f1 = venn_to_plotly([minus_p_m, plus_p_m, ], L_labels=["untreated", "Puromycin"], L_color=colors)
+    f2 = venn_to_plotly([minus_p_c, plus_p_c,], L_labels=["untreated", "Puromycin"], L_color=colors)
     figures = [[f2, f1]]
     multi_fig = copy_to_subfigures(figures, cols=2, multi_fig=multi_fig, n_sets=2)
 
@@ -88,7 +88,7 @@ def main(tsv, config, svg):
         if shape.xref == "x":
             shape.update(xref="x1", yref="y1")
     multi_fig.update_xaxes(
-        title=dict(text="- Puromycin<br>(log<sub>2</sub>FoldChange)"),
+        title=dict(text="untreated<br>(log<sub>2</sub>FoldChange)"),
         scaleanchor=None,
         range=[-5, 3],
         dtick=1,

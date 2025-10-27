@@ -90,7 +90,7 @@ def main(tsv, outputs, config):
 
     #df = df[~pd.isna(df["Uracil_content"])]
     treats = ["minusPuromycin", "plusPuromycin"]
-    fig = make_subplots(rows=1, cols=2, column_titles=["- Puromycin", "+ Puromycin"], shared_yaxes=True, x_title="log2FoldChange")
+    fig = make_subplots(rows=1, cols=2, column_titles=["untreated", "Puromycin"], shared_yaxes=True, x_title="log2FoldChange")
     for idx, puro in enumerate(treats):
         filter = "minusP" if puro == "minusPuromycin" else "plusP"
 

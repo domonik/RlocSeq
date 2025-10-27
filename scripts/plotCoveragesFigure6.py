@@ -89,8 +89,8 @@ def main(design, gff, db_name, output_path, cfg):
             mode="markers",
             name=f"Membrane",
             marker=dict(color=cfg["TRACE_COLORS"]["-p M"], symbol="square", size=10),
-            legendgroup="- Puromycin",
-            legendgrouptitle=dict(text="- Puromycin"),
+            legendgroup="untreated",
+            legendgrouptitle=dict(text="untreated"),
 
         )
     )
@@ -101,7 +101,7 @@ def main(design, gff, db_name, output_path, cfg):
             mode="markers",
             name=f"Cytosol",
             marker=dict(color=cfg["TRACE_COLORS"]["-p C"], symbol="square", size=10),
-            legendgroup="- Puromycin",
+            legendgroup="untreated",
             legendrank=1
 
         )

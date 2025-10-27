@@ -1142,7 +1142,7 @@ rule plotFISHFigure4:
         probes =[("psbA2","untreated","Replicate 1"), ("psbA2","Puromycin","Replicate 1"), ("16S rRNA", "untreated", "Replicate 1"), ("16S rRNA", "Puromycin", "Replicate 1")],
         layout= config["F4FISH"]["layout"],
         subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
-                              column_titles=["- Puromycin", "+ Puromycin", "- Puromycin", "+ Puromycin"])
+                              column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISHFigure4.py"
@@ -1159,7 +1159,7 @@ rule plotFISHFigure5:
         probes =[("fusB","untreated","Replicate 1"), ("fusB","Puromycin","Replicate 1"), ("psaA", "untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")],
         layout= config["F5FISH"]["layout"],
         subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
-                              column_titles=["- Puromycin", "+ Puromycin", "- Puromycin", "+ Puromycin"])
+                              column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISHFigure4.py"
@@ -1176,7 +1176,7 @@ rule plotFISHFigure6:
         probes =[("psbA2","untreated","Replicate 1"), ("psbA2","Puromycin","Replicate 1"), ("rpl10_12", "untreated", "Replicate 1"), ("rpl10_12", "Puromycin", "Replicate 1")],
         layout= config["F6FISH"]["layout"],
         subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
-                              column_titles=["- Puromycin", "+ Puromycin", "- Puromycin", "+ Puromycin"])
+                              column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISHFigure6.py"
@@ -1351,6 +1351,22 @@ rule Figure4toPNG:
 
 
 
+rule plotFigure7:
+    input:
+        tsv = rules.joinTables.output.tsv
+    output:
+        svg = config["F7Scatter"]["file"]
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/plotlfcFig7.py"
+
+rule Figure7toPNG:
+    input:
+        svg = rules.plotFigure7.output.svg
+    output:
+        png =  "Pipeline/Paper/Figure7/Figure7.png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
+
+
 rule plotRBP3GSEA:
     input:
         df=expand(rules.rbp3GSEA.output.gsFile, puro="plusPuromycin")[0],
@@ -1439,7 +1455,7 @@ rule plot16SFISH:
 
         layout = config["Supplement16SFISH"]["layout"],
         subplot = dict(vertical_spacing=0.05, horizontal_spacing=0.05,
-                              column_titles=["- Puromycin", "+ Puromycin", "- Puromycin", "+ Puromycin"])
+                              column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISH16SrRNA.py"
@@ -1493,7 +1509,8 @@ rule all:
         rbp3venn= rules.Figure8toPNG.output,
         supplement = rules.SupplementCorrelationtoPNG.output,
         supplement16FISH = rules.Supplement16SFISHtoPNG.output,
-        uracil = rules.SupplementUraciltoPNG.output
+        uracil = rules.SupplementUraciltoPNG.output,
+        f7 = rules.Figure7toPNG.output
 #tpmemabundace = rules.checkTranscriptAbundanceGO.output
 
 

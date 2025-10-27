@@ -15,7 +15,7 @@ def main(file, probes, cfg, layout, subplot_params):
     df = df.rename(d, axis=1)
     cols = [p for p in d.values() if int(p) <=20]
 
-def main(tsv, cfg):
+def main(tsv, cfg, outfile):
     df = pd.read_csv(tsv, sep="\t")
     fig = go.Figure()
     mp_m = df[df["minusPMembran"]]
@@ -24,7 +24,7 @@ def main(tsv, cfg):
 
     colors = ["rgb(138, 141, 143)", "rgb(0, 106, 56)", "rgb(0, 48, 135)", ]
     names = ["Not sig.", "Membrane", "Cytosol"]
-    lg  = "- Puromycin"
+    lg  = "untreated"
     for idx, subdf in enumerate([others, mp_m, mp_c, ]):
         color = colors[idx]
         fig.add_trace(
@@ -63,7 +63,7 @@ def main(tsv, cfg):
 
             )
         )
-    fig.update_xaxes(title="+ Puromyinc log<sub>2</sub>FoldChange")
+    fig.update_xaxes(title="Puromycin log<sub>2</sub>FoldChange")
     fig.update_yaxes(title="Total Cell log<sub>2</sub>FoldChange")
     color = "rgb(0, 0,0)"
     cmin = 0
@@ -79,7 +79,7 @@ def main(tsv, cfg):
                 cmax=cmax,
                 showscale=True,
                 colorbar=dict(
-                    title="abs(log2FC -Puromycin)",
+                    title="abs(log2FC untreated)",
                     len=0.4
                 )
             ),
@@ -93,7 +93,7 @@ def main(tsv, cfg):
             cmin=np.abs(subdf["log2FoldChange_minusPuromycin"]).min(),
             cmax=np.abs(subdf["log2FoldChange_minusPuromycin"]).max(),
             colorbar=dict(
-                title="abs(log2FC -Puromycin)",
+                title="abs(log2FC untreated)",
                 thickness=15,
                 len=0.8,
                 x=1.05,
@@ -105,8 +105,9 @@ def main(tsv, cfg):
         xaxis_title="+ Puromycin log<sub>2</sub>FoldChange",
         yaxis_title="Total Cell log<sub>2</sub>FoldChange"
     )
-
-    fig.write_html("Figure7.html")
+    fig.update_layout(cfg["LayoutDefault"])
+    fig.update_layout(cfg["F7Scatter"]["layout"])
+    fig.write_image(outfile)
     p = 0
 
 
@@ -115,12 +116,9 @@ def main(tsv, cfg):
 if __name__ == '__main__':
     if "snakemake" in globals():
         file = snakemake.input.tsv
-        probes = snakemake.params.probes
-        layout = snakemake.params.layout
         cfg = snakemake.config
         outfile = snakemake.output.svg
-        subplot_params = snakemake.params.subplot
-        intensities = snakemake.input.intensities
+
     else:
         import yaml
         file = "Pipeline/Summary/joinedDESeq_Table.tsv"
@@ -129,5 +127,5 @@ if __name__ == '__main__':
         with open("configFile.yml", 'r') as f:
             cfg = yaml.safe_load(f)
 
-    main(file, cfg)
+    main(file, cfg, outfile)
 

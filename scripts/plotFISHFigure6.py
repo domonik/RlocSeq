@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
         layout = cfg["F6FISH"]["layout"]
         subplot_params = dict(vertical_spacing=0.05, horizontal_spacing=0.05,
-                              column_titles=["- Puromycin", "+ Puromycin", "- Puromycin", "+ Puromycin"])
+                              column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
 
     hs = subplot_params["horizontal_spacing"]
     l = (1- (len(probes)-1)*hs) / len(probes)
