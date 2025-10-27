@@ -36,66 +36,8 @@ with open(config["tertiary-file"], "r") as handle:
 with open(config["total_cell-file"], "r") as handle:
     config["total_cell"] = yaml.safe_load(handle)
 
-with open(config["puromycinTC"], "r") as handle:
-    config["puromycinTC"] = yaml.safe_load(handle)
-
-with open(config["lightDarkLightConfig"], "r") as handle:
-    config["RUNS"]["lightDarkLight"] = yaml.safe_load(handle)
-
-with open(config["lightDarkDarkConfig"], "r") as handle:
-    config["RUNS"]["lightDarkDark"] = yaml.safe_load(handle)
-
-with open(config["lightDarkLightPuroConfig"], "r") as handle:
-    config["RUNS"]["lightDarkLightPuro"] = yaml.safe_load(handle)
-
-with open(config["lightDarkDarkPuroConfig"], "r") as handle:
-    config["RUNS"]["lightDarkDarkPuro"] = yaml.safe_load(handle)
-
-with open(config["lightDarkLightTCConfig"], "r") as handle:
-    config["RUNS"]["lightDarkLightTC"] = yaml.safe_load(handle)
-
-with open(config["lightDarkLightvsLightTCConfig"], "r") as handle:
-    config["RUNS"]["lightDarkLightvsLightTC"] = yaml.safe_load(handle)
-
-with open(config["lightDarkLightvsLightPlusPuroTCConfig"], "r") as handle:
-    config["RUNS"]["lightDarkLightvsLightPlusPuroTC"] = yaml.safe_load(handle)
-
-
-
-
-
-rule joinLandLDL:
-    input:
-        light = config["RUNS"]["primary"]["CountFile"],
-        light_dark = config["RUNS"]["lightDarkLightTC"]["CountFile"],
-    output:
-        file = "Pipeline/BothDatasetsJoined.tsv"
-    run:
-        import pandas as pd
-        import re
-        df1 = pd.read_csv(input.light, sep=",")
-        df2 = pd.read_csv(input.light_dark, sep=",")
-        def rename_col(col):
-            # Step 1: Replace 'minusP' with 'minP'
-            col = col.replace('minusP','minP')
-
-            # Step 2: Insert 'HL' between region and replicate
-            # Pattern: (prefix)_(region)_(replicate)
-            match = re.match(r"(.+P)_(\w+)_(R\d+)",col)
-            if match:
-                prefix, region, replicate = match.groups()
-                return f"{prefix}_{region}_HL_{replicate}"
-            else:
-                return col
-
-
-        df1.columns = [rename_col(col) for col in df1.columns]
-        df1.index = df1.iloc[:, 0]
-        df2.index = df2.iloc[:, 0]
-        df1 = df1[[col for col in df1.columns[1:]]]
-        df2 = df2[[col for col in df2.columns[1:]]]
-        df_all = df1.merge(df2,left_index=True,right_index=True)
-        df_all.to_csv(output.file, sep=",")
+with open(config["why-drop-replicate-file"], "r") as handle:
+    config["why_drop_replicate"] = yaml.safe_load(handle)
 
 
 
@@ -152,43 +94,12 @@ module tc_workflow:
 
 use rule * from tc_workflow as tc_*
 
+module why_drop_workflow:
+    snakefile: snakefile
+    config: config["why_drop_replicate"]
 
-module MemeMotif:
-    snakefile: "rules/DESeqMotifEnrichment.smk"
-    config: config["memeMotif"]
+use rule * from why_drop_workflow as why_drop_*
 
-use rule * from MemeMotif as meme_*
-
-module MemeMotif2:
-    snakefile: "rules/DESeqMotifEnrichment.smk"
-    config: config["memeMotif2"]
-
-use rule * from MemeMotif2 as meme2_*
-
-
-module MemeMotifLDL:
-    snakefile: "rules/DESeqMotifEnrichment.smk"
-    config: config["memeMotifLD_L"]
-
-use rule * from MemeMotifLDL as meme_ldl_*
-
-module MemeMotifLDD:
-    snakefile: "rules/DESeqMotifEnrichment.smk"
-    config: config["memeMotifLD_D"]
-
-use rule * from MemeMotifLDD as meme_ldd_*
-
-module MemeMotifLDDPuro:
-    snakefile: "rules/DESeqMotifEnrichment.smk"
-    config: config["memeMotifLD_DPuro"]
-
-use rule * from MemeMotifLDDPuro as meme_lddpuro_*
-
-module MemeMotifLDLPuro:
-    snakefile: "rules/DESeqMotifEnrichment.smk"
-    config: config["memeMotifLD_LPuro"]
-
-use rule * from MemeMotifLDLPuro as meme_ldlpuro_*
 
 def checkLocusTagspvals(other_df, col):
     def check(ltags):
@@ -404,58 +315,6 @@ rule plotHistogramm:
         fig.show()
 
 
-rule summarizeResult:
-    input:
-        deseqResMinus = rules.other_extractDESeqResult.output.result_table,
-        deseqResPlus = rules.second_extractDESeqResult.output.result_table,
-        mapping = rules.other_downloadOrganismGOTerms.output.go_terms,
-        gff = "initialData/20210217_syne_onlyUnique_withFeat.gff3"
-    output:
-        file = "Pipeline/RNAType/RNASummary_c{condition}_vs_b{baseline}.tsv"
-    run:
-        import numpy as np
-        df_minus = pd.read_csv(input.deseqResMinus, sep="\t")
-        df_plus = pd.read_csv(input.deseqResPlus, sep="\t")
-        gff = pd.read_csv(input.gff, sep="\t", names=["chr", "feature", "type", "start", "end", "dot", 	"strand", "score", "add_info"], skiprows=1)
-
-        mapping = pd.read_csv(input.mapping, sep="\t")
-        mapping.index = mapping["Gene Names (ordered locus)"]
-        mapping = mapping.drop("Gene Names (ordered locus)", axis=1)
-        df_minus = df_minus.merge(mapping, left_index=True, right_index=True, how="left")
-        df_plus = df_plus.merge(mapping, left_index=True, right_index=True, how="left")
-        out_d = {
-            "RNA Type": [],
-            "Total": [],
-            "minus Puromycin Cytosol": [],
-            "minus Puromycin Membran": [],
-            "plus Puromycin Cytosol": [],
-            "plus Puromycin Membran": [],
-        }
-        filters = {"mRNA": (r'\b(?:sl[rl]|ss[rl])\w*(?![-_])(?<!-as)\b', "Gene Names"), "5'UTR": ("5UTR", "idx"), "3'UTR": ("3UTR", "idx"), "tRNA": ("6803t", "idx"), "asRNA": ("-as", "idx"), "Photosystem": ("psa|psb", "Gene Names"), "Ribosome": ("rps|rpl", "Gene Names"), "CRISPR": ("CRISPR", "idx"), "ncRNA": ("ncr", "idx"), }
-        for name, (filter, column) in filters.items():
-
-            out_d["RNA Type"].append(name)
-            for idx, (s, df) in enumerate({"minus Puromycin": df_minus, "plus Puromycin": df_plus}.items()):
-                if column == "idx":
-                    sub_df = df[df.index.str.contains(filter)]
-                else:
-                    sub_df = df[df[column].str.contains(filter) == True]
-                if idx == 0:
-                    out_d["Total"].append(sub_df.shape[0])
-
-                condition = sub_df[(sub_df["log2FoldChange"] >= config["primary"]["log2FCCutOff"]) & (sub_df["padj"] <= config["primary"]["pAdjCutOff"])].shape[0]
-                baseline = sub_df[(sub_df["log2FoldChange"] <= -config["primary"]["log2FCCutOff"]) & (sub_df["padj"] <= config["primary"]["pAdjCutOff"])].shape[0]
-                out_d[f"{s} Membran"].append(condition)
-                out_d[f"{s} Cytosol"].append(baseline)
-
-        out_df = pd.DataFrame(out_d)
-        arr = out_df.iloc[:, 2:].to_numpy()
-        percent = np.round(( arr / out_df["Total"].to_numpy().reshape(arr.shape[0], 1)) * 100, decimals=1)
-        percent = np.char.add(percent.astype(str), "%)")
-        percent = np.char.add(" (", percent)
-        out_df.iloc[:, 2:] = np.char.add(out_df.iloc[:, 2:].values.astype(str), percent)
-        out_df.to_csv(output.file, sep="\t", index=False)
-
 rule joinTables:
     input:
         deseqResMinus = expand(rules.other_extractDESeqResult.output.result_table, condition="M", baseline="C")[0],
@@ -569,7 +428,8 @@ rule Table1:
         csv = "Pipeline/Paper/Table1/Table1.csv"
     run:
         df = pd.read_csv(input.tsv, sep="\t")
-        names = ["mRNA", "5UTR", "3UTR", "tRNA", "asRNA", "Photosystem mRNA", "Ribosome mRNA", "CRISPR", "ncRNA"]
+        df["TransmembraneDomain"] = (~pd.isna(df["Transmembrane"])) == True
+        names = ["mRNA", "5UTR", "3UTR", "tRNA", "asRNA", "Photosystem mRNA", "Ribosome mRNA", "CRISPR", "ncRNA", "TransmembraneDomain"]
         summary = [
             {
                 "RNA type": "All",
@@ -824,97 +684,6 @@ rule compareResults:
             fig.write_image(outputs[0])
             fig.write_html(outputs[1])
 
-rule runOnLeastDiffRegGenes:
-    input:
-        files = expand(rules.other_extractDESeqResult.output.result_table,  zip, condition=config["primary"]["conditions"], baseline=config["primary"]["baselines"])
-    output:
-        file =   os.path.join(config["secondary"]["RUN_DIR"], "PipelineData/Multilevel/intersectingGenes.tsv")
-    run:
-        import pandas as pd
-        sets = []
-        for file in input.files:
-            df = pd.read_csv(file, sep="\t")
-            df = df[(df["log2FoldChange"] <= config["multilevel"]["lfc_cutoff"]) & (df["log2FoldChange"] >= -config["multilevel"]["lfc_cutoff"]) ]
-            df = df[df["padj"] >= config["multilevel"]["padj_cutoff"]]
-            sets.append(set(df.index))
-        hs_genes = config["multilevel"]["additional_housekeeping_genes"]
-        if len(hs_genes) > 0:
-            for gene in hs_genes:
-                assert gene in df.index, f"{gene} not found in index"
-            sets.append(hs_genes)
-        if config["multilevel"]["mode"] == "intersect":
-            sets = set.intersection(*sets)
-        else:
-            raise NotImplementedError("other mode not implemented yet")
-        df = df[df.index.isin(sets)]
-        df.to_csv(output.file, sep="\t")
-
-#config["lightDarkLight"]["housekeeping"] = str(rules.runOnLeastDiffRegGenes.output.file)
-#config["lightDarkLight"]["use-housekeeping"] = True
-
-
-#config["lightDarkDark"]["housekeeping"] = str(rules.runOnLeastDiffRegGenes.output.file)
-#config["lightDarkDark"]["use-housekeeping"] = True
-
-module ld_light_workflow:
-    snakefile: snakefile
-    config: config["RUNS"]["lightDarkLight"]
-
-use rule * from ld_light_workflow as lightDarkLight_*
-
-module ld_dark_workflow:
-    snakefile: snakefile
-    config: config["RUNS"]["lightDarkDark"]
-
-use rule * from ld_dark_workflow as lightDarkDark_*
-
-
-
-module ld_light_puro_workflow:
-    snakefile: snakefile
-    config: config["RUNS"]["lightDarkLightPuro"]
-
-use rule * from ld_light_puro_workflow as lightDarkLightPuro_*
-
-module ld_dark_puro_workflow:
-    snakefile: snakefile
-    config: config["RUNS"]["lightDarkDarkPuro"]
-
-use rule * from ld_dark_puro_workflow as lightDarkDarkPuro_*
-
-module ld_light_tc_workflow:
-    snakefile: snakefile
-    config: config["RUNS"]["lightDarkLightTC"]
-
-use rule * from ld_light_tc_workflow as lightDarkLightTC_*
-
-module ld_light_vs_light_tc_workflow:
-    snakefile: snakefile
-    config: config["RUNS"]["lightDarkLightvsLightTC"]
-
-use rule * from ld_light_vs_light_tc_workflow as lightDarkLightvsLightTC_*
-
-module ld_light_vs_light_plus_puro_tc_workflow:
-    snakefile: snakefile
-    config: config["RUNS"]["lightDarkLightvsLightPlusPuroTC"]
-
-use rule * from ld_light_vs_light_plus_puro_tc_workflow as lightDarkLightvsLightPlusPuroTC_*
-
-rule extractOverlap:
-    input:
-        deseq1 = rules.other_extractDESeqResult.output.result_table,
-        deseq2 = rules.lightDarkLight_extractDESeqResult.output.result_table,
-        deseq3 = rules.lightDarkDark_extractDESeqResult.output.result_table,
-        lp = rules.second_extractDESeqResult.output.result_table,
-        ldlp = rules.lightDarkLightPuro_extractDESeqResult.output.result_table,
-        lddp = rules.lightDarkDarkPuro_extractDESeqResult.output.result_table,
-    output:
-        svg = "Pipeline/overlap/c{condition}_vs_b{baseline}_overlap.svg",
-        html = "Pipeline/overlap/c{condition}_vs_b{baseline}_overlap.html"
-    conda: "envs/matplotlibPlotly.yml"
-    script:
-        "scripts/getVennDiagram.py"
-
 
 rule customGSEA:
     input:
@@ -1013,47 +782,6 @@ rule checkMotifDistribution:
     output:
         tsv = "Pipeline/Uracil/UracilDistribution.tsv"
     script: "scripts/checkMotifDistribution.py"
-
-#
-# rule prepareForGSEAMotif:
-#     input:
-#         motifs = rules.checkMotifDistribution.output.tsv,
-#         deseq = expand(rules.joinTables.output.output_for_R_because_this_stupid_language_cannot_even_read_tsv_files, condition=["M"], baseline=["C"])
-#     output:
-#         file = "Pipeline/MotifGSEA/preparedFile_t{type}.tsv"
-#     run:
-#         import pandas as pd
-#         import os
-#         deseq = pd.read_csv(input.deseq[0], sep="\t")
-#         motifs = pd.read_csv(input.motifs, sep="\t", comment="#")
-#
-#         for motif_id in motifs.motif_ID.unique():
-#             seqs = motifs[motifs["motif_ID"] == motif_id]["seq_ID"]
-#             deseq["Motif" + motif_id.replace("-", "_") ] = deseq.locus_tag.isin(seqs)
-#         deseq = deseq[deseq["mRNA"]]
-#         deseq.to_csv(output.file, sep="\t", index=False)
-#
-#
-#
-# rule motifGSEA:
-#     input:
-#         tsv = rules.prepareForGSEAMotif.output.file
-#     output:
-#         enrichedFile = "Pipeline/MotifGSEA/enrichedFile_t{type}.tsv",
-#         gsFile = "Pipeline/MotifGSEA/gsFile_t{type}.tsv"
-#     conda: "envs/clusterprofiler.yml",
-#     script: "scripts/motifGSEA.R"
-
-# rule plotMotifGSEA:
-#     input:
-#         df = rules.motifGSEA.output.gsFile,
-#         info = rules.motifGSEA.output.enrichedFile
-#     output:
-#         html = "Pipeline/MotifGSEA/GSEAMotif_t{type}.html",
-#     conda: "envs/matplotlibPlotly.yml"
-#     script:
-#         "scripts/GSEAPlot.py"
-
 
 rule ntFreqs:
     input:
@@ -1162,7 +890,6 @@ rule PercentagePlotF5:
         name="FOO",
         log2FCCutOff=config["primary"]["log2FCCutOff"],
         pAdjCutOff=config["primary"]["pAdjCutOff"]
-
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/percentagePlot.py"
 
@@ -1632,18 +1359,39 @@ rule Figure8toPNG:
     shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
 
 
+rule plotReplicateCorrelations:
+    input:
+        tsv1 = "Pipeline/RUNS/{RUN}/PipelineData/IntermediateData/CorrData.tsv"
+    params:
+        layout = lambda wildcards: config[config["CorrWCMapping"][wildcards.RUN]]["layout"]
+    output:
+        svg = "Pipeline/Paper/Supplementary/Correlation/Run{RUN}Figure.svg"
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/plotReplicateCorrelations.py"
+
+rule joinSupplementCorrelation:
+    input:
+        files=[config[val]["file"] for key, val in config["SupplementCorr"].items()]
+    params:
+        ges_y= 400,
+        figures= config["SupplementCorr"],
+    output:
+        svg = "Pipeline/Paper/Supplementary/Correlation/FigureCorrelation.svg"
+    conda: "envs/svgutils.yml"
+    script: "scripts/paperFigure.py"
+
+
+rule SupplementCorrelationtoPNG:
+    input:
+        svg = rules.joinSupplementCorrelation.output.svg
+    output:
+        png =  "Pipeline/Paper/Supplementary/Correlation/FigureCorrelation.png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
+
+
 rule all:
     default_target: True
     input:
-        all = rules.other_all.input,
-        all2 = rules.second_all.input,
-        tc_alls = rules.tc_all.input,
-        motif = rules.meme_allMotif.input,
-        motif2 = rules.meme2_allMotif.input,
-        motifldl = rules.meme_ldl_allMotif.input,
-        motifldd = rules.meme_ldd_allMotif.input,
-        motifldlp = rules.meme_ldlpuro_allMotif.input,
-        motiflddp = rules.meme_lddpuro_allMotif.input,
         tu = expand(rules.createTUTable.output, condition=["M"], baseline=["C"]),
         tu2 = expand(rules.createTUTable2.output, condition=["M"], baseline=["C"]),
         #tu3 = expand(rules.plotHistogramm.output,zip, condition=["M"], baseline=["C"]),
@@ -1654,13 +1402,7 @@ rule all:
         summary_fig = expand(rules.compareResults.output, condition="M", baseline="C"),
         summary_fig2 = expand(rules.compareTotalCell.output, condition="plusP", baseline="minusP"),
         #overlap= expand(rules.extractOverlap.output, zip, condition=config["primary"]["conditions"],baseline=config["primary"]["baselines"]),
-        ldl = rules.lightDarkLight_all.input,
-        ldd = rules.lightDarkDark_all.input,
-        ldl_puro = rules.lightDarkLightPuro_all.input,
-        ldd_puro = rules.lightDarkDarkPuro_all.input,
-        ldd_tc = rules.lightDarkLightTC_all.input,
-        ldd_vsl_tc = rules.lightDarkLightvsLightTC_all.input,
-        ldd_vsl_plusp_tc = rules.lightDarkLightvsLightPlusPuroTC_all.input,
+
         test = expand(rules.plotGSEA.output, condition="M", baseline="C", run_dir=[os.path.basename(config["RUNS"][run]["RUN_DIR"]) for run in config["RUNS"] if "TC" not in run]),
         subcell = rules.download_subcell.output,
         rbp3 = expand(rules.plotRBP3GSEA.output, puro=["plusPuromycin", ]),
@@ -1682,12 +1424,11 @@ rule all:
         f3ribo = rules.plotGSEARibosome.output,
         qpcr = rules.Figure4toPNG.output,
         clusteredF4 = rules.F4ClusteredGO.output,
-        summary = expand(rules.summarizeResult.output, condition="M", baseline="C"),
         transmemgsea = expand(rules.TransmembraneGSEA.output.enriched, puro=["minusPuromycin", "plusPuromycin"], condition="M", baseline="C"),
         f5perc = config["F5Percent"]["file"],
         f5fish = config["F5FISH"]["file"],
         rbp3venn= rules.Figure8toPNG.output,
-
+        supplement = rules.SupplementCorrelationtoPNG.output
 #tpmemabundace = rules.checkTranscriptAbundanceGO.output
 
 

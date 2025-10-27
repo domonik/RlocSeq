@@ -2,14 +2,7 @@ primary-file: "run_configs/minusPuroConfig.yml" # path to the config file that w
 secondary-file: "run_configs/plusPuroConfig.yml"
 tertiary-file: "run_configs/third_config.yml"
 total_cell-file: "run_configs/total_cell_config.yml"
-puromycinTC: "run_configs/configPuromycinTC.yml"
-lightDarkLightConfig: "run_configs/lightDarkConfig.yml"
-lightDarkDarkConfig: "run_configs/lightDarkDarkConfig.yml"
-lightDarkLightPuroConfig: "run_configs/lightDarkPuroConfig.yml"
-lightDarkDarkPuroConfig: "run_configs/lightDarkDarkPuroConfig.yml"
-lightDarkLightTCConfig: "run_configs/lightDarkLightTCConfig.yml"
-lightDarkLightvsLightTCConfig: "run_configs/lightDarkLightvsLightTCConfig.yml"
-lightDarkLightvsLightPlusPuroTCConfig: "run_configs/lightDarkLightvsLightplusPuroTCConfig.yml"
+why-drop-replicate-file: "run_configs/why_drop_replicate.yml"
 
 membraneColor: "#046A38"
 cytosolColor: "#003087"
@@ -772,3 +765,50 @@ RBP3GSEA:
 F8:
   a: "RBP3Venn"
   b: "RBP3GSEA"
+
+
+CorrWCMapping:
+  LightRunMinusPuromycin: CorrMinusPuro
+  WhyWeDrop: CorrPlusPuro
+  TotalCellPuroComp: CorrTotalCell
+
+CorrMinusPuro:
+  file: "Pipeline/Paper/Supplementary/Correlation/RunLightRunMinusPuromycinFigure.svg"
+  x: 0
+  y: 0
+  layout:
+    height: 200
+    width: 312
+    margin:
+      r: 50
+      t: 10
+      b: 5
+
+CorrPlusPuro:
+  file: "Pipeline/Paper/Supplementary/Correlation/RunWhyWeDropFigure.svg"
+  x: 312
+  y: 0
+  layout:
+    height: 200
+    width: 312
+    margin:
+      r: 50
+      t: 10
+      b: 5
+
+CorrTotalCell:
+  file: "Pipeline/Paper/Supplementary/Correlation/RunTotalCellPuroCompFigure.svg"
+  x: 0
+  y: 200
+  layout:
+    height: 200
+    width: 312
+    margin:
+      r: 50
+      t: 10
+      b: 5
+
+SupplementCorr:
+  a: "CorrMinusPuro"
+  b: "CorrPlusPuro"
+  c: "CorrTotalCell"
