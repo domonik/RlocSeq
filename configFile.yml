@@ -812,3 +812,44 @@ SupplementCorr:
   a: "CorrMinusPuro"
   b: "CorrPlusPuro"
   c: "CorrTotalCell"
+
+
+
+Supplement16SFISH:
+  file: "Pipeline/Paper/Supplementary/16SFISH/16SFISH.svg"
+  x: 0
+  y: 450
+  layout:
+    width: 450
+    height: 400
+    legend:
+      title:
+        font:
+          size: 10
+    annotations:
+      font:
+        size: 10
+
+    margin:
+      r: 50
+      t: 50
+      b: 50
+
+SupplementUracilTransmembrane:
+  x: 0
+  y: 450
+  layout:
+    width: 624
+    height: 200
+    legend:
+      title:
+        font:
+          size: 10
+    annotations:
+      font:
+        size: 10
+
+    margin:
+      r: 50
+      t: 50
+      b: 50

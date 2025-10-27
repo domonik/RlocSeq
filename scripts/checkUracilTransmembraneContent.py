@@ -6,6 +6,11 @@ import re
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+import plotly.io as pio
+
+
+pio.renderers.default = "browser"
+
 def translate(seq):
     rna = Seq(seq.replace("T", "U"))
     return str(rna.translate())[:-1]
@@ -64,20 +69,12 @@ def get_rna_indices(intervals):
 
 def uracil_content(row):
     seq = row["RNASequence"]
-    sequences = ""
-    intervals = row["RNA_intervals"]
-    if not isinstance(intervals, list):
-        return pd.NA
-    for interval in intervals:
-        start, end = interval
-        subseq = seq[start:end]
-        sequences += subseq
     return seq.count("U") / len(seq)
 
 def test_with_offset(row):
     return row[""]
 
-def main(tsv, outfile):
+def main(tsv, outputs, config):
     df = pd.read_csv(tsv, sep="\t", comment="#")
     df = df[~pd.isna(df["Transmembrane"])]
     df = df[df["mRNA"]]
@@ -93,23 +90,58 @@ def main(tsv, outfile):
 
     #df = df[~pd.isna(df["Uracil_content"])]
     treats = ["minusPuromycin", "plusPuromycin"]
-    fig = make_subplots(rows=1, cols=2, column_titles=treats, shared_yaxes=True, x_title="log2FoldChange")
+    fig = make_subplots(rows=1, cols=2, column_titles=["- Puromycin", "+ Puromycin"], shared_yaxes=True, x_title="log2FoldChange")
     for idx, puro in enumerate(treats):
-        sdf = df[df[f"padj_{puro}"] < 0.05]
+        filter = "minusP" if puro == "minusPuromycin" else "plusP"
+
+        for location in ["Cytosol", "Membran"]:
+            sdf = df[df[f"{filter}{location}"]]
+            color = config["membraneColor"] if location == "Membran" else config["cytosolColor"]
+            fig.add_trace(
+                go.Scatter(
+                    x=sdf[f"log2FoldChange_{puro}"],
+                    y=sdf["Uracil_content"],
+                    mode="markers",
+                    marker=dict(color=color),
+                    name=location,
+                    customdata=sdf[["gene_name", f"baseMean_{puro}"]],
+                    hovertemplate=(
+                        "Gene: %{customdata[0]}<br>"
+                        "log2FoldChange: %{x:.2f}<br>"
+                        "Uracil_content: %{y:.2f}<br>"
+                        f"baseMean_{puro}:" + "%{customdata[0]:.2f}<extra>{location}</extra>"
+                    ),
+                    showlegend=bool(idx)
+                ), col=idx+1, row=1
+
+            )
+        sdf = df[~(df[f"{filter}Membran"] | df[f"{filter}Cytosol"])]
         fig.add_trace(
             go.Scatter(
                 x=sdf[f"log2FoldChange_{puro}"],
                 y=sdf["Uracil_content"],
                 mode="markers",
-            ), col=idx+1, row=1
+                marker=dict(color="#8A8D8F"),
+                name="not sig.",
+                customdata=sdf[["gene_name", f"baseMean_{puro}"]],
+                showlegend=bool(idx),
+                hovertemplate=(
+                        "Gene: %{customdata[0]}<br>"
+                        "log2FoldChange: %{x:.2f}<br>"
+                        "Uracil_content: %{y:.2f}<br>"
+                        f"baseMean_{puro}:" + "%{customdata[0]:.2f}<extra>{location}</extra>"
+                )
+            ), col=idx + 1, row=1
 
         )
+    fig.update_layout(config["LayoutDefault"])
+    fig.update_layout(config["SupplementUracilTransmembrane"]["layout"])
     fig.update_layout(
 
-        yaxis=dict(title="Uracil_content")
+        yaxis=dict(title="Uracil content [%]")
     )
-    breakpoint()
-    fig.show()
+    fig.write_image(outputs.svg)
+    fig.write_html(outputs.html)
 
 
 
@@ -120,5 +152,6 @@ if __name__ == '__main__':
 
     main(
         tsv=snakemake.input.tsv,
-        outfile=snakemake.output.tsv
+        outputs=snakemake.output,
+        config=snakemake.config
     )

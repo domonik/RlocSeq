@@ -25,7 +25,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None):
         intensities, results_df = calc_summary_and_pval(intensities, probe_names)
         specs = [
             [{"type": "image"} for _ in range(len(probes))],
-            [{"type": "box", "colspan": 4}, None, None, None] ,# Row 2: one boxplot spanning both cols
+            [{"type": "box", "colspan": len(probes)}] + [None for _ in range(len(probes) - 1)] ,# Row 2: one boxplot spanning both cols
             # Row 1: two image plots
             [{"type": "xy"} for _ in range(len(probes))],  # Row 1: two image plots
         ]

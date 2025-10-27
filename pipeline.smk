@@ -774,14 +774,26 @@ rule memeMotifStayed:
 
 
 
-rule checkMotifDistribution:
+rule checkUracilTransmembrane:
     input:
         tsv = rules.addFastatoTSV.output.tsv,
-    conda: "envs/biopython.yml"
+    conda: "envs/matplotlibPlotly.yml"
 
     output:
-        tsv = "Pipeline/Uracil/UracilDistribution.tsv"
-    script: "scripts/checkMotifDistribution.py"
+        svg = "Pipeline/Paper/Supplementary/UracilDistribution/UracilDistribution.svg",
+        html = "Pipeline/Paper/Supplementary/UracilDistribution/UracilDistribution.html"
+    script: "scripts/checkUracilTransmembraneContent.py"
+
+
+rule SupplementUraciltoPNG:
+    input:
+        svg = rules.checkUracilTransmembrane.output.svg
+    output:
+        png =  "Pipeline/Paper/Supplementary/UracilDistribution/UracilDistribution.png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
+
+
+
 
 rule ntFreqs:
     input:
@@ -1389,6 +1401,30 @@ rule SupplementCorrelationtoPNG:
     shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
 
 
+rule plot16SFISH:
+    input:
+        tsv=rules.processFISHImages.output.tsv,
+        intensities=rules.processFISHImages.output.spots_df
+    output:
+        svg = config["Supplement16SFISH"]["file"]
+    params:
+        probes =[("16S rRNA","untreated","Replicate 1"), ("16S rRNA","Puromycin","Replicate 1")],
+
+        layout = config["Supplement16SFISH"]["layout"],
+        subplot = dict(vertical_spacing=0.05, horizontal_spacing=0.05,
+                              column_titles=["- Puromycin", "+ Puromycin", "- Puromycin", "+ Puromycin"])
+
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/plotFISH16SrRNA.py"
+
+
+rule Supplement16SFISHtoPNG:
+    input:
+        svg = rules.plot16SFISH.output.svg
+    output:
+        png =  "Pipeline/Paper/Supplementary/16SFISH/16SFISH.png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
+
 rule all:
     default_target: True
     input:
@@ -1406,7 +1442,7 @@ rule all:
         test = expand(rules.plotGSEA.output, condition="M", baseline="C", run_dir=[os.path.basename(config["RUNS"][run]["RUN_DIR"]) for run in config["RUNS"] if "TC" not in run]),
         subcell = rules.download_subcell.output,
         rbp3 = expand(rules.plotRBP3GSEA.output, puro=["plusPuromycin", ]),
-        #prdwep = expand(rules.checkMotifDistribution.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
+        #prdwep = expand(rules.checkUracilTransmembrane.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
         fig1 = rules.joinFig1.output,
         fig1png = rules.Figure1toPNG.output,
         rnatypegsea = expand(rules.rnatypeGSEA.output, puro=["minusPuromycin", ]),
@@ -1428,7 +1464,9 @@ rule all:
         f5perc = config["F5Percent"]["file"],
         f5fish = config["F5FISH"]["file"],
         rbp3venn= rules.Figure8toPNG.output,
-        supplement = rules.SupplementCorrelationtoPNG.output
+        supplement = rules.SupplementCorrelationtoPNG.output,
+        supplement16FISH = rules.Supplement16SFISHtoPNG.output,
+        uracil = rules.SupplementUraciltoPNG.output
 #tpmemabundace = rules.checkTranscriptAbundanceGO.output
 
 
