@@ -647,18 +647,18 @@ VolcanoFigure5:
     legend:
       orientation: "h"
   annotations:
-    psbA2:
-      x: 0.2
-      y: 18
+    fusB:
+      x: -1.1
+      y: 25
 
-    rpl10:
+    psaA:
       x: -0.2
       y: 10
 
-    rpl12:
-      x: 1.
-      y: 23
 
+                                                    
+                                                    
+                                                    
 
 F5FISH:
   file: "Pipeline/Paper/Figure5/F5FISH.svg"

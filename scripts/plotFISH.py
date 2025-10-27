@@ -17,15 +17,18 @@ def _color_to_calpha(color: str, alpha: float = 0.2):
     color = color.split("(")[-1].split(")")[0]
     return f"rgba({color}, {alpha})"
 
-def main(file, probes, cfg, layout, subplot_params, intensities=None):
+def main(file, probes, cfg, layout, subplot_params, intensities=None, test_output=None):
     df = pd.read_csv(file, sep="\t")
     if intensities is not None:
         intensities = pd.read_csv(intensities, sep="\t")
         probe_names = [probe[0] for probe in probes]
         intensities, results_df = calc_summary_and_pval(intensities, probe_names)
+        introw = []
+        for _ in range(len(probes) // 2):
+            introw += [{"type": "box", "colspan": len(probes) // 2}, None]
         specs = [
             [{"type": "image"} for _ in range(len(probes))],
-            [{"type": "box", "colspan": len(probes)}] + [None for _ in range(len(probes) - 1)] ,# Row 2: one boxplot spanning both cols
+            introw,# Row 2: one boxplot spanning both cols
             # Row 1: two image plots
             [{"type": "xy"} for _ in range(len(probes))],  # Row 1: two image plots
         ]
@@ -129,14 +132,14 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None):
         )
         if intensities is not None:
             group = intensities[(intensities.Treatment == treatment) & (intensities.Probe == probe)]
-            values = group["ProbeIntensity"].tolist()
+            values = group["subtractedIntensity"].tolist()
             mean_val = np.mean(values)
             std_val = np.std(values)
             fig.add_trace(
                 go.Bar(
                     x=[f"{treatment} – {probe}"],
                     y=[mean_val],
-                    name=f"{treatment} – {probe}",
+                    name=f"{treatment} – <i>{probe}</i>",
                     marker=dict(color="#69BE28"),
                     showlegend=False,
 
@@ -150,10 +153,10 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None):
                     )
                 ),
                 row=2,
-                col=1
+                col=(i + 1) - (i % 2)
             )
         vint = float(np.median(np.asarray(amaxes)))
-        didx = i+1+len(probes) if intensities is None else i+1 + len(probes) + 1
+        didx = i+1+len(probes) if intensities is None else i+1 + len(probes) + len(probes) // 2
         domain = f"{didx} domain"
         fig.add_annotation(
             x=1, y=1,
@@ -213,12 +216,10 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None):
             row=2,
             col=1
         )
-        fig.update_xaxes(
-            showticklabels=False, row=2
-        )
         fig.update_yaxes(
-            title=dict(text="mean<br>Intensity"), row=2
+            title=dict(text="Mean Fluorescence<br>Intensity [A.U.]"), row=2, col=1
         )
+        results_df.to_csv(test_output, sep="\t", index=False)
 
 
     fig.add_trace(
@@ -253,7 +254,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None):
     )
 
     fig.update_yaxes(
-        title=dict(text="normalized<br>intensity"),
+        title=dict(text="normalized<br>Fluorescence<br>Intensity [A.U.]"),
         row=row,
         col=1,
         showticklabels=True,

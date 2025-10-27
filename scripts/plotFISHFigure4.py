@@ -13,6 +13,8 @@ if __name__ == '__main__':
         outfile = snakemake.output.svg
         subplot_params = snakemake.params.subplot
         intensities = snakemake.input.intensities
+        res_tsv = snakemake.output.res_tsv
+
     else:
         import yaml
         file = "Pipeline/FISH/all_distributions.tsv"
@@ -28,7 +30,7 @@ if __name__ == '__main__':
 
     hs = subplot_params["horizontal_spacing"]
     l = (1- (len(probes)-1)*hs) / len(probes)
-    fig = main(file, probes, cfg, layout, subplot_params, intensities=intensities)
+    fig = main(file, probes, cfg, layout, subplot_params, intensities=intensities, test_output=res_tsv)
     y = 1.1
     fig.add_shape(
         type="line",

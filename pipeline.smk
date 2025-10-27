@@ -371,6 +371,9 @@ rule joinTables:
         df["minusPCytosol"] = (df["log2FoldChange_minusPuromycin"] <= -config["primary"]["log2FCCutOff"]) & (df["padj_minusPuromycin"] <= config["primary"]["pAdjCutOff"])
         df["plusPCytosol"] = (df["log2FoldChange_plusPuromycin"] <= -config["primary"]["log2FCCutOff"]) & (df["padj_plusPuromycin"] <= config["primary"]["pAdjCutOff"])
         df["plusPMembran"] = (df["log2FoldChange_plusPuromycin"] >= config["primary"]["log2FCCutOff"]) & (df["padj_plusPuromycin"] <= config["primary"]["pAdjCutOff"])
+        df["plusPTCUp"] = (df["log2FoldChange_tc"] >= config["primary"]["log2FCCutOff"]) & (df["padj_tc"] <= config["primary"]["pAdjCutOff"])
+        df["plusPTCDown"] = (df["log2FoldChange_tc"] <= -config["primary"]["log2FCCutOff"]) & (df["padj_tc"] <= config["primary"]["pAdjCutOff"])
+
         df["shiftMtoC"] = (df["minusPMembran"] & df["plusPCytosol"])
         df["shiftCtoM"] = (df["plusPMembran"] & df["minusPCytosol"])
         df["stayedAtMembrane"] = df["plusPMembran"] & df["minusPMembran"]
@@ -447,6 +450,10 @@ rule Table1:
                         0],
                 "both in Cytosol": df["stayedInCytosol"].sum(),
                 "both at Membrane": df["stayedAtMembrane"].sum(),
+                "plus Puromycin TC Up": df["plusPTCUp"].sum(),
+                "plus Puromycin TC Down": df["plusPTCDown"].sum(),
+                "TC total": df[~(df["baseMean_tc"] == 0)].shape[0]
+
             }
         ]
 
@@ -463,12 +470,15 @@ rule Table1:
                 "both Total": subset[~(subset["baseMean_minusPuromycin"] == 0) & ~(subset["baseMean_plusPuromycin"] == 0)].shape[0],
                 "both in Cytosol": subset["stayedInCytosol"].sum(),
                 "both at Membrane": subset["stayedAtMembrane"].sum(),
+                "plus Puromycin TC Up": subset["plusPTCUp"].sum(),
+                "plus Puromycin TC Down": subset["plusPTCDown"].sum(),
+                "TC total": subset[~(subset["baseMean_tc"] == 0)].shape[0]
 
             })
 
         out_df = pd.DataFrame(summary)
         for puro in ["minus", "plus"]:
-            loc = [f"{puro} Puromycin Cytosol", f"{puro} Puromycin Membrane"]
+            loc = [f"{puro} Puromycin Cytosol", f"{puro} Puromycin Membrane",]
             arr = out_df.loc[:, loc].to_numpy()
             percent = np.round(( arr / out_df[f"{puro} Puromycin Total"].to_numpy().reshape(arr.shape[0], 1)) * 100, decimals=1)
             percent = np.char.add(percent.astype(str), "%)")
@@ -483,6 +493,15 @@ rule Table1:
         percent = np.char.add(" (",percent)
         out_df.loc[:, loc] = out_df.loc[:, loc].astype(str)
         out_df.loc[:, loc] = np.char.add(out_df.loc[:, loc].values.astype(str),percent)
+        loc = [f"plus Puromycin TC Down", f"plus Puromycin TC Up"]
+        arr = out_df.loc[:, loc].to_numpy()
+        percent = np.round((arr / out_df[f"TC total"].to_numpy().reshape(
+            arr.shape[0],1)) * 100,decimals=1)
+        percent = np.char.add(percent.astype(str),"%)")
+        percent = np.char.add(" (",percent)
+        out_df.loc[:, loc] = out_df.loc[:, loc].astype(str)
+        out_df.loc[:, loc] = np.char.add(out_df.loc[:, loc].values.astype(str),percent)
+
         out_df.to_csv(output.csv, sep=",", index=False)
 
 
@@ -878,12 +897,12 @@ rule refinePercentagePlot:
 
 rule PercentagePlotF4:
     input:
-        tsv = expand(rules.tc_extractDESeqResult.output.result_table,condition=["minusP"], baseline=["plusP"])[0]
+        tsv = expand(rules.tc_extractDESeqResult.output.result_table, condition=["plusP"], baseline=["minusP"])[0]
     output:
         svg = config["F4Percent"]["file"],
     params:
-        condition="untreated",
-        baseline="Puromycin",
+        condition="Puromycin",
+        baseline="untreated",
         figureConfig="F4Percent",
         name="FOO",
         log2FCCutOff=config["primary"]["log2FCCutOff"],
@@ -1134,7 +1153,8 @@ rule plotFISHFigure5:
         tsv=rules.processFISHImages.output.tsv,
         intensities=rules.processFISHImages.output.spots_df
     output:
-        svg = config["F5FISH"]["file"]
+        svg = config["F5FISH"]["file"],
+        res_tsv = "Pipeline/Paper/Figure5/IntensitiesTTest.tsv"
     params:
         probes =[("fusB","untreated","Replicate 1"), ("fusB","Puromycin","Replicate 1"), ("psaA", "untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")],
         layout= config["F5FISH"]["layout"],

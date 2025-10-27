@@ -16,8 +16,11 @@ def main(tsv, go_terms, output, config, params):
     vc = params["figureConfig"]
     for term, color in config[vc]["highlight_go_term"].items():
         up_ids = go_df[go_df["Description"] == term]["geneID"].str.split("/").iloc[0]
+        up_ids = df[df["locus_tag"].isin(up_ids)].index
         universe_ids = go_df[go_df["Description"] == term]["universeGeneID"].str.split("/").iloc[0]
-        ids = universe_ids + up_ids
+        universe_ids = df[df["locus_tag"].isin(universe_ids)].index
+
+        ids = universe_ids.tolist() + up_ids.tolist()
         highlight[term] = (color, ids)
     lout = config[vc]
     fig = volcano_from_deseq_result(

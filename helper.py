@@ -97,10 +97,9 @@ def compare_results(files, sep, condition, base, padj_cutoff, lfc_cutoff, colors
         df[y] += [name, name, name]
         df["Enriched in"] += [base, "not Enriched", condition]
     df = pd.DataFrame(df)
-    fig = px.bar(df, x="Percentage", y=y, color="Enriched in", color_discrete_sequence=colors, text="Percentage")
+    fig = px.bar(df, x="Percentage", y=y, color="Enriched in", color_discrete_sequence=colors,)
     fig.update_traces(marker_line_color='black',
                       marker_line_width=1)
-    fig.update_traces(texttemplate='%{text:.1f}')
     fig.update_xaxes(range=[0, 100])
 
     return fig

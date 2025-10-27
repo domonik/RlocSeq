@@ -16,14 +16,16 @@ pio.renderers.default = "browser"
 
 def calc_summary_and_pval(spots_df, probes):
     spots_df = spots_df[spots_df.Treatment != "Kasugamycin"]
+    spots_df["subtractedIntensity"] = spots_df["ProbeIntensity"] - spots_df["background"]
+
     # Filter dataframe for selected probe
     df = spots_df[spots_df["Probe"].isin(probes)]
-    df = df.groupby(["Treatment", "Probe", "Figure", ])["ProbeIntensity"].mean().reset_index()
+    df = df.groupby(["Treatment", "Probe", "Figure", ])["subtractedIntensity"].mean().reset_index()
     # Run Welch’s t-test for each probe
     results = []
     for probe in df['Probe'].unique():
-        untreated = df.query("Treatment == 'untreated' and Probe == @probe")['ProbeIntensity']
-        puromycin = df.query("Treatment == 'Puromycin' and Probe == @probe")['ProbeIntensity']
+        untreated = df.query("Treatment == 'untreated' and Probe == @probe")['subtractedIntensity']
+        puromycin = df.query("Treatment == 'Puromycin' and Probe == @probe")['subtractedIntensity']
         if len(untreated) == len(puromycin):
             tstat, pval = ttest_rel(untreated, puromycin, )
         else:
@@ -57,9 +59,7 @@ def main(spots_df, cfg, outfile, outtsv):
         vertical_spacing=0.02,
         subplot_titles=[f"untreated", "Puromycin", "untreated", "Puromycin"]
     )
-    spots_df["z_intensity"] = spots_df.groupby("Image")["ProbeIntensity"].transform(
-        lambda x: (x - x.min()) / (x.max() - x.min())
-    )
+
     # Add images for each treatment
     idx = 0
     for probe in probes:
@@ -86,7 +86,7 @@ def main(spots_df, cfg, outfile, outtsv):
             name = name + f" {probe}"
             fig.add_trace(
                 go.Box(
-                    y=group["ProbeIntensity"].tolist(),
+                    y=group["subtractedIntensity"].tolist(),
                     name=f"{treatment} – <i>{probe}</i>",
                     boxmean=True,
                     marker=dict(color=colors.get(treatment, "black")),
