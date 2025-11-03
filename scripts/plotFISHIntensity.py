@@ -30,7 +30,7 @@ def calc_summary_and_pval(spots_df, probes):
             tstat, pval = ttest_rel(untreated, puromycin, )
         else:
             tstat, pval = ttest_ind(untreated, puromycin, equal_var=False)
-        results.append({'Probe': probe, 't-statistic': tstat, 'p-value': pval})
+        results.append({'Probe': probe, 't-statistic': tstat, 'p-value': pval, "untreated": untreated, "puromycin": puromycin})
 
     results_df = pd.DataFrame(results)
     reject, pvals_corr, _, _ = multipletests(results_df['p-value'], method='fdr_bh')

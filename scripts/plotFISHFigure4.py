@@ -14,6 +14,8 @@ if __name__ == '__main__':
         subplot_params = snakemake.params.subplot
         intensities = snakemake.input.intensities
         res_tsv = snakemake.output.res_tsv
+        html_outfile = snakemake.output.html
+
 
     else:
         import yaml
@@ -77,3 +79,4 @@ if __name__ == '__main__':
     if "snakemake" not in globals():
         fig.show()
     fig.write_image(outfile)
+    fig.write_html(html_outfile)

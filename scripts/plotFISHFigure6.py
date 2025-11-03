@@ -12,6 +12,8 @@ if __name__ == '__main__':
         cfg = snakemake.config
         outfile = snakemake.output.svg
         subplot_params = snakemake.params.subplot
+        html_outfile = snakemake.output.html
+
     else:
         import yaml
         file = "Pipeline/FISH/all_distributions.tsv"
@@ -73,3 +75,5 @@ if __name__ == '__main__':
     if "snakemake" not in globals():
         fig.show()
     fig.write_image(outfile)
+    fig.write_html(html_outfile)
+

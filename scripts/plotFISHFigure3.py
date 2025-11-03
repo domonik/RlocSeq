@@ -11,6 +11,7 @@ if __name__ == '__main__':
         layout = snakemake.params.layout
         cfg = snakemake.config
         outfile = snakemake.output.svg
+        html_outfile = snakemake.output.html
         subplot_params = snakemake.params.subplot
     else:
         import yaml
@@ -32,3 +33,4 @@ if __name__ == '__main__':
         print("showing")
         fig.show()
     fig.write_image(outfile)
+    fig.write_html(html_outfile)

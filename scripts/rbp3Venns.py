@@ -6,7 +6,7 @@ import plotly.graph_objs as go
 
 def main(file, config, output):
     df = pd.read_csv(file, sep="\t")
-    locs = ["All", "Cytoplasm", "Cell membrane", "Cellular thylakoid membrane"]
+    locs = ["All", "Cytoplasm", "Plasmamembrane", "Cellular thylakoid membrane"]
     rows = 1
     cols = 4
     figures = [[] for _ in range(rows)]
@@ -19,10 +19,10 @@ def main(file, config, output):
         rbp3_set = set(sdf[sdf["RBP3_Target"] == True]["locus_tag"])
         minusp_set = set(sdf[sdf["minusPMembran"] == True]["locus_tag"])
         plusp_set = set(sdf[sdf["plusPMembran"] == True]["locus_tag"])
-        subfig = venn_to_plotly((minusp_set, rbp3_set, plusp_set), ("-Puromycin at membrane", "RBP3 Target", "+Puromycin at membrane"), L_color=["rgba(0, 106, 56, 0.6)", "rgba(0, 48, 135, 0.6)", "rgb(138, 141, 143, 0.6)"])
+        subfig = venn_to_plotly((minusp_set, rbp3_set, plusp_set), ("untreated at membrane", "RBP3 Target", "Puromycin at membrane"), L_color=["rgba(0, 106, 56, 0.6)", "rgba(0, 48, 135, 0.6)", "rgb(138, 141, 143, 0.6)"])
         row = idx // cols
         figures[row].append(subfig)
-    stitels = ["All", "Cytoplasm", "Cell<br>membrane", "Thylakoid<br>membrane"]
+    stitels = ["All", "Cytoplasm", "Plasmamembrane", "Thylakoid<br>membrane"]
     multi_fig = make_subplots(rows=rows, cols=cols, horizontal_spacing=0, vertical_spacing=0, subplot_titles=stitels)
     for row, subfigs in enumerate(figures, 1):
         for idx, fig in enumerate(subfigs, 1):
