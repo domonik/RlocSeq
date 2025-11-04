@@ -449,6 +449,9 @@ F4Volcano:
     rpl10:
       x: 2
       y: 13.5
+    rpl12:
+      x: 4
+      y: 11
 
     rpl17:
       x: 3.2
@@ -462,6 +465,12 @@ F4Volcano:
     pilA11:
       x: -5
       y: 3.2
+    psaA:
+      x: -5
+      y: 15
+    cupA:
+      x: -2.1
+      y: 15
   file: "Pipeline/Paper/Figure4/F4Volcano.svg"
   x: 0
   y: 100
@@ -654,6 +663,10 @@ VolcanoFigure5:
     psaA:
       x: -0.2
       y: 10
+
+    psbA2:
+      x: 1
+      y: 25
 
 
                                                     

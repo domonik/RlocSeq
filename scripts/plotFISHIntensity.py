@@ -30,7 +30,7 @@ def calc_summary_and_pval(spots_df, probes):
             tstat, pval = ttest_rel(untreated, puromycin, )
         else:
             tstat, pval = ttest_ind(untreated, puromycin, equal_var=False)
-        results.append({'Probe': probe, 't-statistic': tstat, 'p-value': pval, "untreated": untreated, "puromycin": puromycin})
+        results.append({'Probe': probe, 't-statistic': tstat, 'p-value': pval, "untreated": untreated.tolist(), "puromycin": puromycin.tolist(), "untreated_mean": untreated.mean(), "puromycin_mean": puromycin.mean()})
 
     results_df = pd.DataFrame(results)
     reject, pvals_corr, _, _ = multipletests(results_df['p-value'], method='fdr_bh')
@@ -94,6 +94,36 @@ def main(spots_df, cfg, outfile, outtsv):
                 row=2,
                 col=1 if pidx == 0 else 3
             )
+            if treatment == "Puromycin":
+                pval = results_df.loc[results_df["Probe"] == probe, "adj p-value (FDR)"].values
+                if len(pval) > 0 and pval[0] < 0.05:
+                    # Get approximate y position (top of box)
+                    y_max = max(group["subtractedIntensity"]) * 1.2
+                    # choose symbol by significance level
+                    p = pval[0]
+                    if p < 0.0001:
+                        stars = "****"
+                    elif p < 0.001:
+                        stars = "***"
+                    elif p < 0.01:
+                        stars = "**"
+                    elif p < 0.05:
+                        stars = "*"
+                    else:
+                        stars = "n.s."
+
+                    # Add a star annotation above the box
+                    fig.add_annotation(
+                        text=stars,  # or "*" if you prefer plain text
+                        x=f"{treatment} – <i>{probe}</i>",
+                        y=y_max,
+                        xref="x",
+                        yref="y",
+                        showarrow=False,
+                        font=dict(size=25, color="black"),
+                        row=2,
+                        col=1 if pidx == 0 else 3
+                    )
     fig.update_xaxes(showticklabels=False, row=1)
     fig.update_yaxes(showticklabels=False, row=1)
     fig.update_yaxes(title=dict(text="mean Intensities"), row=2, col=1)

@@ -15,6 +15,7 @@ if __name__ == '__main__':
         intensities = snakemake.input.intensities
         res_tsv = snakemake.output.res_tsv
         html_outfile = snakemake.output.html
+        distribution_out = snakemake.output.distribution_out
 
 
     else:
@@ -29,10 +30,12 @@ if __name__ == '__main__':
         layout = cfg["F5FISH"]["layout"]
         subplot_params = dict(vertical_spacing=0.05, horizontal_spacing=0.05,
                               column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
+        res_tsv = None
 
     hs = subplot_params["horizontal_spacing"]
     l = (1- (len(probes)-1)*hs) / len(probes)
-    fig = main(file, probes, cfg, layout, subplot_params, intensities=intensities, test_output=res_tsv)
+    fig, df = main(file, probes, cfg, layout, subplot_params, intensities=intensities, test_output=res_tsv)
+    df.to_csv(distribution_out, sep="\t", index=False)
     y = 1.1
     fig.add_shape(
         type="line",

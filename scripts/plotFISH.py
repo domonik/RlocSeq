@@ -171,6 +171,17 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
 
         )
         fig.add_vline(vint, col=i+1, row=row, line=dict(dash="dash", color="black", width=1), layer="above")
+        fig.add_annotation(
+            x=vint,
+            yref=f"y{domain}",
+            xref=f"x{didx}",
+            y=0,  # position near top of the subplot (in data coords)
+            text=f"{vint}",  # or any custom label
+            showarrow=False,
+            xanchor="left",  # position text to the right of the line
+            yanchor="bottom",
+            font=dict(color="grey", size=7),
+        )
     colors = list(color_map.values())
     fig.add_traces(
         [
@@ -266,7 +277,8 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
         annotation.update(
             layout["annotations"]
         )
-    return fig
+    df = df.rename({"Figure": "Replicate"}, axis=1)
+    return fig, df
 
 
 
@@ -283,6 +295,7 @@ if __name__ == '__main__':
         cfg = snakemake.config
         outfile = snakemake.output.svg
         subplot_params = snakemake.params.subplot
+        distribution_out = snakemake.output.distribution_out
     else:
         import yaml
         file = "Pipeline/FISH/all_distributions.tsv"
@@ -292,7 +305,9 @@ if __name__ == '__main__':
         with open("configFile.yml", 'r') as f:
             cfg = yaml.safe_load(f)
         layout = cfg["F2FISH"]["layout"]
-    fig = main(file, probes, cfg, layout, subplot_params)
+    fig, df = main(file, probes, cfg, layout, subplot_params)
+    df.to_csv(distribution_out, sep="\t", index=False)
+
     if "snakemake" not in globals():
         fig.show()
     fig.write_image(outfile)

@@ -13,6 +13,7 @@ if __name__ == '__main__':
         outfile = snakemake.output.svg
         html_outfile = snakemake.output.html
         subplot_params = snakemake.params.subplot
+        distribution_out = snakemake.output.distribution_out
     else:
         import yaml
         file = "Pipeline/FISH/all_distributions.tsv"
@@ -28,7 +29,8 @@ if __name__ == '__main__':
 
     hs = subplot_params["horizontal_spacing"]
     l = (1- (len(probes)-1)*hs) / len(probes)
-    fig = main(file, probes, cfg, layout, subplot_params)
+    fig, df = main(file, probes, cfg, layout, subplot_params)
+    df.to_csv(distribution_out, sep="\t", index=False)
     if "snakemake" not in globals():
         print("showing")
         fig.show()

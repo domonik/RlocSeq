@@ -1,3 +1,5 @@
+from importlib_metadata import distribution
+
 from scripts.plotFISH import main
 
 
@@ -13,6 +15,7 @@ if __name__ == '__main__':
         outfile = snakemake.output.svg
         subplot_params = snakemake.params.subplot
         html_outfile = snakemake.output.html
+        distribution_out = snakemake.output.distribution_out
 
     else:
         import yaml
@@ -28,7 +31,8 @@ if __name__ == '__main__':
 
     hs = subplot_params["horizontal_spacing"]
     l = (1- (len(probes)-1)*hs) / len(probes)
-    fig = main(file, probes, cfg, layout, subplot_params, intensities=None)
+    fig, df = main(file, probes, cfg, layout, subplot_params, intensities=None)
+    df.to_csv(distribution_out, sep="\t", index=False)
     y = 1.1
     fig.add_shape(
         type="line",

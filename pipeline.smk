@@ -858,18 +858,35 @@ rule rnatypeGSEA:
 rule rbp3GSEA:
     input:
         tsv = rules.addRBP3Data.output.trash_tsv_for_R,
+
     output:
         enrichedFile = "Pipeline/RBP3Check/gseaEnrich_puro{puro}.tsv",
         gsFile = "Pipeline/RBP3Check/gseaInfo_puro{puro}.tsv"
     conda: "envs/clusterprofiler.yml",
     script: "scripts/RBP3GSEA.R"
 
+rule jointhisBullshit:
+    input:
+        gsFile = expand(rules.rbp3GSEA.output.gsFile, puro="plusPuromycin")[0],
+        joined = rules.joinTables.output.tsv
+
+    output:
+        gsFile = "Pipeline/Paper/Figure8/gseaInfo_puro.tsv"
+    run:
+        import pandas as pd
+        gsinfo = pd.read_csv(input.gsFile, sep="\t")
+        df = pd.read_csv(input.joined, sep="\t")
+        df = df[["padj_plusPuromycin", "log2FoldChange_plusPuromycin", "locus_tag", "Gene Names"]]
+        out_df = gsinfo.merge(df,left_on="gene",right_on="locus_tag",how="left")
+        out_df.to_csv(output.gsFile, index=False, sep="\t")
+
+
 
 
 rule minusPVolcanoForFig1:
     input:
-        tsv = rules.joinTables.output.tsv, condition="M", baseline="C",
-        gsea = rules.rnatypeGSEA.output.enrichedFile, puro="minusPuromycin"
+        tsv = rules.joinTables.output.tsv,
+        gsea = expand(rules.rnatypeGSEA.output.enrichedFile, puro="minusPuromycin")[0]
     params:
         condition="Membrane",
         baseline= "Cytosol",
@@ -1014,7 +1031,8 @@ rule plotFISHFigure2:
     input:
         tsv = rules.processFISHImages.output.tsv
     output:
-        svg = config["F2FISH"]["file"]
+        svg = config["F2FISH"]["file"],
+        distribution_out = "Pipeline/Paper/Figure2/DistanceDistribution.tsv"
     params:
         probes = [("psaA", "untreated", "Replicate 1"), ("cupA", "untreated", "Replicate 1"), ("rnpB", "untreated", "Replicate 1"), ("fusB", "Puromycin", "Replicate 1") ],
         layout= config["F2FISH"]["layout"],
@@ -1049,7 +1067,9 @@ rule plotFISHFigure3:
     input:
         tsv=rules.processFISHImages.output.tsv
     output:
-        svg = config["F3FISH"]["file"]
+        svg = config["F3FISH"]["file"],
+        html = str(config["F3FISH"]["file"]).split(".")[0] + ".html",
+        distribution_out = "Pipeline/Paper/Figure3/DistanceDistribution.tsv"
     params:
         probes =[("16S rRNA", "untreated", "Replicate 1")],
         layout= config["F3FISH"]["layout"],
@@ -1138,7 +1158,9 @@ rule plotFISHFigure4:
     input:
         tsv=rules.processFISHImages.output.tsv
     output:
-        svg = config["F4FISH"]["file"]
+        svg = config["F4FISH"]["file"],
+        html= str(config["F4FISH"]["file"]).split(".")[0] + ".html"
+
     params:
         probes =[("psbA2","untreated","Replicate 1"), ("psbA2","Puromycin","Replicate 1"), ("16S rRNA", "untreated", "Replicate 1"), ("16S rRNA", "Puromycin", "Replicate 1")],
         layout= config["F4FISH"]["layout"],
@@ -1155,7 +1177,9 @@ rule plotFISHFigure5:
         intensities=rules.processFISHImages.output.spots_df
     output:
         svg = config["F5FISH"]["file"],
-        res_tsv = "Pipeline/Paper/Figure5/IntensitiesTTest.tsv"
+        res_tsv = "Pipeline/Paper/Figure5/IntensitiesTTest.tsv",
+        html= str(config["F5FISH"]["file"]).split(".")[0] + ".html",
+        distribution_out = "Pipeline/Paper/Figure5/DistanceDistribution.tsv"
     params:
         probes =[("fusB","untreated","Replicate 1"), ("fusB","Puromycin","Replicate 1"), ("psaA", "untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")],
         layout= config["F5FISH"]["layout"],
@@ -1172,7 +1196,10 @@ rule plotFISHFigure6:
     input:
         tsv=rules.processFISHImages.output.tsv,
     output:
-        svg = config["F6FISH"]["file"]
+        svg = config["F6FISH"]["file"],
+        html= str(config["F6FISH"]["file"]).split(".")[0] + ".html",
+        distribution_out = "Pipeline/Paper/Figure6/DistanceDistribution.tsv"
+
     params:
         probes =[("psbA2","untreated","Replicate 1"), ("psbA2","Puromycin","Replicate 1"), ("rpl10_12", "untreated", "Replicate 1"), ("rpl10_12", "Puromycin", "Replicate 1")],
         layout= config["F6FISH"]["layout"],
@@ -1450,7 +1477,9 @@ rule plot16SFISH:
         tsv=rules.processFISHImages.output.tsv,
         intensities=rules.processFISHImages.output.spots_df
     output:
-        svg = config["Supplement16SFISH"]["file"]
+        svg = config["Supplement16SFISH"]["file"],
+        distribution_out= "Pipeline/Paper/Supplementary/16SFISH/DistanceDistribution.tsv"
+
     params:
         probes =[("16S rRNA","untreated","Replicate 1"), ("16S rRNA","Puromycin","Replicate 1")],
 
