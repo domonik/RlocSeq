@@ -404,9 +404,22 @@ rule joinTables:
         df["locus_tag_norm"] = df["locus_tag"].str.replace(r'_(5UTR|3UTR)$', '', regex=True)
         tus_expanded["locus_tag"] = tus_expanded["locus_tag"].str.strip()
         tus_expanded = tus_expanded[["locus_tag", "TU"]]
+        tus_expanded = tus_expanded.merge(df[["locus_tag", "baseMean_minusPuromycin"]], on="locus_tag")
+        tus_expanded = tus_expanded[tus_expanded["baseMean_minusPuromycin"] > 10]
+
+
+        def clean_join(series):
+            vals = [x for x in series if pd.notna(x)]
+            if vals:
+                return vals
+            else:
+                return pd.NA  # keep NA if all values are missing
+
+
         tus_grouped = (
-            tus_expanded.groupby("locus_tag")["TU"]
-            .apply(lambda x: ",".join(sorted(set([str(i) for i in x if ~pd.isna(i)]))))
+            tus_expanded
+            .groupby('locus_tag')['TU']
+            .agg(clean_join)
             .reset_index()
         )
         df = df.merge(
@@ -414,6 +427,26 @@ rule joinTables:
             on="locus_tag_norm",
             how="left"
         )
+        count_per_TU = tus_expanded.groupby('TU')['locus_tag'].count().reset_index(name='locus_tag_count')
+
+        TU_size_dict = dict(zip(count_per_TU['TU'],count_per_TU['locus_tag_count']))
+        def fct(tu_list):
+            return [TU_size_dict[tu] for tu in tu_list if tu in TU_size_dict] if isinstance(tu_list, list) else pd.NA
+
+
+        df["TU"] = df["TU"].fillna(pd.NA)
+
+        df['TU_sizes'] = df['TU'].apply(fct)
+
+
+        def get_shortest_TU(tu_list, sizes):
+            if isinstance(sizes, list) and len(sizes):
+                min_idx = sizes.index(min(sizes))  # index of smallest size (first if tie)
+                return tu_list[min_idx], min(sizes)
+            else:
+                return pd.NA, pd.NA
+
+        df[['shortest_TU', "TU_size"]] = df.apply(lambda row: pd.Series(get_shortest_TU(row['TU'],row['TU_sizes'])),axis=1)
         #df = df.merge( tus_expanded.rename(columns={"locus_tag": "locus_tag_norm"}),on="locus_tag_norm",how="left")
         df.loc[df["gene_name"] == df["locus_tag"], "gene_name"] = df["Gene Names"].str.split(" ").str[0]
 
@@ -453,7 +486,13 @@ rule Table1:
                 "both at Membrane": df["stayedAtMembrane"].sum(),
                 "plus Puromycin TC Up": df["plusPTCUp"].sum(),
                 "plus Puromycin TC Down": df["plusPTCDown"].sum(),
-                "TC total": df[~(df["baseMean_tc"] == 0)].shape[0]
+                "TC total": df[~(df["baseMean_tc"] == 0)].shape[0],
+                "TC and plus Puro Total":
+                    df[~(df["baseMean_tc"] == 0) & ~(df["baseMean_plusPuromycin"] == 0)].shape[0],
+                "TC Up and plusP Up": (df["plusPMembran"] & df["plusPTCUp"]).sum(),
+                "TC Up and plusP Down": (df["plusPCytosol"] & df["plusPTCDown"]).sum(),
+                "TC Down and plusP Up": (df["plusPMembran"] & df["plusPTCDown"]).sum(),
+                "TC Down and plusP Down": (df["plusPCytosol"] & df["plusPTCDown"]).sum(),
 
             }
         ]
@@ -473,7 +512,12 @@ rule Table1:
                 "both at Membrane": subset["stayedAtMembrane"].sum(),
                 "plus Puromycin TC Up": subset["plusPTCUp"].sum(),
                 "plus Puromycin TC Down": subset["plusPTCDown"].sum(),
-                "TC total": subset[~(subset["baseMean_tc"] == 0)].shape[0]
+                "TC total": subset[~(subset["baseMean_tc"] == 0)].shape[0],
+                "TC and plus Puro Total": subset[~(subset["baseMean_tc"] == 0) & ~(subset["baseMean_plusPuromycin"] == 0)].shape[0],
+                "TC Up and plusP Up": (subset["plusPMembran"] & subset["plusPTCUp"]).sum(),
+                "TC Up and plusP Down": (subset["plusPCytosol"] & subset["plusPTCDown"]).sum(),
+                "TC Down and plusP Up": (subset["plusPMembran"] & subset["plusPTCDown"]).sum(),
+                "TC Down and plusP Down": (subset["plusPCytosol"] & subset["plusPTCDown"]).sum(),
 
             })
 
@@ -503,7 +547,29 @@ rule Table1:
         out_df.loc[:, loc] = out_df.loc[:, loc].astype(str)
         out_df.loc[:, loc] = np.char.add(out_df.loc[:, loc].values.astype(str),percent)
 
+        loc = [f"TC Up and plusP Up", f"TC Down and plusP Down", "TC Down and plusP Up", "TC Up and plusP Down"]
+        arr = out_df.loc[:, loc].to_numpy()
+        percent = np.round((arr / out_df[f"TC and plus Puro Total"].to_numpy().reshape(
+            arr.shape[0],1)) * 100,decimals=1)
+        percent = np.char.add(percent.astype(str),"%)")
+        percent = np.char.add(" (",percent)
+        out_df.loc[:, loc] = out_df.loc[:, loc].astype(str)
+        out_df.loc[:, loc] = np.char.add(out_df.loc[:, loc].values.astype(str),percent)
+
         out_df.to_csv(output.csv, sep=",", index=False)
+
+
+
+rule plotTUAssociation:
+    input:
+        tsv = rules.joinTables.output.tsv
+    output:
+        svg = config["SupplementTUAssociation"]["file"]
+    params:
+        num_permutations = 10000
+    threads: 5
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/TUPermutationTest.py"
 
 
 rule GOTermEnrichmentStayed:
@@ -1034,7 +1100,7 @@ rule plotFISHFigure2:
         svg = config["F2FISH"]["file"],
         distribution_out = "Pipeline/Paper/Figure2/DistanceDistribution.tsv"
     params:
-        probes = [("psaA", "untreated", "Replicate 1"), ("cupA", "untreated", "Replicate 1"), ("rnpB", "untreated", "Replicate 1"), ("fusB", "Puromycin", "Replicate 1") ],
+        probes = [("psaA", "untreated", "Replicate 2"), ("cupA", "untreated", "Replicate 1"), ("rnpB", "untreated", "Replicate 1"), ("fusB", "Puromycin", "Replicate 1") ],
         layout= config["F2FISH"]["layout"],
         subplot=dict(vertical_spacing=0.05, column_titles=["psaA", "cupA", "rnpB", "fusB"])
 
@@ -1498,6 +1564,14 @@ rule Supplement16SFISHtoPNG:
         png =  "Pipeline/Paper/Supplementary/16SFISH/16SFISH.png"
     shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
 
+
+rule SupplementTUAssotoPNG:
+    input:
+        svg = rules.plotTUAssociation.output.svg
+    output:
+        png =  config["SupplementTUAssociation"]["file"].split(".")[0] + ".png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
+
 rule all:
     default_target: True
     input:
@@ -1540,7 +1614,8 @@ rule all:
         supplement = rules.SupplementCorrelationtoPNG.output,
         supplement16FISH = rules.Supplement16SFISHtoPNG.output,
         uracil = rules.SupplementUraciltoPNG.output,
-        f7 = rules.Figure7toPNG.output
+        f7 = rules.Figure7toPNG.output,
+        tua = rules.SupplementTUAssotoPNG.output
 #tpmemabundace = rules.checkTranscriptAbundanceGO.output
 
 

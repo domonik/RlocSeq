@@ -900,6 +900,27 @@ Supplement16SFISH:
       t: 50
       b: 50
 
+
+SupplementTUAssociation:
+    file: "Pipeline/Paper/Supplementary/TUAssociation/TUAssociation.svg"
+    x: 0
+    y: 450
+    layout:
+      width: 450
+      height: 400
+      legend:
+        title:
+          font:
+            size: 10
+      annotations:
+        font:
+          size: 10
+
+      margin:
+        r: 50
+        t: 50
+        b: 50
+
 SupplementUracilTransmembrane:
   x: 0
   y: 450
@@ -918,3 +939,5 @@ SupplementUracilTransmembrane:
       r: 50
       t: 50
       b: 50
+
+

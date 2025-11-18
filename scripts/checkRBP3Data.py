@@ -9,7 +9,7 @@ def main(snakemake_input, config, output):
     joined = pd.read_csv(snakemake_input.joined, sep="\t")
     joined = joined.merge(df, on="locus_tag", how="left")
     joined["RBP3_Target"] = (~pd.isna(joined["log2FC"])) == True
-    joined_out = joined[~(joined["UTR"] | joined["asRNA"])]  # filter because they are not in the rbp3 dataset
+    joined_out = joined[joined["mRNA"]]
     p=0
     loc = ["Cellular thylakoid membrane"]
     cols = []
