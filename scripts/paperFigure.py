@@ -17,7 +17,7 @@ def main(params, output, config):
         panels.append(p)
 
     panels = panels + letters
-    f = Figure("624px", f"{ges_y}px", *panels)
+    f = Figure("680px", f"{ges_y}px", *panels)
     svg_string = f.tostr()
     svg_string = svg_string.decode().replace("encoding='ASCII'", "encoding='utf-8'")
     with open(output.svg, "w") as handle:

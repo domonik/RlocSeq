@@ -1,6 +1,9 @@
 from DEplots.enrichment import plot_gsea
 import plotly.graph_objects as go
 import pandas as pd
+from scripts.plotly_template import register_template
+
+register_template()
 
 def main(
         tsv,

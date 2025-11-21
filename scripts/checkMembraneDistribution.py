@@ -2,7 +2,9 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objs as go
 import re
+from scripts.plotly_template import register_template
 
+register_template()
 
 def extract_terms_before_brackets(text):
     if pd.isna(text):
@@ -66,8 +68,6 @@ def check_membrane_dist(table, config, output, uni_col="Gene Names (ordered locu
                 name=part,
                 orientation="h",
                 marker=dict(color=color, pattern_shape=pattern, pattern=dict(fgcolor="grey"), line=dict(color="black", width=2)),
-                text=t,
-                textposition="inside",
                 insidetextanchor="middle",
 
             )

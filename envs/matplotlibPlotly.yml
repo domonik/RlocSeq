@@ -8,6 +8,7 @@ dependencies:
  - matplotlib-venn
  - python-kaleido=0.2.1
  - biopython
+ - tesseract
  - pip:
     - git+https://github.com/domonik/DEplots.git@main
     - gffutils

@@ -2,7 +2,9 @@ import pandas as pd
 from scripts.readCount import plot_precomputed_coverage
 from scripts.gff_helper import read_gff3, read_gff_via_gffutils, optimize_gff_lines
 import plotly.graph_objs as go
+from scripts.plotly_template import register_template
 
+register_template()
 
 def main(design, gff, db_name, output_path, cfg):
     gff = read_gff_via_gffutils(gff, dbname="foofile.db", fix=False)
@@ -173,7 +175,7 @@ def main(design, gff, db_name, output_path, cfg):
             x=[None],
             y=[None],
             mode="lines",
-            name=f"Q.25-Q.75",
+            name=f"IQR",
             fill="toself",
             fillcolor='rgba(0,0,0,0.4)',
             line=dict(color='rgba(255,255,255,0)'),
@@ -184,6 +186,8 @@ def main(design, gff, db_name, output_path, cfg):
     fig.update_layout(cfg["LayoutDefault"])
 
     fig.update_layout(cfg["MinusPuroCoverage"]["layout"])
+    fig.update_xaxes(showline=False, ticks="", row=1)
+    fig.update_yaxes(ticks="", row=2)
 
     fig.write_image(output_path)
 

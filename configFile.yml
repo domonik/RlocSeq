@@ -4,12 +4,12 @@ tertiary-file: "run_configs/third_config.yml"
 total_cell-file: "run_configs/total_cell_config.yml"
 why-drop-replicate-file: "run_configs/why_drop_replicate.yml"
 
-membraneColor: "#046A38"
-cytosolColor: "#003087"
+membraneColor: "#C60C30"
+cytosolColor: "#00338D"
 
 TRACE_COLORS:
-  "-p M": "#2ca02c"
-  "-p C": "#002695"
+  "-p M": "#C60C30"
+  "-p C": "#00338D"
   "+p C": "#002244"
   "+p M": "#69BE28"
 
@@ -101,32 +101,7 @@ memeMotifLD_LPuro:
 
 
 LayoutDefault:
-  template: "seaborn"
-  width: 624
-  height: 400
-  font:
-    size: 9.33
-    family: "Arial"
-
-  legend:
-    font:
-      size: 8
-      family: "Arial"
-  margin:
-    t: 20
-    b: 50
-    l: 50
-    r: 50
-  yaxis:
-    gridwidth: 0.75
-    title:
-      font:
-        size: 8
-  xaxis:
-    gridwidth: 0.75
-    title:
-      font:
-        size: 8
+  template: "simple_white_custom"
 
 
 fonts:
@@ -261,16 +236,12 @@ MinusPuroCoverage:
   x: 0
   y: 0
   layout:
-    width: 624
+    width: 680
     height: 150
-    legend:
-      title:
-        font:
-          size: 10
     margin:
       r: 50
-      t: 30
-      b: 5
+      t: 10
+      b: 20
 
 F2FISH:
   file: "Pipeline/Paper/Figure2/F2FISH.svg"
@@ -278,21 +249,17 @@ F2FISH:
   x: 0
   y: 150
   layout:
-    width: 624
-    height: 300
+    width: 680
+    height: 250
     legend:
-      title:
-        font:
-          size: 10
+      yanchor: "bottom"
+      y: 0
     margin:
       r: 50
-      t: 30
-      b: 50
-    xaxis:
-      title_standoff: 1
-    annotations:
-      font:
-        size: 10
+      l: 50
+      t: 20
+      b: 30
+
 
 
 F2:
@@ -316,57 +283,60 @@ F3SubCellLoc:
   x: 0
   y: 0
   layout:
-    width: 624
-    height: 200
+    width: 400
+    height: 120
     margin:
-      t: 30
-      b: 50
+      t: 20
+      r: 5
+      l: 120
+      b: 40
     xaxis:
       title:
         text: "fraction of transcripts [%]"
         standoff: 1
     legend:
       orientation: "h"
-      y: -0.25
+      y: 1.25
+      x: -0.2
+      xanchor: "left"
+      yanchor: "bottom"
+      bgcolor: "rgba(0, 0,0 ,0)"
 
 
 F3ClusteredGO:
   file: "Pipeline/Paper/Figure3/F3CluteredGO.svg"
   x: 0
-  y: 200
+  y: 120
   layout:
-    width: 312
-    height: 300
+    width: 400
+    height: 230
     legend:
       title:
         font:
           size: 10
     margin:
       r: 50
-      t: 30
+      l: 120
+      t: 15
       b: 50
 
 
 
 F3FISH:
   file: "Pipeline/Paper/Figure3/F3FISH.svg"
-  x: 312
-  y: 200
+  x: 400
+  y: 0
   layout:
-    width: 312
-    height: 300
+    width: 280
+    height: 350
     legend:
-      title:
-        font:
-          size: 10
+      yanchor: "bottom"
+      y: 0
     margin:
       r: 50
+      l: 50
       t: 30
       b: 50
-    xaxis:
-      title_standoff: 1
-    yaxis3:
-      title_standoff: 1
     annotations:
       font:
         size: 10

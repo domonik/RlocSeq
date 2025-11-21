@@ -23,6 +23,7 @@ if __name__ == '__main__':
         file = "Pipeline/FISH/all_distributions.tsv"
         intensities = "Pipeline/FISH/single_spots.tsv"
         outfile = "foo.svg"
+        distribution_out = "foo.tsv"
         with open("configFile.yml", 'r') as f:
             cfg = yaml.safe_load(f)
         probes =[("fusB","untreated","Replicate 1"), ("fusB","Puromycin","Replicate 1"), ("psaA", "untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")]

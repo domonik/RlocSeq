@@ -1102,7 +1102,7 @@ rule plotFISHFigure2:
     params:
         probes = [("psaA", "untreated", "Replicate 2"), ("cupA", "untreated", "Replicate 1"), ("rnpB", "untreated", "Replicate 1"), ("fusB", "Puromycin", "Replicate 1") ],
         layout= config["F2FISH"]["layout"],
-        subplot=dict(vertical_spacing=0.05, column_titles=["psaA", "cupA", "rnpB", "fusB"])
+        subplot=dict(vertical_spacing=0.00, horizontal_spacing=0.05, column_titles=["<i>psaA</i>", "<i>cupA</i>", "<i>rnpB</i>", "<i>fusB</i>"])
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISH.py"
@@ -1114,7 +1114,7 @@ rule joinFig2:
         fish = rules.plotFISHFigure2.output.svg
     params:
         figures = config["F2"],
-        ges_y = 450
+        ges_y = 400
     conda: "envs/svgutils.yml"
     output:
         svg = "Pipeline/Paper/Figure2/Figure2.svg"
@@ -1139,7 +1139,7 @@ rule plotFISHFigure3:
     params:
         probes =[("16S rRNA", "untreated", "Replicate 1")],
         layout= config["F3FISH"]["layout"],
-        subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05, column_titles=["16S rRNA"],)
+        subplot=dict(vertical_spacing=0.0, horizontal_spacing=0.05, column_titles=["16S rRNA"],)
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISHFigure3.py"
@@ -1249,7 +1249,7 @@ rule plotFISHFigure5:
     params:
         probes =[("fusB","untreated","Replicate 1"), ("fusB","Puromycin","Replicate 1"), ("psaA", "untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")],
         layout= config["F5FISH"]["layout"],
-        subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
+        subplot = dict(vertical_spacing=0.05, horizontal_spacing=0.05,
                               column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
 
     conda: "envs/matplotlibPlotly.yml"

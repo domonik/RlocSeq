@@ -423,7 +423,7 @@ def _trace_from_row(row, idx, v, arrow_size, type_colors, gff_name):
         x=x,
         mode="lines",
         fillcolor=color,
-        line=dict(color="black"),
+        line=dict(color="black", width=1),
         fill="toself",
         name=f'{row.featuretype}-{name}',
         text=hovertext,
