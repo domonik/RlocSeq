@@ -3,6 +3,9 @@ import yaml
 import pandas as pd
 from scipy.stats import ttest_ind
 import numpy as np
+from scripts.plotly_template import register_template
+
+register_template()
 
 def significance_label(p):
     if pd.isna(p): return ""
@@ -47,10 +50,11 @@ def main(tsv, cfg, outfile):
             error_y=dict(
                 type="data",
                 array=agg["std_log2FC"],
-                visible=True
+                visible=True,
+                thickness=1,  # line width of the error bars (in px)
             ),
             marker=dict(line=dict(color="black", width=1),
-                        color=cfg["cytosolColor"]),
+                        color="white"),
             showlegend=False# show significance above bars
         )
     )
@@ -62,7 +66,7 @@ def main(tsv, cfg, outfile):
             y=np.full(len(agg), y_max + offset),  # same height for all
             text=agg["significance"],
             mode="text",
-            textfont=dict(size=8),
+            textfont=dict(size=9.33),
             showlegend=False
         )
     )

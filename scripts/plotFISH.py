@@ -38,15 +38,19 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
         ]
         row_heights =  [0.33, 0.07, 0.3, 0.3]
 
-        row = 4
-    else:
-        specs = [
-            [{"type": "image"} for _ in range(len(probes))],
-            [{"type": "image", "b": 0.09, "t": 0.01, "l": 0.02, "r": 0.02} for _ in range(len(probes))],
-            [{"type": "xy"} for _ in range(len(probes))],  # Row 1: two image plots
-        ]
-        row_heights = [0.58, 0.12, 0.3]
         row = 3
+    else:
+        lr = 0.05 / len(probes)
+        r = 0.15 / len(probes)
+        specs = [
+            [{"type": "image", "l": lr, "r": lr}, {"type": "xy", "b": 0.12, "t": 0.2, "r": r} ] * len(probes),
+            [{"type": "xy", "colspan": 2, "r": r+ lr}, None] * len(probes),  # Row 1: two image plots
+        ]
+        row_heights = [0.7, 0.3]
+        base = 1 / len(probes)
+
+        column_widths = [base * .8, base * .2] * len(probes)
+        row = 2
     id_vars = ["Mask", "Image", "Probe", "Figure", "Treatment"]
     mode = "mean"
     cols = [col for col in df.columns if mode in col and "bg_mean" not in col]
@@ -73,19 +77,25 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
     summary['ci95'] = summary['sem'] * stats.t.ppf(0.975, df=summary['count'] - 1)
     summary = summary[summary["variable"] != "max"]
     summary = summary[summary["variable"].astype(int) <= 20]
-    col_titles = [p[0] for p in probes]
+    col_titles = []
+    for title in subplot_params["column_titles"]:
+        col_titles.append(title)
+        col_titles.append(None)
+    del subplot_params["column_titles"]
     fig = make_subplots(
         rows=row,
-        cols=len(probes),
+        cols=len(probes)*2,
         row_heights=row_heights,
         x_title="distance to probe [nm]",
         specs=specs,
+        column_widths=column_widths,
+        column_titles = col_titles,
         **subplot_params
 
 
     )
     for annotation in fig.layout.annotations:
-        annotation.update(font=dict(size=8))
+        annotation.update(font=dict(size=8), yanchor="top")
     fig.update_layout(cfg["LayoutDefault"])
 
     color_map = {"Replicate 1": "rgb(0, 106, 56)", "Replicate 2": "rgb(0, 48, 135)", "Replicate 3": "rgb( 111, 160, 130)"}
@@ -104,22 +114,17 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
         image_file = os.path.join(image_dir, files[0])
         img = tifffile.imread(image_file)
         tmp = px.imshow(img)
-        fig.add_trace(tmp.data[0], row=1, col=i + 1)
+        fig.add_trace(tmp.data[0], row=1, col=(i * 2) + 1)
 
         image_file = os.path.join(image_dir, cbarfile)
         img = tifffile.imread(image_file)
         max_v = int(pytesseract.image_to_string(img).split("\n")[0])
-        fig.update_layout({
-                f'coloraxis{i + 1}': dict(
-                    colorscale='Viridis',
-                    colorbar=dict(title=f'Column {i + 1}')
-                )
-            })
+
         img = np.rot90(img)
         mask = (img[..., 0] != 255) &  (img[..., 2] != 255)
         max_color = img[mask, 1].max()
 
-        fake_heat = np.linspace(0, max_v, 100).reshape(1, 100)
+        fake_heat = np.linspace(0, max_v, 100).reshape(100, 1)
         didx = i+1+(len(probes) * 1) if intensities is None else i+1 + (len(probes) * 2) // 2
         domain = f"{didx} domain"
         fig.add_trace(
@@ -128,8 +133,8 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
                 colorscale=["rgb(0, 0, 0)", f"rgb(0, {max_color}, 0)"],
                 showscale=False,
                 # Hide the actual heatmap by making it tiny and offset
-                x=fake_heat.flatten(),  # off the visible range
-                y=[-1],
+                y=fake_heat.flatten(),  # off the visible range
+                x=[-1],
                 colorbar=dict(
                     len=0.2,
                     x=(1 / len(probes)) * i,
@@ -142,10 +147,11 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
                 )
                 # Configure colorbar
             ),
-            row=2, col=i + 1
+            row=1, col=i * 2 + 2
         )
-        fig.update_xaxes(
-            tickvals=[0, max_v // 2, max_v], row=2, col=i+1,
+        fig.update_yaxes(
+            tickvals=[0, max_v // 2, max_v], row=1, col=i*2+2,
+            range=[0, max_v],  # ensure all tickvals are within the axis
         )
         amaxes = []
 
@@ -190,7 +196,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
                 showlegend=False,
             ))
         fig.add_traces(
-            traces + errors, cols=i+1, rows=3 if intensities is None else 4
+            traces + errors, cols=(i * 2)+1, rows=2 if intensities is None else 3
         )
         if intensities is not None:
             group = intensities[(intensities.Treatment == treatment) & (intensities.Probe == probe)]
@@ -214,7 +220,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
                         width=4
                     )
                 ),
-                row=3,
+                row=2,
                 col=(i + 1) - (i % 2)
             )
         vint = float(np.median(np.asarray(amaxes)))
@@ -232,7 +238,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
             opacity=1,
 
         )
-        fig.add_vline(vint, col=i+1, row=row, line=dict(dash="dash", color="black", width=1), layer="above")
+        fig.add_vline(vint, col=i*2+1, row=row, line=dict(dash="dash", color="black", width=1), layer="above")
         fig.add_annotation(
             x=vint,
             yref=f"y{domain}",
@@ -286,7 +292,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
                 legendgrouptitle=dict(text="Intensities"),
 
             ),
-            row=3,
+            row=2,
             col=1
         )
         fig.update_yaxes(
@@ -317,13 +323,13 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
     fig.update_yaxes(
         showgrid=False, showticklabels=False, row=1, ticks="", showline=False
     )
-    fig.update_xaxes(
-        showgrid=False, row=2, ticks="outside", showline=False,
-    )
-
-    fig.update_yaxes(
-        showgrid=False, showticklabels=False, row=2, ticks="", showline=False
-    )
+    for col in range(2, len(probes)* 2 + 1, 2):
+        fig.update_yaxes(
+            showgrid=False, row=1, col=col, ticks="outside", ticklen=3, showline=False, showticklabels=True, side="right"
+        )
+        fig.update_xaxes(
+            showgrid=False, showticklabels=False, row=1, col=col, ticks="", showline=False
+        )
     fig.update_yaxes(
         range=[0, 1], row=row, showticklabels=False, title_standoff=30
     )
@@ -366,7 +372,7 @@ if __name__ == '__main__':
         file = "Pipeline/FISH/all_distributions.tsv"
         probes = [("psaA", "untreated", "Replicate 1"), ("cupA", "untreated", "Replicate 1"), ("rnpB", "untreated", "Replicate 1"), ("fusB", "untreated", "Replicate 1") ]
         outfile = "foo.svg"
-        subplot_params = dict(vertical_spacing=0.0, column_titles=[p[0] for p in probes],)
+        subplot_params = dict(vertical_spacing=0.0, column_titles=[p[0] for p in probes], horizontal_spacing=0.)
         with open("configFile.yml", 'r') as f:
             cfg = yaml.safe_load(f)
         layout = cfg["F2FISH"]["layout"]

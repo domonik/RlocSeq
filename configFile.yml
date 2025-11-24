@@ -4,8 +4,12 @@ tertiary-file: "run_configs/third_config.yml"
 total_cell-file: "run_configs/total_cell_config.yml"
 why-drop-replicate-file: "run_configs/why_drop_replicate.yml"
 
-membraneColor: "#C60C30"
-cytosolColor: "#00338D"
+membraneColor: "rgb(198, 12, 48)"
+cytosolColor: "rgb(0, 51, 141)"
+minusPColor: "rgb(0, 51, 141)"
+plusPColor: "rgb(198, 12, 48)"
+seahawksGrey: "rgb(165, 172, 175)"
+
 
 TRACE_COLORS:
   "-p M": "#C60C30"
@@ -283,12 +287,12 @@ F3SubCellLoc:
   x: 0
   y: 0
   layout:
-    width: 400
+    width: 450
     height: 120
     margin:
       t: 20
       r: 5
-      l: 120
+      l: 140
       b: 40
     xaxis:
       title:
@@ -308,15 +312,11 @@ F3ClusteredGO:
   x: 0
   y: 120
   layout:
-    width: 400
+    width: 450
     height: 230
-    legend:
-      title:
-        font:
-          size: 10
     margin:
       r: 50
-      l: 120
+      l: 140
       t: 15
       b: 50
 
@@ -324,16 +324,19 @@ F3ClusteredGO:
 
 F3FISH:
   file: "Pipeline/Paper/Figure3/F3FISH.svg"
-  x: 400
+  x: 450
   y: 0
   layout:
-    width: 280
+    width: 230
     height: 350
     legend:
       yanchor: "bottom"
+      orientation: "h"
+      bgcolor: "rgba(0,0,0,0)"
+      visible: False
       y: 0
     margin:
-      r: 50
+      r: 10
       l: 50
       t: 30
       b: 50
@@ -382,16 +385,18 @@ F4Percent:
   x: 0
   y: 0
   layout:
-    width: 312
-    height: 100
+    width: 310
+    height: 80
     margin:
-      r: 5
-      t: 30
-      l: 5
+      r: 10
+      t: 25
+      l: 10
+      b: 35
     legend:
       orientation: "h"
       y: 1.2
       x: 0
+      bgcolor: "rgba(0,0,0,0)"
       yanchor: "bottom"
       xanchor: "left"
 
@@ -443,83 +448,39 @@ F4Volcano:
       y: 15
   file: "Pipeline/Paper/Figure4/F4Volcano.svg"
   x: 0
-  y: 100
+  y: 80
   highlight_go_term:
     ribosome: "#8f6b30"
-    "unfolded protein binding": "#ffe863"
+    "unfolded protein binding": "rgb(198, 12, 48)"
   layout:
-    width: 312
-    height: 200
+    width: 310
+    height: 250
     legend:
       orientation: "h"
     xaxis:
       title:
         standoff: 1
 
-
-F4CupAIntensities:
-  file: "Pipeline/Paper/Figure4/F4cupAIntensities.svg"
-  x: 0
-  y: 500
-  annotations:
-    font:
-      size: 10
-  layout:
-    showlegend: False
-    width: 624
-    height: 300
-    legend:
-      title:
-        font:
-          size: 10
-    margin:
-      r: 50
-      t: 40
-      b: 50
-
-
 F4ClusteredGO:
   file: "Pipeline/Paper/Figure4/F4ClusteredGO.svg"
-  x: 312
+  x: 310
   y: 0
   layout:
-    width: 312
-    height: 300
-    legend:
-      title:
-        font:
-          size: 10
+    width: 370
+    height: 330
     margin:
       r: 50
+      l: 120
       t: 30
-      b: 50
-
-F4FISH:
-  file: "Pipeline/Paper/Figure4/F4FISH.svg"
-  x: 0
-  y: 0
-  layout:
-    width: 624
-    height: 300
-    legend:
-      title:
-        font:
-          size: 10
-    annotations:
-      font:
-        size: 10
-    margin:
-      r: 50
-      t: 50
       b: 50
 
 
 F4QTPCR:
   file: "Pipeline/Paper/Figure4/F4QPCR.svg"
   x: 0
-  y: 300
+  y: 330
   layout:
-    width: 624
+    width: 230
     height: 200
     legend:
       title:
@@ -528,13 +489,38 @@ F4QTPCR:
       orientation: "h"
 
     margin:
-      r: 50
-      t: 30
-      b: 50
+      r: 10
+      t: 10
+      b: 30
     xaxis:
       title_standoff: 1
     yaxis3:
       title_standoff: 1
+
+
+
+
+F4CupAIntensities:
+  file: "Pipeline/Paper/Figure4/F4cupAIntensities.svg"
+  x: 230
+  y: 310
+  layout:
+    showlegend: False
+    width: 450
+    height: 220
+    legend:
+      title:
+        font:
+          size: 10
+    margin:
+      r: 10
+      t: 40
+      b: 20
+      l: 40
+
+
+
+
 
 
 

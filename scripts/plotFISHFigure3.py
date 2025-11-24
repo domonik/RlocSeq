@@ -34,7 +34,7 @@ if __name__ == '__main__':
     for annotation in fig.layout.annotations:
         if annotation.text.startswith("distance to"):
             annotation.update(yanchor="bottom", text="")
-    fig.update_xaxes(title=dict(text="distance to probe [nm]"), row=3,)
+    fig.update_xaxes(title=dict(text="distance to probe [nm]"), row=2, col=1)
     if "snakemake" not in globals():
         print("showing")
         fig.show()

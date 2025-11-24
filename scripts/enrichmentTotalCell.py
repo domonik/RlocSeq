@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
 from DEplots.enrichment import enrichment_plot_from_cp_table
+from scripts.plotly_template import register_template
 
+register_template()
 
 def main(tsv, config, svg, html):
     colorscale = ["purple", "yellow"]

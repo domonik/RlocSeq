@@ -42,6 +42,14 @@ def register_template():
             },
             "font": {"family": "Arial", "size": 8, "color": "black"},
             "margin": {"b": 50, "t": 10, "l":30 , "r": 30   },
-            "annotationdefaults": {"font": {"family": "Arial", "size": 8},}
+            "annotationdefaults": {"font": {"family": "Arial", "size": 8},},
+            "coloraxis": {
+                "colorbar": {
+                    "title": {"font": {"size": 8}},
+                    "tickfont": {"size": 7},
+                }
+
+            },
         }
+
     )

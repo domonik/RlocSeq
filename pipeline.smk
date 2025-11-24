@@ -1102,7 +1102,7 @@ rule plotFISHFigure2:
     params:
         probes = [("psaA", "untreated", "Replicate 2"), ("cupA", "untreated", "Replicate 1"), ("rnpB", "untreated", "Replicate 1"), ("fusB", "Puromycin", "Replicate 1") ],
         layout= config["F2FISH"]["layout"],
-        subplot=dict(vertical_spacing=0.00, horizontal_spacing=0.05, column_titles=["<i>psaA</i>", "<i>cupA</i>", "<i>rnpB</i>", "<i>fusB</i>"])
+        subplot=dict(vertical_spacing=0.00, horizontal_spacing=0.0, column_titles=["<i>psaA</i>", "<i>cupA</i>", "<i>rnpB</i>", "<i>fusB</i>"])
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISH.py"
@@ -1139,7 +1139,7 @@ rule plotFISHFigure3:
     params:
         probes =[("16S rRNA", "untreated", "Replicate 1")],
         layout= config["F3FISH"]["layout"],
-        subplot=dict(vertical_spacing=0.0, horizontal_spacing=0.05, column_titles=["16S rRNA"],)
+        subplot=dict(vertical_spacing=0.0, horizontal_spacing=0.0, column_titles=["16S rRNA"],)
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISHFigure3.py"
@@ -1220,21 +1220,21 @@ rule plotVolcanoFigure5:
 
 
 
-rule plotFISHFigure4:
-    input:
-        tsv=rules.processFISHImages.output.tsv
-    output:
-        svg = config["F4FISH"]["file"],
-        html= str(config["F4FISH"]["file"]).split(".")[0] + ".html"
-
-    params:
-        probes =[("psbA2","untreated","Replicate 1"), ("psbA2","Puromycin","Replicate 1"), ("16S rRNA", "untreated", "Replicate 1"), ("16S rRNA", "Puromycin", "Replicate 1")],
-        layout= config["F4FISH"]["layout"],
-        subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
-                              column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
-
-    conda: "envs/matplotlibPlotly.yml"
-    script: "scripts/plotFISHFigure4.py"
+# rule plotFISHFigure4:
+#     input:
+#         tsv=rules.processFISHImages.output.tsv
+#     output:
+#         svg = config["F4FISH"]["file"],
+#         html= str(config["F4FISH"]["file"]).split(".")[0] + ".html"
+#
+#     params:
+#         probes =[("psbA2","untreated","Replicate 1"), ("psbA2","Puromycin","Replicate 1"), ("16S rRNA", "untreated", "Replicate 1"), ("16S rRNA", "Puromycin", "Replicate 1")],
+#         layout= config["F4FISH"]["layout"],
+#         subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
+#                               column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
+#
+#     conda: "envs/matplotlibPlotly.yml"
+#     script: "scripts/plotFISHFigure4.py"
 
 
 rule plotFISHFigure5:
@@ -1409,7 +1409,7 @@ rule joinFig3:
         files = [config[val]["file"] for key, val in config["F3"].items()]
     params:
         figures = config["F3"],
-        ges_y = 500
+        ges_y = 350
     conda: "envs/svgutils.yml"
     output:
         svg = "Pipeline/Paper/Figure3/Figure3.svg"
@@ -1429,7 +1429,7 @@ rule joinFig4:
         files=[config[val]["file"] for key, val in config["F4"].items()]
     params:
         figures = config["F4"],
-        ges_y = 800
+        ges_y = 530
     conda: "envs/svgutils.yml"
     output:
         svg = "Pipeline/Paper/Figure4/Figure4.svg"
