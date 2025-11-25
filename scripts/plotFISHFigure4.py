@@ -1,4 +1,4 @@
-from scripts.plotFISH import main
+from scripts.plotFISHWithIntensities import main
 
 
 
@@ -29,7 +29,7 @@ if __name__ == '__main__':
         probes =[("fusB","untreated","Replicate 1"), ("fusB","Puromycin","Replicate 1"), ("psaA", "untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")]
 
         layout = cfg["F5FISH"]["layout"]
-        subplot_params = dict(vertical_spacing=0.05, horizontal_spacing=0.05,
+        subplot_params = dict(vertical_spacing=0., horizontal_spacing=0.,
                               column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
         res_tsv = None
 
@@ -37,33 +37,33 @@ if __name__ == '__main__':
     l = (1- (len(probes)-1)*hs) / len(probes)
     fig, df = main(file, probes, cfg, layout, subplot_params, intensities=intensities, test_output=res_tsv)
     df.to_csv(distribution_out, sep="\t", index=False)
-    y = 1.1
+    y = 1.075
     fig.add_shape(
         type="line",
-        xref="paper",
+        xref="x7",
         yref="paper",
-        x0=l/4,
-        x1=l*1.75+hs,
+        x0=0,
+        x1=1,
         y0=y,
         y1=y,
-        line=dict(color="black", width=2),
+        line=dict(color="black", width=1),
         opacity=1
     )
     fig.add_shape(
         type="line",
-        xref="paper",
+        xref="x8",
         yref="paper",
-        x0=2.25*l+2*hs,
-        x1=3.75*l+3*hs,
+        x0=0,
+        x1=1,
         y0=y,
         y1=y,
-        line=dict(color="black", width=2),
+        line=dict(color="black", width=1),
         opacity=1
     )
     fig.add_annotation(
-        xref="paper",
+        xref="x7",
         yref="paper",
-        x=1/4,
+        x=0.5,
         xanchor="center",
         y=y,
         yanchor="bottom",
@@ -71,9 +71,9 @@ if __name__ == '__main__':
         showarrow=False,
     )
     fig.add_annotation(
-        xref="paper",
+        xref="x8",
         yref="paper",
-        x=3 / 4,
+        x=0.5,
         xanchor="center",
         y=y,
         yanchor="bottom",
@@ -82,5 +82,8 @@ if __name__ == '__main__':
     )
     if "snakemake" not in globals():
         fig.show()
+    for annotation in fig.layout.annotations:
+        if annotation.text.startswith("distance to"):
+            annotation.update(yanchor="bottom")
     fig.write_image(outfile)
     fig.write_html(html_outfile)

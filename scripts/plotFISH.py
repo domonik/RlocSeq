@@ -26,22 +26,25 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
         intensities = pd.read_csv(intensities, sep="\t")
         probe_names = [probe[0] for probe in probes]
         intensities, results_df = calc_summary_and_pval(intensities, probe_names)
-        introw = []
-        for _ in range(len(probes) // 2):
-            introw += [{"type": "box", "colspan": len(probes) // 2}, None]
-        specs = [
-            [{"type": "image"} for _ in range(len(probes))],
-            [{"type": "image", "b": 0.02} for _ in range(len(probes))],
-            introw,# Row 2: one boxplot spanning both cols
-            # Row 1: two image plots
-            [{"type": "xy"} for _ in range(len(probes))],  # Row 1: two image plots
-        ]
-        row_heights =  [0.33, 0.07, 0.3, 0.3]
 
+        lr = 0.04 / len(probes)
+        r = 0.15 / len(probes)
+        specs = [
+            [{"type": "image", "l": lr, "r": lr}, {"type": "image", "l": lr, "r": lr}, {"type": "xy", "b": 0.01, "t": 0.05, "r": r} ] * (len(probes) // 2),
+            [{"type": "box", "colspan": 3, "r": r+ lr, "b": 0.1}, None, None] * (len(probes) // 2),
+            [{"type": "xy", "colspan": 1, "r": r+ lr}, {"type": "xy", "colspan": 1, "r": r+ lr}, None] * (len(probes) //2),  # Row 1: two image plots
+        ]
+        base = 1 / (len(probes) // 2)
+
+        row_heights =  [0.4, 0.3, 0.3]
+        column_widths = [base * .4, base*.4, base * .2] * (len(probes) // 2)
+
+        col = int(len(probes) * 1.5)
         row = 3
     else:
         lr = 0.05 / len(probes)
         r = 0.15 / len(probes)
+        col = len(probes)*2
         specs = [
             [{"type": "image", "l": lr, "r": lr}, {"type": "xy", "b": 0.12, "t": 0.2, "r": r} ] * len(probes),
             [{"type": "xy", "colspan": 2, "r": r+ lr}, None] * len(probes),  # Row 1: two image plots
@@ -84,7 +87,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
     del subplot_params["column_titles"]
     fig = make_subplots(
         rows=row,
-        cols=len(probes)*2,
+        cols=col,
         row_heights=row_heights,
         x_title="distance to probe [nm]",
         specs=specs,
@@ -94,8 +97,13 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
 
 
     )
-    for annotation in fig.layout.annotations:
-        annotation.update(font=dict(size=8), yanchor="top")
+    if intensities is None:
+        for annotation in fig.layout.annotations:
+            annotation.update(font=dict(size=8), yanchor="top")
+    else:
+        for annotation in fig.layout.annotations:
+            annotation.update(font=dict(size=8))
+
     fig.update_layout(cfg["LayoutDefault"])
 
     color_map = {"Replicate 1": "rgb(0, 106, 56)", "Replicate 2": "rgb(0, 48, 135)", "Replicate 3": "rgb( 111, 160, 130)"}
@@ -127,32 +135,33 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
         fake_heat = np.linspace(0, max_v, 100).reshape(100, 1)
         didx = i+1+(len(probes) * 1) if intensities is None else i+1 + (len(probes) * 2) // 2
         domain = f"{didx} domain"
-        fig.add_trace(
-            go.Heatmap(
-                z=fake_heat,
-                colorscale=["rgb(0, 0, 0)", f"rgb(0, {max_color}, 0)"],
-                showscale=False,
-                # Hide the actual heatmap by making it tiny and offset
-                y=fake_heat.flatten(),  # off the visible range
-                x=[-1],
-                colorbar=dict(
-                    len=0.2,
-                    x=(1 / len(probes)) * i,
-                    y=1 - row_heights[0],
-                    orientation="h",
-                    yref=f"paper",
-                    xref=f"paper",
-                    xanchor="left",
-                    yanchor="middle"
-                )
-                # Configure colorbar
-            ),
-            row=1, col=i * 2 + 2
-        )
-        fig.update_yaxes(
-            tickvals=[0, max_v // 2, max_v], row=1, col=i*2+2,
-            range=[0, max_v],  # ensure all tickvals are within the axis
-        )
+        if treatment == "Puromycin" or intensities is None:
+            fig.add_trace(
+                go.Heatmap(
+                    z=fake_heat,
+                    colorscale=["rgb(0, 0, 0)", f"rgb(0, {max_color}, 0)"],
+                    showscale=False,
+                    # Hide the actual heatmap by making it tiny and offset
+                    y=fake_heat.flatten(),  # off the visible range
+                    x=[-1],
+                    colorbar=dict(
+                        len=0.2,
+                        x=(1 / len(probes)) * i,
+                        y=1 - row_heights[0],
+                        orientation="h",
+                        yref=f"paper",
+                        xref=f"paper",
+                        xanchor="left",
+                        yanchor="middle"
+                    )
+                    # Configure colorbar
+                ),
+                row=1, col=i * 2 + 2
+            )
+            fig.update_yaxes(
+                tickvals=[0, max_v // 2, max_v], row=1, col=i*2+2,
+                range=[0, max_v],  # ensure all tickvals are within the axis
+            )
         amaxes = []
 
         text = "<b>n: </b>"
@@ -221,7 +230,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
                     )
                 ),
                 row=2,
-                col=(i + 1) - (i % 2)
+                col=1 if probe == probes[0][0] else 5
             )
         vint = float(np.median(np.asarray(amaxes)))
         didx = i+1+(len(probes) * 2) if intensities is None else i+1 + (len(probes) * 2) + len(probes) // 2
@@ -345,6 +354,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
         col=1,
         showticklabels=True,
     )
+    fig.update_layout(bargap=0.7)
     fig.update_layout(**layout)
     for shape in fig.layout.shapes:
         shape['layer'] = 'above'

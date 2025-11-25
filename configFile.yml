@@ -541,66 +541,37 @@ F5Percent:
   x: 0
   y: 0
   layout:
-    width: 312
-    height: 100
+    width: 280
+    height: 120
     margin:
-      r: 5
-      t: 30
-      l: 5
+      r: 10
+      t: 50
+      l: 10
+      b: 50
     legend:
       orientation: "h"
       y: 1.2
       x: 0
+      bgcolor: "rgba(0,0,0,0)"
       yanchor: "bottom"
       xanchor: "left"
-
-
-
-
-
-Fig5Venn:
-  file: "Pipeline/Paper/Figure5/F5Venns.svg"
-  x: 312
-  y: 0
-  layout:
-    height: 300
-    width: 312
-    margin:
-      t: 30
-      r: 10
-      b: 50
-
-    legend:
-      orientation: "h"
-      y: 0.67
-      x: 0.5
-      xref: "paper"
-      yref: "paper"
-      yanchor: "top"
-      xanchor: "center"
-      bgcolor: "rgba(0, 0, 0, 0)"
-      font:
-        size: 10
-      title:
-        font:
-          size: 10
 
 
 VolcanoFigure5:
   file: "Pipeline/Paper/Figure5/F5Volcano.svg"
   x: 0
-  y: 100
+  y: 120
   highlight_go_term:
     photosystem: "#ffe863"
     ribosome: "#8f6b30"
   layout:
-    width: 312
-    height: 200
+    width: 280
+    height: 330
     margin:
-      t: 30
-      r: 30
-      b: 50
-
+      l: 30
+      t: 40
+      b: 40
+      r: 10
     xaxis:
       title_standoff: 1
       title:
@@ -625,28 +596,48 @@ VolcanoFigure5:
       y: 25
 
 
-                                                    
+Fig5Venn:
+  file: "Pipeline/Paper/Figure5/F5Venns.svg"
+  x: 280
+  y: 0
+  layout:
+    height: 200
+    width: 400
+    margin:
+      t: 15
+      r: 10
+      b: 25
+      l: 10
+
+    legend:
+      orientation: "h"
+      y: 0
+      x: -0.05
+      xref: "paper"
+      yref: "paper"
+      yanchor: "top"
+      xanchor: "left"
+      bgcolor: "rgba(0, 0, 0, 0)"
                                                     
                                                     
 
 F5FISH:
   file: "Pipeline/Paper/Figure5/F5FISH.svg"
-  x: 0
-  y: 300
+  x: 280
+  y: 200
   layout:
-    width: 624
-    height: 400
+    width: 400
+    height: 250
     legend:
-      title:
-        font:
-          size: 10
+      visible: False
     annotations:
       font:
         size: 10
     margin:
-      r: 50
-      t: 50
-      b: 50
+      r: 10
+      l: 50
+      t: 30
+      b: 30
 
 
 
@@ -664,58 +655,56 @@ F6ClusteredGO:
   x: 0
   y: 0
   layout:
-    width: 312
+    width: 250
     height: 300
-    legend:
-      title:
-        font:
-          size: 10
     margin:
-      r: 50
+      r: 10
+      l: 100
       t: 30
       b: 50
+    coloraxis:
+      colorbar:
+        thickness: 10
+    legend:
+      itemsizing: "constant"
+      itemwidth: 30
 
 
 
 F6Coverage:
   file: "Pipeline/Paper/Figure6/Coverages.svg"
-  x: 0
-  y: 300
+  x: 250
+  y: 0
   layout:
-    width: 624
+    width: 430
     height: 150
     legend:
-      title:
-        font:
-          size: 10
+      orientation: "h"
       tracegroupgap: 0
     yaxis:
       title_standoff: 1
     margin:
-      r: 50
-      t: 5
+      r: 20
+      t: 20
       b: 5
+      l: 40
 
 
 F6FISH:
   file: "Pipeline/Paper/Figure6/F6FISH.svg"
-  x: 0
-  y: 450
+  x: 250
+  y: 150
   layout:
-    width: 624
-    height: 300
+    width: 430
+    height: 200
     legend:
-      title:
-        font:
-          size: 10
-    annotations:
-      font:
-        size: 10
+      visible: False
 
     margin:
-      r: 50
-      t: 50
-      b: 50
+      r: 10
+      l: 30
+      t: 25
+      b: 30
 
 
 F6:

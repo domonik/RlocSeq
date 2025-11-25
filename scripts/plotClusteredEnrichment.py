@@ -9,10 +9,12 @@ register_template()
 def main(tsv, outfile, layout, config):
     df = pd.read_csv(tsv, sep="\t")
     df["Description"] = df["Description"].str.replace("bounded", "bounded<br>", regex=False)
+    df["Description"] = df["Description"].str.replace("macromolecule", "macromolecule<br>", regex=False)
     fig: go.Figure = enrichment_plot_from_cp_table(df, colorscale=[config["plusPColor"], config["minusPColor"],])
     term = "outer membrane-bounded periplasmic space"
     fig.update_layout(config["LayoutDefault"])
     fig.update_layout(layout)
+    fig.update_yaxes(title=dict(text=""))
     fig.write_image(outfile)
 
 

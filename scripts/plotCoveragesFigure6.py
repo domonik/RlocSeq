@@ -2,6 +2,9 @@ import pandas as pd
 from scripts.readCount import plot_precomputed_coverage
 from scripts.gff_helper import read_gff3, read_gff_via_gffutils, optimize_gff_lines
 import plotly.graph_objs as go
+from scripts.plotly_template import register_template
+
+register_template()
 
 def main(design, gff, db_name, output_path, cfg):
     gff = read_gff_via_gffutils(gff, dbname=db_name, fix=False)
@@ -32,6 +35,7 @@ def main(design, gff, db_name, output_path, cfg):
         force=True,
         line_mapping=lmap,
         vertical_spacing=0,
+        horizontal_spacing=0.08,
         row_heights=[0.9, 0.1],
         cols=2,
     )
@@ -87,10 +91,9 @@ def main(design, gff, db_name, output_path, cfg):
             x=[None],
             y=[None],
             mode="markers",
-            name=f"Membrane",
+            name=f"Membrane untreated",
             marker=dict(color=cfg["TRACE_COLORS"]["-p M"], symbol="square", size=10),
-            legendgroup="untreated",
-            legendgrouptitle=dict(text="untreated"),
+
 
         )
     )
@@ -99,10 +102,9 @@ def main(design, gff, db_name, output_path, cfg):
             x=[None],
             y=[None],
             mode="markers",
-            name=f"Cytosol",
+            name=f"Cytosol untreated",
             marker=dict(color=cfg["TRACE_COLORS"]["-p C"], symbol="square", size=10),
-            legendgroup="untreated",
-            legendrank=1
+
 
         )
     )
@@ -111,10 +113,9 @@ def main(design, gff, db_name, output_path, cfg):
             x=[None],
             y=[None],
             mode="markers",
-            name=f"Membrane",
+            name=f"Membrane Puromycin",
             marker=dict(color=cfg["TRACE_COLORS"]["+p M"], symbol="square", size=10),
-            legendgroup="+ Puromycin",
-            legendrank=2
+
 
         )
     )
@@ -123,68 +124,91 @@ def main(design, gff, db_name, output_path, cfg):
             x=[None],
             y=[None],
             mode="markers",
-            name=f"Cytosol",
+            name=f"Cytosol Puromycin",
             marker=dict(color=cfg["TRACE_COLORS"]["+p C"], symbol="square", size=10),
-            legendgroup="+ Puromycin",
-            legendgrouptitle=dict(text="+ Puromycin"),
-
-            legendrank=1
 
         )
     )
-    lgroup = "Lines"
-    fig.add_trace(
-        go.Scatter(
-            x=[None],
-            y=[None],
-            legendgroup="Lines",
-            legendgrouptitle=dict(text="Lines"),
-            mode="lines",
-            name=f"Mean",
-            line=dict(color='black'),
-
-        )
+    # lgroup = "Lines"
+    # fig.add_trace(
+    #     go.Scatter(
+    #         x=[None],
+    #         y=[None],
+    #         legendgroup="Lines",
+    #         legendgrouptitle=dict(text="Lines"),
+    #         mode="lines",
+    #         name=f"Mean",
+    #         line=dict(color='black'),
+    #
+    #     )
+    # )
+    # fig.add_trace(
+    #     go.Scatter(
+    #         x=[None],
+    #         y=[None],
+    #         mode="lines",
+    #         name=f"Median",
+    #         line=dict(dash="dot", color="black"),
+    #         legendgroup=lgroup,
+    #
+    #     )
+    # )
+    # fig.add_trace(
+    #     go.Scatter(
+    #         x=[None],
+    #         y=[None],
+    #         mode="lines",
+    #         name=f"Q.25-Q.75",
+    #         fill="toself",
+    #         fillcolor='rgba(0,0,0,0.4)',
+    #         line=dict(color='rgba(255,255,255,0)'),
+    #         legendgroup=lgroup,
+    #
+    #     )
+    # )
+    fig.for_each_trace(
+        lambda t: t.update(showlegend=False, legendgroup=None, legendgrouptitle=None)
+        if t.legendgroup == "Annotations"
+        else None
     )
-    fig.add_trace(
-        go.Scatter(
-            x=[None],
-            y=[None],
-            mode="lines",
-            name=f"Median",
-            line=dict(dash="dot", color="black"),
-            legendgroup=lgroup,
-
-        )
+    fig.for_each_trace(
+        lambda t: t.update(legendgroup=None, legendgrouptitle=None)
     )
-    fig.add_trace(
-        go.Scatter(
-            x=[None],
-            y=[None],
-            mode="lines",
-            name=f"Q.25-Q.75",
-            fill="toself",
-            fillcolor='rgba(0,0,0,0.4)',
-            line=dict(color='rgba(255,255,255,0)'),
-            legendgroup=lgroup,
 
-        )
-    )
 
     fig.update_xaxes(range=[rpl10_12start - 50, rpl10_12end + 50],  col=2, )
+    fig.update_yaxes(ticks="", row=2)
+    fig.update_xaxes(ticks="", row=1, showline=False)
     fig.update_layout(cfg["F6Coverage"]["layout"])
+    fig.update_layout(legend=dict(entrywidthmode="fraction", entrywidth=0.25, maxheight=0, yanchor="top", y=-0.1, x=-0.1,
+                                 orientation="h", bgcolor="rgba(0,0,0,0)", indentation=0, ))
+
     fig.write_image(output_path)
 
-    p = 0
 
 if __name__ == '__main__':
-    file = snakemake.input.design
-    gff = snakemake.input.gff
-    cfg = snakemake.config
-    sf = snakemake.input.sf
+    if "snakemake" in globals():
+        file = snakemake.input.design
+        gff = snakemake.input.gff
+        cfg = snakemake.config
+        sf = snakemake.input.sf
+        db_name = snakemake.output.db
+        outfile = snakemake.output.svg
+    else:
+        import yaml
+
+        file = "initialData/testDesign.tsv"
+        gff = "initialData/annotationFiltered.gff"
+        sf = "/home/rabsch/PythonProjects/RlocSeq/Pipeline/SizeFactorEsitmate/PipelineData/IntermediateData/size_factors.tsv"
+        outfile = "foo.svg"
+        distribution_out = "foo.tsv"
+        db_name = "Pipeline/GFFDB/gff_database.db"
+        with open("configFile.yml", 'r') as f:
+            cfg = yaml.safe_load(f)
 
     design = pd.read_csv(file, sep="\t")
     sf = pd.read_csv(sf, sep="\t")
     sf = sf.rename({"x": "Size factors"}, axis=1)
     design = design[design["Replicate"].isin(sf.index) & design["Replicate"] != "plusP_M_R3"]
     design = design.merge(sf, left_on="Replicate", right_index=True)
-    main(design, gff, output_path=snakemake.output.svg, cfg=cfg, db_name=snakemake.output.db)
+    main(design, gff, output_path=outfile, cfg=cfg, db_name=db_name)

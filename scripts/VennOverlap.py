@@ -3,7 +3,9 @@ from plotly.subplots import make_subplots
 from scripts.plotlyVenn import venn_to_plotly, copy_to_subfigures
 import plotly.graph_objs as go
 from scipy.stats import pearsonr
+from scripts.plotly_template import register_template
 
+register_template()
 
 def main(tsv, config, svg):
     df = pd.read_csv(tsv, sep="\t")
@@ -14,49 +16,22 @@ def main(tsv, config, svg):
     multi_fig = make_subplots(
         rows=2,
         cols=2,
-        column_titles=["Cytosol", "Membrane"],
-        row_heights=[0.4, 0.6],
-        vertical_spacing=0.1,
-        horizontal_spacing=0,
+        subplot_titles=["Cytosol", None, "Membrane", None],
+        column_widths=[0.3, 0.7],
+        vertical_spacing=0.,
+        horizontal_spacing=0.2,
     specs=[
-        [{}, {}],           # First row: normal 2 columns
-        [{"colspan": 2}, None]  # Second row: one subplot spanning both columns
+        [{}, {"rowspan": 2}],           # First row: normal 2 columns
+        [{}, None]  # Second row: one subplot spanning both columns
     ]
     )
-    multi_fig.add_shape(
-        {
-            'type': 'rect',
-            'xref': 'x domain',
-            'yref': 'y domain',
-            'x0': 0.0,
-            'x1': 1,
-            'y0': 0,
-            'y1': 1.0,
-            'fillcolor': 'white',
-            'line': {'width': 0},  # No border
-            'opacity': 1,
-            'layer': 'above'
-        }
-    )
-    multi_fig.add_shape(
-        {
-            'type': 'rect',
-            'xref': 'x2 domain',
-            'yref': 'y2 domain',
-            'x0': 0.0,
-            'x1': 1,
-            'y0': 0,
-            'y1': 1.0,
-            'fillcolor': 'white',
-            'line': {'width': 0},  # No border
-            'opacity': 1,
-            'layer': 'above'
-        }
-    )
+    for annotation in multi_fig.layout.annotations:
+        annotation.update(font=dict(size=8, ), yanchor="middle")
+
     colors = ["rgba(105, 190, 40, 0.6)", "rgba(0, 34, 68, 0.6)"]
     f1 = venn_to_plotly([minus_p_m, plus_p_m, ], L_labels=["untreated", "Puromycin"], L_color=colors)
     f2 = venn_to_plotly([minus_p_c, plus_p_c,], L_labels=["untreated", "Puromycin"], L_color=colors)
-    figures = [[f2, f1]]
+    figures = [[f2,], [f1]]
     multi_fig = copy_to_subfigures(figures, cols=2, multi_fig=multi_fig, n_sets=2)
 
     multi_fig.update_layout(config["LayoutDefault"])
@@ -71,18 +46,16 @@ def main(tsv, config, svg):
                 annotation.update(font=dict(color="white"))
             elif annotation.text == "135":
                 annotation.update(showarrow=True, ax=annotation.x+7, ay=annotation.y-25, arrowcolor="black", arrowwidth=.5, arrowhead=0)
-        else:
-            annotation.update(font=dict(size=12))
     multi_fig.add_trace(
         go.Scatter(
             x=df["log2FoldChange_minusPuromycin"],
             y=df["log2FoldChange_plusPuromycin"],
             mode="markers",
             showlegend=False,
-            marker=dict(size=3, color=cfg["membraneColor"])
+            marker=dict(size=3, color=cfg["seahawksGrey"])
 
         ),
-        row=2, col=1
+        row=1, col=2
     )
     for shape in multi_fig.layout.shapes:
         if shape.xref == "x":
@@ -92,33 +65,33 @@ def main(tsv, config, svg):
         scaleanchor=None,
         range=[-5, 3],
         dtick=1,
-        row=2,
+        col=2,
         showline=True,
-        linecolor='white',
-        zeroline=True,
-        showgrid=True,
-        title_standoff=1,
 
+    )
+    multi_fig.update_xaxes(
+        showline=False,
+        col=1
+    )
+    multi_fig.update_yaxes(
+        showline=False,
+        col=1
     )
     multi_fig.update_yaxes(
         title=dict(text="+ Puromycin<br>(log<sub>2</sub>FoldChange)"),
         scaleanchor=None,
-        row=2,
-        showline=True,
-        linecolor='white',
+        col=2,
         dtick=1,
-        title_standoff=1,
+        showline=True,
 
-        zeroline=True,
-        showgrid=True,
 
     )
     mask = ~(df["log2FoldChange_plusPuromycin"].isna() | df["log2FoldChange_minusPuromycin"].isna())
     stat, p = pearsonr(df.loc[mask, "log2FoldChange_minusPuromycin"], df.loc[mask, "log2FoldChange_plusPuromycin"])
     multi_fig.add_annotation(
         text=f"Pearson R: {stat:.2f}",
-        xref="x3 domain",
-        yref="y3 domain",
+        xref="x2 domain",
+        yref="y2 domain",
         xanchor="right",
         yanchor="bottom",
         x=1,

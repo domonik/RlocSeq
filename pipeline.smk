@@ -1004,7 +1004,7 @@ rule PercentagePlotF5:
     params:
         condition="Membrane",
         baseline="Cytosol",
-        figureConfig="F1Percent",
+        figureConfig="F5Percent",
         name="FOO",
         log2FCCutOff=config["primary"]["log2FCCutOff"],
         pAdjCutOff=config["primary"]["pAdjCutOff"]
@@ -1249,8 +1249,8 @@ rule plotFISHFigure5:
     params:
         probes =[("fusB","untreated","Replicate 1"), ("fusB","Puromycin","Replicate 1"), ("psaA", "untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")],
         layout= config["F5FISH"]["layout"],
-        subplot = dict(vertical_spacing=0.05, horizontal_spacing=0.05,
-                              column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
+        subplot = dict(vertical_spacing=0.0, horizontal_spacing=0.0,
+                              column_titles=["untreated", "Puromycin", None, "untreated", "Puromycin", None])
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISHFigure4.py"
@@ -1269,7 +1269,7 @@ rule plotFISHFigure6:
     params:
         probes =[("psbA2","untreated","Replicate 1"), ("psbA2","Puromycin","Replicate 1"), ("rpl10_12", "untreated", "Replicate 1"), ("rpl10_12", "Puromycin", "Replicate 1")],
         layout= config["F6FISH"]["layout"],
-        subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
+        subplot=dict(vertical_spacing=0., horizontal_spacing=0.,
                               column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
 
     conda: "envs/matplotlibPlotly.yml"
@@ -1308,7 +1308,7 @@ rule joinFig6:
         files = [config[val]["file"] for key, val in config["F6"].items()]
     params:
         figures = config["F6"],
-        ges_y = 750
+        ges_y = 350
     conda: "envs/svgutils.yml"
     output:
         svg = "Pipeline/Paper/Figure6/Figure6.svg"
@@ -1328,7 +1328,7 @@ rule joinFig5:
         files=[config[val]["file"] for key, val in config["F5"].items()]
     params:
         figures = config["F5"],
-        ges_y = 700
+        ges_y = 450
     conda: "envs/svgutils.yml"
     output:
         svg = "Pipeline/Paper/Figure5/Figure5.svg"

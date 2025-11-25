@@ -11,6 +11,7 @@ def register_template():
             "xaxis": {
                 "title_font": {"size": 8},
                 "tickfont": {"size": 7},
+                "color": "black",
                 "title_standoff": 5,
                 "showgrid": False,
                 "zeroline": False,
@@ -24,6 +25,7 @@ def register_template():
             "yaxis": {
                 "title_font": {"size": 8},
                 "tickfont": {"size": 7},
+                "color": "black",
                 "title_standoff": 5,
                 "showgrid": False,
                 "zeroline": False,
@@ -35,10 +37,12 @@ def register_template():
 
             },
             "legend": {
-                "font": {"size": 7}
+                "font": {"size": 7},
+                "title": {"font": {"size": 7}},
             },
-            "legend_title": {
-                "font": {"size": 7}
+            "legend2": {
+                "font": {"size": 7},
+                "title": {"font": {"size": 7}},
             },
             "font": {"family": "Arial", "size": 8, "color": "black"},
             "margin": {"b": 50, "t": 10, "l":30 , "r": 30   },
