@@ -54,7 +54,7 @@ def main(tsv, cfg, outfile):
                 thickness=1,  # line width of the error bars (in px)
             ),
             marker=dict(line=dict(color="black", width=1),
-                        color="white"),
+                        color=cfg["seahawksGrey"]),
             showlegend=False# show significance above bars
         )
     )

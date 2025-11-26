@@ -349,7 +349,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
     )
 
     fig.update_yaxes(
-        title=dict(text="normalized<br>Fluorescence<br>Intensity [A.U.]"),
+        title=dict(text="norm. Intensity"),
         row=row,
         col=1,
         showticklabels=True,

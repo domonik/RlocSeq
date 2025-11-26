@@ -2,13 +2,16 @@ import pandas as pd
 from plotly.subplots import make_subplots
 from scripts.plotlyVenn import venn_to_plotly
 import plotly.graph_objs as go
+from scripts.plotly_template import register_template
+from scripts.plotFISH import _color_to_calpha
 
+register_template()
 
 def main(file, config, output):
     df = pd.read_csv(file, sep="\t")
     locs = ["All", "Cytoplasm", "Plasmamembrane", "Cellular thylakoid membrane"]
-    rows = 1
-    cols = 4
+    rows = 2
+    cols = 2
     figures = [[] for _ in range(rows)]
 
     for idx, loc in enumerate(locs):
@@ -19,11 +22,15 @@ def main(file, config, output):
         rbp3_set = set(sdf[sdf["RBP3_Target"] == True]["locus_tag"])
         minusp_set = set(sdf[sdf["minusPMembran"] == True]["locus_tag"])
         plusp_set = set(sdf[sdf["plusPMembran"] == True]["locus_tag"])
-        subfig = venn_to_plotly((minusp_set, rbp3_set, plusp_set), ("untreated at membrane", "RBP3 Target", "Puromycin at membrane"), L_color=["rgba(0, 106, 56, 0.6)", "rgba(0, 48, 135, 0.6)", "rgb(138, 141, 143, 0.6)"])
+        subfig = venn_to_plotly(
+            (minusp_set, rbp3_set, plusp_set),
+            ("untreated at membrane", "RBP3 Target", "Puromycin at membrane"),
+            L_color=[_color_to_calpha(config["plusPColor"], 0.4), _color_to_calpha(config["minusPColor"], 0.4), _color_to_calpha(config["seahawksGrey"], 0.4)])
         row = idx // cols
         figures[row].append(subfig)
-    stitels = ["All", "Cytoplasm", "Plasmamembrane", "Thylakoid<br>membrane"]
-    multi_fig = make_subplots(rows=rows, cols=cols, horizontal_spacing=0, vertical_spacing=0, subplot_titles=stitels)
+    stitels = ["All", "Cytoplasm", "Plasmamembrane", "Thylakoid membrane"]
+    multi_fig = make_subplots(rows=rows, cols=cols, horizontal_spacing=0, vertical_spacing=0.05, subplot_titles=stitels)
+    multi_fig.update_annotations(font=dict(size=8))
     for row, subfigs in enumerate(figures, 1):
         for idx, fig in enumerate(subfigs, 1):
             running_idx = (row -1) * cols + idx
@@ -65,8 +72,8 @@ def main(file, config, output):
             multi_fig.update_xaxes(scaleanchor="y" if running_idx == 1 else f"x{running_idx}", scaleratio=1, col=idx)
     multi_fig.update_layout(config["LayoutDefault"])
     multi_fig.update_layout(config["RBP3Venn"]["layout"])
-    multi_fig.update_xaxes(showgrid=False, zeroline=False)
-    multi_fig.update_yaxes(showgrid=False, zeroline=False)
+    multi_fig.update_xaxes(showgrid=False, zeroline=False, showline=False)
+    multi_fig.update_yaxes(showgrid=False, zeroline=False, showline=False)
     for annotation in multi_fig.layout.annotations:
         if annotation.text.isnumeric():
             annotation.update(font=dict(size=8))

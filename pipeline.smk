@@ -560,14 +560,23 @@ rule Table1:
 
 
 
-rule plotTUAssociation:
+rule calcTUAssociation:
     input:
-        tsv = rules.joinTables.output.tsv
+        tsv=rules.joinTables.output.tsv
     output:
-        svg = config["SupplementTUAssociation"]["file"]
+        values = "Pipeline/TUdata/TUData.npy"
     params:
         num_permutations = 10000
     threads: 5
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/calcTUPermutations.py"
+
+rule plotTUAssociation:
+    input:
+        tsv = rules.joinTables.output.tsv,
+        values = rules.calcTUAssociation.output.values,
+    output:
+        svg = config["SupplementTUAssociation"]["file"]
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/TUPermutationTest.py"
 
@@ -915,7 +924,7 @@ rule rnatypeGSEA:
         enrichedFile = "Pipeline/rnaTypeGSEA/gseaEnrich_puro{puro}.tsv",
         gsFile = "Pipeline/rnaTypeGSEA/gseaInfo_puro{puro}.tsv"
     params:
-        terms = config["RNA_TYPE_COLORS"].keys()
+        terms = ["mRNA", "tRNA", "5UTR", "ncRNA", "asRNA"]
     conda: "envs/clusterprofiler.yml",
     script: "scripts/rnatypeGSEA.R"
 
@@ -1013,11 +1022,11 @@ rule PercentagePlotF5:
 
 rule F1GSEA:
     input:
-        df=rules.rnatypeGSEA.output.gsFile,
-        info=rules.rnatypeGSEA.output.enrichedFile,
+        df=expand(rules.rnatypeGSEA.output.gsFile, puro="minusPuromycin")[0],
+        info=expand(rules.rnatypeGSEA.output.enrichedFile, puro="minusPuromycin")[0],
     output:
-        html = "Pipeline/rnaTypeGSEA/rnaTypeGSEA_{puro}.html",
-        svg="Pipeline/Paper/Subfigures/rnaTypeGSEA_{puro}.svg",
+        html = config["F1GSEA"]["file"].split(".")[0] + ".html",
+        svg= config["F1GSEA"]["file"],
     conda: "envs/matplotlibPlotly.yml"
     params:
         figureConfig="F1GSEA",
@@ -1040,10 +1049,10 @@ rule joinFig1:
         volcano = rules.minusPVolcanoForFig1.output.svg,
         summary = rules.refinePercentagePlot.output.svg,
         workflow = rules.txtToPathWorkflow.output.svg,
-        gsea = expand(rules.F1GSEA.output.svg, puro="minusPuromycin")[0]
+        gsea = rules.F1GSEA.output.svg
     params:
         figures = config["F1"],
-        ges_y = 520
+        ges_y = 470
     conda: "envs/svgutils.yml"
     output:
         svg = "Pipeline/Paper/Figure1/Figure1.svg"
@@ -1381,8 +1390,9 @@ rule plotFULLGOTermEnrichment:
         tsv2= expand(rules.second_GOEnrichment.output,condition=["M"],baseline=["C"])[0],
         tsv3= expand(rules.GOTermEnrichmentStayed.output,condition=["M"],baseline=["C"])[0],
     output:
-        svg = "Pipeline/Paper/Supplementary/FullEnrichment.svg",
-        html = "Pipeline/Paper/Supplementary/FullEnrichment.html",
+        svg = config["SupplementFullEnrichment"]["file"],
+        html = config["SupplementFullEnrichment"]["file"].split(".")[0] + ".html",
+        png = config["SupplementFullEnrichment"]["file"].split(".")[0] + ".png",
     conda: "envs/matplotlibPlotly.yml"
 
     script: "scripts/plotEnrichmentPlots.py"
@@ -1445,19 +1455,19 @@ rule Figure4toPNG:
 
 
 
-rule plotFigure7:
+rule plotScatterSupplement:
     input:
         tsv = rules.joinTables.output.tsv
     output:
-        svg = config["F7Scatter"]["file"]
+        svg = config["SupplementScatter"]["file"]
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotlfcFig7.py"
 
-rule Figure7toPNG:
+rule ScatterSupplementtoPNG:
     input:
-        svg = rules.plotFigure7.output.svg
+        svg = rules.plotScatterSupplement.output.svg
     output:
-        png =  "Pipeline/Paper/Figure7/Figure7.png"
+        png =  config["SupplementScatter"]["file"].split(".")[0] + ".png"
     shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
 
 
@@ -1488,23 +1498,23 @@ rule plotRBP3Venns:
 
 
 
-rule joinFig8:
+rule joinFig7:
     input:
         files=[config[val]["file"] for key, val in config["F8"].items()]
     params:
-        ges_y= 400,
+        ges_y= 300,
         figures= config["F8"],
 
     output:
-        svg = "Pipeline/Paper/Figure8/Figure8.svg"
+        svg = "Pipeline/Paper/Figure7/Figure7.svg"
     conda: "envs/svgutils.yml"
     script: "scripts/paperFigure.py"
 
-rule Figure8toPNG:
+rule Figure7toPNG:
     input:
-        svg = rules.joinFig8.output.svg
+        svg = rules.joinFig7.output.svg
     output:
-        png =  "Pipeline/Paper/Figure8/Figure8.png"
+        png =  "Pipeline/Paper/Figure7/Figure7.png"
     shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
 
 
@@ -1522,7 +1532,7 @@ rule joinSupplementCorrelation:
     input:
         files=[config[val]["file"] for key, val in config["SupplementCorr"].items()]
     params:
-        ges_y= 400,
+        ges_y= 500,
         figures= config["SupplementCorr"],
     output:
         svg = "Pipeline/Paper/Supplementary/Correlation/FigureCorrelation.svg"
@@ -1550,7 +1560,7 @@ rule plot16SFISH:
         probes =[("16S rRNA","untreated","Replicate 1"), ("16S rRNA","Puromycin","Replicate 1")],
 
         layout = config["Supplement16SFISH"]["layout"],
-        subplot = dict(vertical_spacing=0.05, horizontal_spacing=0.05,
+        subplot = dict(vertical_spacing=0.05, horizontal_spacing=0,
                               column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
 
     conda: "envs/matplotlibPlotly.yml"
@@ -1610,12 +1620,13 @@ rule all:
         transmemgsea = expand(rules.TransmembraneGSEA.output.enriched, puro=["minusPuromycin", "plusPuromycin"], condition="M", baseline="C"),
         f5perc = config["F5Percent"]["file"],
         f5fish = config["F5FISH"]["file"],
-        rbp3venn= rules.Figure8toPNG.output,
+        rbp3venn= rules.Figure7toPNG.output,
         supplement = rules.SupplementCorrelationtoPNG.output,
         supplement16FISH = rules.Supplement16SFISHtoPNG.output,
         uracil = rules.SupplementUraciltoPNG.output,
-        f7 = rules.Figure7toPNG.output,
-        tua = rules.SupplementTUAssotoPNG.output
+        f7 = rules.ScatterSupplementtoPNG.output,
+        tua = rules.SupplementTUAssotoPNG.output,
+        corr = rules.ScatterSupplementtoPNG.output
 #tpmemabundace = rules.checkTranscriptAbundanceGO.output
 
 

@@ -2,7 +2,9 @@ import pandas as pd
 import plotly.graph_objs as go
 import plotly.express as px
 from scipy.stats import mannwhitneyu
+from scripts.plotly_template import register_template
 
+register_template()
 
 def main(snakemake_input, config, output):
     df = pd.read_csv(snakemake_input.rbp3, sep="\t")

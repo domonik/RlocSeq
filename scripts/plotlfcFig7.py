@@ -1,6 +1,9 @@
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
+from scripts.plotly_template import register_template
+
+register_template()
 
 def _color_to_calpha(color: str, alpha: float = 0.2):
     color = color.split("(")[-1].split(")")[0]
@@ -106,7 +109,7 @@ def main(tsv, cfg, outfile):
         yaxis_title="Total Cell log<sub>2</sub>FoldChange"
     )
     fig.update_layout(cfg["LayoutDefault"])
-    fig.update_layout(cfg["F7Scatter"]["layout"])
+    fig.update_layout(cfg["SupplementScatter"]["layout"])
     fig.write_image(outfile)
     p = 0
 

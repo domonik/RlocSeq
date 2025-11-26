@@ -5,7 +5,9 @@ import numpy as np
 import plotly.graph_objects as go
 from multiprocessing import Pool
 from plotly.subplots import make_subplots
+from scripts.plotly_template import register_template
 
+register_template()
 
 
 def calc_mean_fraction(df, val):
@@ -30,21 +32,17 @@ def mp_wrapper(df):
     return value1, value2
 
 
-def main(df, cfg, outfile, num_permutations=1000, num_processes = 1):
+def main(df, values, cfg,  outfile):
     df = df[df["mRNA"]]
     original_value_mem = calc_mean_fraction(df, 'minusPMembran')
     original_value_cyt = calc_mean_fraction(df, 'minusPCytosol')
 
     df = df[["minusPMembran", "minusPCytosol", 'shortest_TU', 'TU_size']].copy()
 
-    s = time.time()
-    with Pool(num_processes) as p:
-        values = p.starmap(mp_wrapper, [(df, ) for _ in range(num_permutations)])
-    e = time.time()
-    values = np.array(values)
-    print(f"{e-s} seconds")
+    values = np.load(values)
     s = time.time()
     fig = make_subplots(cols=2, rows=1, subplot_titles=["Membrane", "Cytosol"])
+    fig.update_annotations(font=dict(size=8))
     mem_pval = ((values[:, 0] >= original_value_mem).sum() + 1) / (values.shape[0] + 1)
     cyt_pval = ((values[:, 1] >= original_value_cyt).sum() + 1) / (values.shape[0] + 1)
     fig.add_trace(
@@ -84,7 +82,7 @@ def main(df, cfg, outfile, num_permutations=1000, num_processes = 1):
         y=1,  # relative y in paper coordinates (1 = top)
         xref="x domain",  # first subplot
         yref="paper",
-        text=f"p-Value: {mem_pval:.3e}",
+        text=f"p-Value: {mem_pval:.1e}",
         showarrow=False,
         yanchor="top",
         xanchor="left",
@@ -95,7 +93,7 @@ def main(df, cfg, outfile, num_permutations=1000, num_processes = 1):
         y=1,  # relative y in paper coordinates (1 = top)
         xref="x2 domain",  # first subplot
         yref="paper",
-        text=f"p-Value: {cyt_pval:.3e}",
+        text=f"p-Value: {cyt_pval:.1e}",
         showarrow=False,
         yanchor="top",
         xanchor="left",
@@ -127,9 +125,8 @@ if __name__ == '__main__':
     if "snakemake" in globals():
         tsv = snakemake.input.tsv
         cfg = snakemake.config
-        num_permutations = snakemake.params.num_permutations
-        threads = snakemake.threads
         outfile = snakemake.output.svg
+        values = snakemake.input.values
     else:
         tsv = "Pipeline/Paper/Supplementary/SummaryTable.tsv"
         import yaml
@@ -138,4 +135,4 @@ if __name__ == '__main__':
         threads = 4
         num_permutations = 100
     df = pd.read_csv(tsv, sep="\t")
-    main(df, outfile=outfile, num_processes=threads, cfg=cfg, num_permutations=num_permutations)
+    main(df, values=values, outfile=outfile, cfg=cfg)

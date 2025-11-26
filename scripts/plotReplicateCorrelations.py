@@ -1,10 +1,12 @@
 import pandas as pd
 from DEplots.qc import pheatmap
+from scripts.plotly_template import register_template
 
+register_template()
 
 def main(tsv, cfg, layout, outfile):
     df = pd.read_csv(tsv, sep="\t")
-    colors = [cfg["membraneColor"], cfg["cytosolColor"]]
+    colors = [cfg["plusPColor"], "white", cfg["minusPColor"]]
     fig = pheatmap(df, colorscale=colors, vertical_spacing=0.0, horizontal_spacing=0., row_heights=[0.1, 0.9])
     fig.update_yaxes(showline=False, showgrid=False, zeroline=False, col=2)
     fig.update_yaxes(showline=False, showgrid=False, zeroline=False, row=1, showticklabels=False)
@@ -18,6 +20,10 @@ def main(tsv, cfg, layout, outfile):
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)'
     )
+    fig.update_xaxes(row=1, ticks="", showline=False)
+    fig.update_xaxes(row=2, ticks="", showline=False)
+    fig.update_yaxes(row=1, ticks="", showline=False)
+    fig.update_yaxes(row=2, ticks="", showline=False)
     fig.write_image(outfile)
 
 

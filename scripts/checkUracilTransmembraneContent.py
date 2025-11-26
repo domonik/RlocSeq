@@ -5,9 +5,10 @@ import numpy as np
 import re
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-
+from scripts.plotly_template import register_template
 import plotly.io as pio
 
+register_template()
 
 pio.renderers.default = "browser"
 
@@ -90,9 +91,29 @@ def main(tsv, outputs, config):
 
     #df = df[~pd.isna(df["Uracil_content"])]
     treats = ["minusPuromycin", "plusPuromycin"]
-    fig = make_subplots(rows=1, cols=2, column_titles=["untreated", "Puromycin"], shared_yaxes=True, x_title="log2FoldChange")
+    fig = make_subplots(rows=1, cols=2, column_titles=["untreated", "Puromycin"], shared_yaxes=True, x_title="log2FoldChange", horizontal_spacing=0.05)
+    fig.update_annotations(font=dict(size=8))
     for idx, puro in enumerate(treats):
         filter = "minusP" if puro == "minusPuromycin" else "plusP"
+        sdf = df[~(df[f"{filter}Membran"] | df[f"{filter}Cytosol"])]
+        fig.add_trace(
+            go.Scatter(
+                x=sdf[f"log2FoldChange_{puro}"],
+                y=sdf["Uracil_content"],
+                mode="markers",
+                marker=dict(color=config["seahawksGrey"]),
+                name="not sig.",
+                customdata=sdf[["gene_name", f"baseMean_{puro}"]],
+                showlegend=bool(idx),
+                hovertemplate=(
+                        "Gene: %{customdata[0]}<br>"
+                        "log2FoldChange: %{x:.2f}<br>"
+                        "Uracil_content: %{y:.2f}<br>"
+                        f"baseMean_{puro}:" + "%{customdata[0]:.2f}<extra>{location}</extra>"
+                )
+            ), col=idx + 1, row=1
+
+        )
 
         for location in ["Cytosol", "Membran"]:
             sdf = df[df[f"{filter}{location}"]]
@@ -115,25 +136,7 @@ def main(tsv, outputs, config):
                 ), col=idx+1, row=1
 
             )
-        sdf = df[~(df[f"{filter}Membran"] | df[f"{filter}Cytosol"])]
-        fig.add_trace(
-            go.Scatter(
-                x=sdf[f"log2FoldChange_{puro}"],
-                y=sdf["Uracil_content"],
-                mode="markers",
-                marker=dict(color="#8A8D8F"),
-                name="not sig.",
-                customdata=sdf[["gene_name", f"baseMean_{puro}"]],
-                showlegend=bool(idx),
-                hovertemplate=(
-                        "Gene: %{customdata[0]}<br>"
-                        "log2FoldChange: %{x:.2f}<br>"
-                        "Uracil_content: %{y:.2f}<br>"
-                        f"baseMean_{puro}:" + "%{customdata[0]:.2f}<extra>{location}</extra>"
-                )
-            ), col=idx + 1, row=1
 
-        )
     fig.update_layout(config["LayoutDefault"])
     fig.update_layout(config["SupplementUracilTransmembrane"]["layout"])
     fig.update_layout(

@@ -4,18 +4,18 @@ tertiary-file: "run_configs/third_config.yml"
 total_cell-file: "run_configs/total_cell_config.yml"
 why-drop-replicate-file: "run_configs/why_drop_replicate.yml"
 
-membraneColor: "rgb(198, 12, 48)"
-cytosolColor: "rgb(0, 51, 141)"
-minusPColor: "rgb(0, 51, 141)"
-plusPColor: "rgb(198, 12, 48)"
+membraneColor: "rgb(105, 190, 40)"
+cytosolColor: "rgb(0, 34, 68)"
+minusPColor: "rgb(255, 198, 47)"
+plusPColor: "rgb(79, 38, 131)"
 seahawksGrey: "rgb(165, 172, 175)"
 
 
 TRACE_COLORS:
-  "-p M": "#C60C30"
-  "-p C": "#00338D"
-  "+p C": "#002244"
-  "+p M": "#69BE28"
+  "-p M": "rgb(105, 190, 40)"
+  "-p C": "rgb(0, 34, 68)"
+  "+p C": "rgb(255, 198, 47)"
+  "+p M": "rgb(79, 38, 131)"
 
 
 RNA_TYPE_COLORS:
@@ -25,9 +25,9 @@ RNA_TYPE_COLORS:
   3'UTR: "rgb(160, 82, 45)"       # Sienna
   asRNA: "#ffe863"      # Deep Sky Blue
   ncRNA: "rgb(0, 128, 0)"        # Green
-  tRNA: "rgb(255, 105, 180)"     # Hot Pink
+  mRNA: "rgb(255, 198, 47)"     # Hot Pink
   CRISPR: "rgb(255, 215, 0)"     # Gold
-  mRNA: "#f5c2ed"         # Blue
+  tRNA: "rgb(79, 38, 131)"         # Blue
   CDS: "#f5c2ed"         # Blue
   gene: "rgb(219, 219, 219)"         # Blue
   default: "#7CB9E8"         # Blue
@@ -123,15 +123,15 @@ F1Volcano:
   annotationsize: 8
   annotations:
     cupA:
-      x: 1.55
-      y: 6.2
+      x: 1.75
+      y: 8.0
     psaA:
       x: 0.15
-      y: 4
+      y: 5
 
-    psbA2:
+    rpl11:
       x: 0.55
-      y: 6
+      y: 7
     rnpB:
       x: -1.5
       y: 9
@@ -140,30 +140,29 @@ F1Volcano:
       y: 6
     rpl10:
       x: -0.2
-      y: 1.75
+      y: 2
 
-    rpl11:
+    psbA2:
       x: 1.1
-      y: 8
+      y: 10
 
     rpl12:
-      x: 3.2
+      x: 2.5
       y: 8
-    rimO:
-      x:
-      y:
-  file: "Pipeline/Paper/Subfigures/Fig1Volcano.svg"
-  x: 312
+  file: "Pipeline/Paper/Figure1/F1Volcano.svg"
+  x: 0
   y: 100
   layout:
-    width: 312
+    width: 332
     height: 250
     margin:
-      r: 30
+      r: 10
+      b: 30
+      l: 30
     legend:
       orientation: "h"
-      y: -0.25
-      x: 0
+      y: -0.05
+      x: -0.1
       yanchor: "top"
       indentation: 0
       itemsizing: "constant"
@@ -177,10 +176,10 @@ F1Volcano:
 
 F1Percent:
   file: "Pipeline/Paper/Figure1/Fig1Percentage.svg"
-  x: 312
+  x: 0
   y: 0
   layout:
-    width: 312
+    width: 332
     height: 100
     margin:
       r: 10
@@ -194,16 +193,19 @@ F1Percent:
       xanchor: "left"
 
 F1GSEA:
-  file: "Pipeline/Paper/Subfigures/rnaTypeGSEA_minusPuromycin.svg"
-  x: 312
+  file: "Pipeline/Paper/Figure1/F1rnaTypeGSEA_minusPuromycin.svg"
+  x: 0
   y: 320
   layout:
-    width: 312
-    height: 200
+    paper_bgcolor: "rgba(0, 0,0,0)"
+
+    width: 332
+    height: 150
     margin:
       r: 50
       t: 30
-      b: 5
+      b: 30
+      l: 30
     showlegend: False
     annotations:
       font:
@@ -228,10 +230,10 @@ F1GSEA:
 
 
 F1:
-  d: "F1GSEA"
-  a: "F1Workflow"
-  b: "F1Percent"
-  c: "F1Volcano"
+  a: "F1Percent"
+  b: "F1Volcano"
+  c: "F1GSEA"
+
 
 
 
@@ -260,7 +262,7 @@ F2FISH:
       y: 0
     margin:
       r: 50
-      l: 50
+      l: 30
       t: 20
       b: 30
 
@@ -374,9 +376,7 @@ F3:
 
 
 
-EnrichFigure6:
-  layout:
-    height: 1000
+
 
 
 
@@ -450,13 +450,14 @@ F4Volcano:
   x: 0
   y: 80
   highlight_go_term:
-    ribosome: "#8f6b30"
-    "unfolded protein binding": "rgb(198, 12, 48)"
+    ribosome: "rgb(255, 198, 47)"
+    "unfolded protein binding": "rgb(79, 38, 131)"
   layout:
     width: 310
     height: 250
     legend:
       orientation: "h"
+      itemsizing: "constant"
     xaxis:
       title:
         standoff: 1
@@ -562,8 +563,8 @@ VolcanoFigure5:
   x: 0
   y: 120
   highlight_go_term:
-    photosystem: "#ffe863"
-    ribosome: "#8f6b30"
+    photosystem: "rgb(255, 198, 47)"
+    ribosome:  "rgb(79, 38, 131)"
   layout:
     width: 280
     height: 330
@@ -582,6 +583,7 @@ VolcanoFigure5:
         text: "-Log<sub>10</sub>(pval)"
     legend:
       orientation: "h"
+      itemsizing: "constant"
   annotations:
     fusB:
       x: -1.1
@@ -714,62 +716,40 @@ F6:
 
 
 
-F7Scatter:
-  file: "Pipeline/Paper/Figure7/F7Scatter.svg"
-  x: 0
-  y: 450
-  layout:
-    width: 450
-    height: 400
-    legend:
-      title:
-        font:
-          size: 10
-
-    margin:
-      r: 50
-      t: 50
-      b: 50
 
 
 RBP3Venn:
-  file: "Pipeline/Paper/Figure8/F8Venn.svg"
+  file: "Pipeline/Paper/Figure7/F7Venn.svg"
   x: 0
   y: 0
 
   layout:
-    height: 200
-    width: 624
+    height: 300
+    width: 340
     margin:
-      r: 20
-      l: 20
+      r: 10
+      l: 10
       t: 30
     legend:
       orientation: "h"
       y: 0
       yanchor: "top"
-      title:
-        font:
-          size: 10
 
 
 RBP3GSEA:
-  file: "Pipeline/Paper/Figure8/F8GSEA.svg"
-  x: 0
-  y: 200
+  file: "Pipeline/Paper/Figure7/F7GSEA.svg"
+  x: 340
+  y: 0
   layout:
-    height: 200
-    width: 624
+    height: 300
+    width: 340
     margin:
       r: 50
-      t: 10
+      t: 30
       b: 5
-
     legend:
       orientation: "h"
-      title:
-        font:
-          size: 10
+      x: -0.1
 
 
 F8:
@@ -787,36 +767,48 @@ CorrMinusPuro:
   x: 0
   y: 0
   layout:
-    height: 200
-    width: 312
+    coloraxis:
+      colorbar:
+        thickness: 10
+    height: 250
+    width: 340
     margin:
-      r: 50
+      r: 20
       t: 10
-      b: 5
+      b: 50
 
 CorrPlusPuro:
   file: "Pipeline/Paper/Supplementary/Correlation/RunWhyWeDropFigure.svg"
-  x: 312
+  x: 340
   y: 0
   layout:
-    height: 200
-    width: 312
+    coloraxis:
+      colorbar:
+        thickness: 10
+    height: 250
+    width: 340
     margin:
-      r: 50
+      r: 20
       t: 10
-      b: 5
+      b: 50
+      l: 50
+
 
 CorrTotalCell:
   file: "Pipeline/Paper/Supplementary/Correlation/RunTotalCellPuroCompFigure.svg"
   x: 0
-  y: 200
+  y: 250
   layout:
-    height: 200
-    width: 312
+    coloraxis:
+      colorbar:
+        thickness: 10
+    height: 250
+    width: 340
     margin:
-      r: 50
+      r: 20
       t: 10
-      b: 5
+      b: 50
+      l: 50
 
 SupplementCorr:
   a: "CorrMinusPuro"
@@ -830,20 +822,17 @@ Supplement16SFISH:
   x: 0
   y: 450
   layout:
-    width: 450
-    height: 400
+    width: 332
+    height: 300
     legend:
-      title:
-        font:
-          size: 10
-    annotations:
-      font:
-        size: 10
+      visible: False
 
     margin:
       r: 50
       t: 50
       b: 50
+      l: 50
+
 
 
 SupplementTUAssociation:
@@ -851,26 +840,20 @@ SupplementTUAssociation:
     x: 0
     y: 450
     layout:
-      width: 450
-      height: 400
-      legend:
-        title:
-          font:
-            size: 10
-      annotations:
-        font:
-          size: 10
+      width: 332
+      height: 200
 
       margin:
-        r: 50
+        r: 20
         t: 50
         b: 50
+        l: 50
 
 SupplementUracilTransmembrane:
   x: 0
   y: 450
   layout:
-    width: 624
+    width: 332
     height: 200
     legend:
       title:
@@ -881,8 +864,34 @@ SupplementUracilTransmembrane:
         size: 10
 
     margin:
-      r: 50
-      t: 50
+      r: 30
+      l: 30
+      t: 30
+      b: 50
+
+SupplementFullEnrichment:
+  file: "Pipeline/Paper/Supplementary/FullEnrichment/FullEnrichment.svg"
+  layout:
+    height: 1000
+    width: 680
+    margin:
+      l: 180
       b: 50
 
 
+SupplementScatter:
+  file: "Pipeline/Paper/Supplementary/Scatter/Scatter.svg"
+  x: 0
+  y: 450
+  layout:
+    width: 450
+    height: 400
+    legend:
+      title:
+        font:
+          size: 10
+
+    margin:
+      r: 50
+      t: 50
+      b: 50

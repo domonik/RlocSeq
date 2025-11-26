@@ -4,6 +4,7 @@ from scripts.plotlyVenn import venn_to_plotly, copy_to_subfigures
 import plotly.graph_objs as go
 from scipy.stats import pearsonr
 from scripts.plotly_template import register_template
+from scripts.plotFISH import _color_to_calpha
 
 register_template()
 
@@ -28,7 +29,7 @@ def main(tsv, config, svg):
     for annotation in multi_fig.layout.annotations:
         annotation.update(font=dict(size=8, ), yanchor="middle")
 
-    colors = ["rgba(105, 190, 40, 0.6)", "rgba(0, 34, 68, 0.6)"]
+    colors = [_color_to_calpha(config["minusPColor"], 0.6), _color_to_calpha(config["plusPColor"], 0.6)]
     f1 = venn_to_plotly([minus_p_m, plus_p_m, ], L_labels=["untreated", "Puromycin"], L_color=colors)
     f2 = venn_to_plotly([minus_p_c, plus_p_c,], L_labels=["untreated", "Puromycin"], L_color=colors)
     figures = [[f2,], [f1]]
@@ -38,7 +39,7 @@ def main(tsv, config, svg):
     multi_fig.update_layout(config["Fig5Venn"]["layout"])
     multi_fig.update_xaxes(showgrid=False, zeroline=False)
     multi_fig.update_yaxes(showgrid=False, zeroline=False)
-    white_annos = ["80", "28", "512"]
+    white_annos = ["80", "512"]
     for annotation in multi_fig.layout.annotations:
         if annotation.text.isnumeric():
             annotation.update(font=dict(size=8))

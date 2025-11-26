@@ -37,7 +37,7 @@ def main(tsv, go_terms, output, config, params):
         base_name=params.basename,
         highlight_up_color=config["membraneColor"],
         highlight_down_color=config["cytosolColor"],
-        opacity=0.15
+        opacity=0.05
     )
     fig.update_annotations(font=dict(color="black"))
     for shape in fig.layout.shapes:

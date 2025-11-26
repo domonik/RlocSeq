@@ -1,4 +1,4 @@
-from scripts.plotFISH import main
+from scripts.plotFISHWithIntensities import main
 
 
 

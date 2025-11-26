@@ -67,7 +67,7 @@ def check_membrane_dist(table, config, output, uni_col="Gene Names (ordered locu
                 y=x,
                 name=part,
                 orientation="h",
-                marker=dict(color=color, pattern_shape=pattern, pattern=dict(fgcolor="grey"), line=dict(color="black", width=2)),
+                marker=dict(color=color, pattern_shape=pattern, pattern=dict(fgcolor="grey"), line=dict(color="black", width=1)),
                 insidetextanchor="middle",
 
             )

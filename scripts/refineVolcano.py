@@ -2,7 +2,9 @@ import pandas as pd
 from DEplots.volcano import volcano_from_deseq_result
 import plotly.graph_objs as go
 import numpy as np
+from scripts.plotly_template import register_template
 
+register_template()
 
 def main(tsv, gsea, output, params, config):
     lout = config[params["figureConfig"]]
@@ -24,8 +26,10 @@ def main(tsv, gsea, output, params, config):
         base_name="Cytosol",
         highlight_up_color=config["membraneColor"],
         highlight_down_color=config["cytosolColor"],
-        opacity=0.3
+        opacity=0.05
     )
+    fig.update_annotations(font=dict(color="black"))
+
     fig: go.Figure
     if "annotations" in lout:
         for anno, data in lout["annotations"].items():
@@ -49,12 +53,18 @@ def main(tsv, gsea, output, params, config):
                 )
     fig.update_layout(config["LayoutDefault"])
     fig.update_xaxes(dtick=2)
+    for shape in fig.layout.shapes:
+        if shape.type == "line":
+            shape.update(line=dict(width=1))
+        else:
+            shape.update(line=dict(width=0))
+    fig.data[0].update(name="not sig.", showlegend=False)
 
     fig.update_layout(lout["layout"])
     fig.update_traces(
         marker=dict(size=3),
     )
-    fig.data[0].update(name="not sig.", showlegend=True)
+    fig.data[0].update(name="not sig.", showlegend=False)
     fig.write_image(output.svg)
     fig.write_html(output.html)
 

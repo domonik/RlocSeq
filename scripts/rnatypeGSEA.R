@@ -31,7 +31,7 @@ customGSEA(
   terms = terms,
   enrichedFile = efile,
   gsFile = gsfile,
-  pval_cutoff = 0.1,
+  pval_cutoff = 0.05,
 )
 
 
