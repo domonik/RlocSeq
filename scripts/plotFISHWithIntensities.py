@@ -8,7 +8,6 @@ import plotly.express as px
 import numpy as np
 from scripts.plotly_template import register_template
 from scipy import stats
-from scripts.plotFISHIntensity import calc_summary_and_pval
 import plotly.io as pio
 
 
@@ -22,9 +21,8 @@ def _color_to_calpha(color: str, alpha: float = 0.2):
 
 def main(file, probes, cfg, layout, subplot_params, intensities, test_output=None):
     df = pd.read_csv(file, sep="\t")
-    intensities = pd.read_csv(intensities, sep="\t")
+    results_df = pd.read_csv(intensities, sep="\t")
     probe_names = [probe[0] for probe in probes]
-    intensities, results_df = calc_summary_and_pval(intensities, probe_names)
 
     lr = 0.03 / len(probes)
     r = 0.11 / (len(probes) // 2)
@@ -191,8 +189,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
         fig.add_traces(
             traces + errors, cols=int(i * 1.5)+1, rows=3
         )
-        group = intensities[(intensities.Treatment == treatment) & (intensities.Probe == probe)]
-        values = group["subtractedIntensity"].tolist()
+        values = eval(results_df[results_df.Probe == probe][treatment].iloc[0])
         mean_val = np.mean(values)
         std_val = np.std(values)
         colors = {"Puromycin": cfg["plusPColor"], "untreated": cfg["minusPColor"]}
@@ -339,6 +336,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
     for shape in fig.layout.shapes:
         shape['layer'] = 'above'
     df = df.rename({"Figure": "Replicate"}, axis=1)
+
     return fig, df
 
 

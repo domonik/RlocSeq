@@ -20,31 +20,6 @@ def _color_to_calpha(color: str, alpha: float = 0.2):
     color = color.split("(")[-1].split(")")[0]
     return f"rgba({color}, {alpha})"
 
-def calc_summary_and_pval(spots_df, probes):
-    spots_df = spots_df[spots_df.Treatment != "Kasugamycin"]
-    spots_df["subtractedIntensity"] = spots_df["ProbeIntensity"] - spots_df["background"]
-
-    # Filter dataframe for selected probe
-    df = spots_df[spots_df["Probe"].isin(probes)]
-    df = df.groupby(["Treatment", "Probe", "Figure", ])["subtractedIntensity"].mean().reset_index()
-    # Run Welch’s t-test for each probe
-    results = []
-    for probe in df['Probe'].unique():
-        untreated = df.query("Treatment == 'untreated' and Probe == @probe")['subtractedIntensity']
-        puromycin = df.query("Treatment == 'Puromycin' and Probe == @probe")['subtractedIntensity']
-        if len(untreated) == len(puromycin):
-            tstat, pval = ttest_rel(untreated, puromycin, )
-        else:
-            tstat, pval = ttest_ind(untreated, puromycin, equal_var=False)
-        results.append({'Probe': probe, 't-statistic': tstat, 'p-value': pval, "untreated": untreated.tolist(), "puromycin": puromycin.tolist(), "untreated_mean": untreated.mean(), "puromycin_mean": puromycin.mean()})
-
-    results_df = pd.DataFrame(results)
-    reject, pvals_corr, _, _ = multipletests(results_df['p-value'], method='fdr_bh')
-
-    results_df['adj p-value (FDR)'] = pvals_corr
-    results_df['significant (FDR<0.05)'] = reject
-    return df, results_df
-
 
 def find_and_extract_cbar(image_dir, treatment):
     cbar_files = [f for f in os.listdir(image_dir) if "CBar" in f]
@@ -69,10 +44,9 @@ def find_and_extract_cbar(image_dir, treatment):
             )
     return trace, max_v
 
-def main(spots_df, cfg, outfile, outtsv):
+def main(results_df, cfg, outfile, outtsv):
     probes = ["psbA2", "cupA"]
     treatments = ["untreated", "Puromycin"]
-    df, results_df = calc_summary_and_pval(spots_df, probes)
     # Create subplot grid: 2 rows, 2 columns
     r = 0.06
     l = 0.001
@@ -136,12 +110,10 @@ def main(spots_df, cfg, outfile, outtsv):
     # Add boxplot spanning both columns
     for pidx , probe in enumerate(probes):
         for treatment in treatments:
-            group = df[(df.Treatment == treatment) & (df.Probe == probe)]
-            name = "untreated" if treatment == "untreated" else "Puromycin"
-            name = name + f" {probe}"
+            intensities = eval(results_df[results_df.Probe == probe][treatment].iloc[0])
             fig.add_trace(
                 go.Box(
-                    y=group["subtractedIntensity"].tolist(),
+                    y=intensities,
                     name=f"{treatment} – <i>{probe}</i>",
                     boxmean=True,
                     fillcolor=_color_to_calpha(colors[treatment], 0.7),
@@ -154,7 +126,7 @@ def main(spots_df, cfg, outfile, outtsv):
                 pval = results_df.loc[results_df["Probe"] == probe, "adj p-value (FDR)"].values
                 if len(pval) > 0 and pval[0] < 0.05:
                     # Get approximate y position (top of box)
-                    y_max = max(group["subtractedIntensity"]) * 1.2
+                    y_max = max(intensities) * 1.2
                     # choose symbol by significance level
                     p = pval[0]
                     if p < 0.0001:
@@ -252,7 +224,7 @@ if __name__ == '__main__':
     else:
         import yaml
 
-        file = "Pipeline/FISH/single_spots.tsv"
+        file = "Pipeline/Paper/Supplementary/FISHIntensitiesSummary.tsv"
         outfile = "foo.svg"
         outtsv = "foo.tsv"
         with open("configFile.yml", 'r') as f:

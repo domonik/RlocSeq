@@ -25,7 +25,7 @@ def main(tsv, cfg, outfile):
     mp_c = df[df["minusPCytosol"]]
     others = df[~(df["minusPMembran"] | df["minusPCytosol"])]
 
-    colors = ["rgb(138, 141, 143)", "rgb(0, 106, 56)", "rgb(0, 48, 135)", ]
+    colors = [cfg["seahawksGrey"], cfg["membraneColor"], cfg["cytosolColor"]]
     names = ["Not sig.", "Membrane", "Cytosol"]
     lg  = "untreated"
     for idx, subdf in enumerate([others, mp_m, mp_c, ]):

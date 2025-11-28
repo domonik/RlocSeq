@@ -30,6 +30,7 @@ def plot_gsea(df, info, descs, colors=px.colors.qualitative.Light24):
             go.Bar(
                 x=sdf["x"],
                 y=y,
+                width=[1.5],
                 marker_color=colors[idx-1],
                 marker_line=dict(width=1, color=colors[idx-1]),
                 name=desc + f' {info[info["Description"] == desc]["p.adjust"].iloc[0]:.2e}',
@@ -40,6 +41,7 @@ def plot_gsea(df, info, descs, colors=px.colors.qualitative.Light24):
         fig.update_yaxes(range=[0, 1], row=idx +1, showticklabels=False)
     fig.update_xaxes(title_text="Position in ranked dataset", row=len(d)+1)
     fig.update_yaxes(title_text="Running enrichment score", row=1)
+    fig.update_layout(barmode='overlay')
 
     return fig
 

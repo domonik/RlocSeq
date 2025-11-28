@@ -325,7 +325,7 @@ rule joinTables:
         uniprot= rules.download_subcell.output.tsv,
 
     output:
-        tsv = "Pipeline/Paper/Supplementary/SummaryTable.tsv",
+        tsv = "Pipeline/Summary/SummaryTable.tsv",
         output_for_R_because_this_stupid_language_cannot_even_read_tsv_files = "Pipeline/Summary/joinedDESeqForstupidR.tsv",
         stayed = "Pipeline/Summary/stayedAtMembrane.tsv",
     run:
@@ -389,8 +389,10 @@ rule joinTables:
         df["mRNA"] = (df.index.str.startswith("sll") | df.index.str.startswith("slr") | df.index.str.startswith("ssl") | df.index.str.startswith("ssr") | df.index.str.startswith("sml" )| df.index.str.startswith("smr") | df.index.str.startswith("sgl") | df.index.str.startswith("Norf")) & ~(df["UTR"] | df["asRNA"])
         add_data = pd.read_csv(input.add_data, sep=",")
         df = df.merge(add_data, left_index=True, right_on="locus_tag")
-        df.loc[df["5UTR"], "gene_name"] = df.loc[df["5UTR"], "gene_name"] + " 5UTR"
-        df.loc[df["3UTR"], "gene_name"] = df.loc[df["5UTR"], "gene_name"] + " 3UTR"
+        df.loc[df["5UTR"], "gene_name"] = df.loc[df["5UTR"], "gene_name"] + "_5UTR"
+        df.loc[df["3UTR"], "gene_name"] = df.loc[df["5UTR"], "gene_name"] + "_3UTR"
+        df["gene_name"] = df["gene_name"].str.replace("_5'UTR", "")
+        df["gene_name"] = df["gene_name"].str.replace("_3'UTR", "")
         df["Photosystem mRNA"] = df.gene_name.str.contains("psa|psb")
         df["Ribosome mRNA"] = df.gene_name.str.contains("rpl|rps")
         df = df[df.columns[-2:].to_list() + df.columns[:-2].to_list()]
@@ -409,7 +411,7 @@ rule joinTables:
 
 
         def clean_join(series):
-            vals = [x for x in series if pd.notna(x)]
+            vals = list(set([x for x in series if pd.notna(x)]))
             if vals:
                 return vals
             else:
@@ -427,6 +429,7 @@ rule joinTables:
             on="locus_tag_norm",
             how="left"
         )
+
         count_per_TU = tus_expanded.groupby('TU')['locus_tag'].count().reset_index(name='locus_tag_count')
 
         TU_size_dict = dict(zip(count_per_TU['TU'],count_per_TU['locus_tag_count']))
@@ -448,7 +451,7 @@ rule joinTables:
 
         df[['shortest_TU', "TU_size"]] = df.apply(lambda row: pd.Series(get_shortest_TU(row['TU'],row['TU_sizes'])),axis=1)
         #df = df.merge( tus_expanded.rename(columns={"locus_tag": "locus_tag_norm"}),on="locus_tag_norm",how="left")
-        df.loc[df["gene_name"] == df["locus_tag"], "gene_name"] = df["Gene Names"].str.split(" ").str[0]
+        df.loc[(df["gene_name"] == df["locus_tag"]) & (~pd.isna(df["Gene Names"])), "gene_name"] = df.loc[(df["gene_name"] == df["locus_tag"]) & (~pd.isna(df["Gene Names"])), "Gene Names"].str.split(" ").str[0]
 
         df.to_csv(output.tsv, sep="\t", index=False)
 
@@ -456,7 +459,6 @@ rule joinTables:
         df_for_r = df[["locus_tag", "stayedAtMembrane", "stayedInCytosol", "mRNA", "log2FoldChange_plusPuromycin", "log2FoldChange_minusPuromycin"] + rtkeys]
 
         df = df[df["stayedAtMembrane"] == True]
-
         df.to_csv(output.stayed, sep="\t", index=False)
         df_for_r.to_csv(output.output_for_R_because_this_stupid_language_cannot_even_read_tsv_files, sep="\t", index=False)
 
@@ -490,7 +492,7 @@ rule Table1:
                 "TC and plus Puro Total":
                     df[~(df["baseMean_tc"] == 0) & ~(df["baseMean_plusPuromycin"] == 0)].shape[0],
                 "TC Up and plusP Up": (df["plusPMembran"] & df["plusPTCUp"]).sum(),
-                "TC Up and plusP Down": (df["plusPCytosol"] & df["plusPTCDown"]).sum(),
+                "TC Up and plusP Down": (df["plusPCytosol"] & df["plusPTCUp"]).sum(),
                 "TC Down and plusP Up": (df["plusPMembran"] & df["plusPTCDown"]).sum(),
                 "TC Down and plusP Down": (df["plusPCytosol"] & df["plusPTCDown"]).sum(),
 
@@ -515,7 +517,7 @@ rule Table1:
                 "TC total": subset[~(subset["baseMean_tc"] == 0)].shape[0],
                 "TC and plus Puro Total": subset[~(subset["baseMean_tc"] == 0) & ~(subset["baseMean_plusPuromycin"] == 0)].shape[0],
                 "TC Up and plusP Up": (subset["plusPMembran"] & subset["plusPTCUp"]).sum(),
-                "TC Up and plusP Down": (subset["plusPCytosol"] & subset["plusPTCDown"]).sum(),
+                "TC Up and plusP Down": (subset["plusPCytosol"] & subset["plusPTCUp"]).sum(),
                 "TC Down and plusP Up": (subset["plusPMembran"] & subset["plusPTCDown"]).sum(),
                 "TC Down and plusP Down": (subset["plusPCytosol"] & subset["plusPTCDown"]).sum(),
 
@@ -913,8 +915,7 @@ rule addRBP3Data:
         joined = rules.joinTables.output.tsv
     output:
         trash_tsv_for_R = "Pipeline/RBP3Check/trashTSVForR.tsv",
-        useful_tsv = "Pipeline/RBP3Check/rbp3joined.tsv",
-        html = "Pipeline/RBP3Check/rbp3joined.html",
+        useful_tsv = "Pipeline/Paper/Supplementary/SummaryTable.tsv",
     script: "scripts/checkRBP3Data.py"
 
 rule rnatypeGSEA:
@@ -1102,6 +1103,17 @@ rule processFISHImages:
         "scripts/generateFISHDistribution.ipynb"
 
 
+rule craftSupplementaryTables:
+    input:
+        tsv = rules.processFISHImages.output.tsv,
+        intensities = rules.processFISHImages.output.spots_df
+    output:
+        dist = "Pipeline/Paper/Supplementary/FISHDistributionSummary.tsv",
+        intensities = "Pipeline/Paper/Supplementary/FISHIntensitiesSummary.tsv",
+    script:
+        "scripts/finalizeFISHData.py"
+
+
 rule plotFISHFigure2:
     input:
         tsv = rules.processFISHImages.output.tsv
@@ -1188,7 +1200,7 @@ rule plotQPCR:
 
 rule plotF4cupAIntensities:
     input:
-        tsv=rules.processFISHImages.output.spots_df,
+        tsv=rules.craftSupplementaryTables.output.intensities,
     output:
         svg=config["F4CupAIntensities"]["file"],
         tsv= "Pipeline/Paper/Figure4/IntensitiesTestPval.tsv"
@@ -1249,7 +1261,7 @@ rule plotVolcanoFigure5:
 rule plotFISHFigure5:
     input:
         tsv=rules.processFISHImages.output.tsv,
-        intensities=rules.processFISHImages.output.spots_df
+        intensities=rules.craftSupplementaryTables.output.intensities
     output:
         svg = config["F5FISH"]["file"],
         res_tsv = "Pipeline/Paper/Figure5/IntensitiesTTest.tsv",
@@ -1551,7 +1563,7 @@ rule SupplementCorrelationtoPNG:
 rule plot16SFISH:
     input:
         tsv=rules.processFISHImages.output.tsv,
-        intensities=rules.processFISHImages.output.spots_df
+        intensities=rules.craftSupplementaryTables.output.intensities
     output:
         svg = config["Supplement16SFISH"]["file"],
         distribution_out= "Pipeline/Paper/Supplementary/16SFISH/DistanceDistribution.tsv"
@@ -1581,6 +1593,18 @@ rule SupplementTUAssotoPNG:
     output:
         png =  config["SupplementTUAssociation"]["file"].split(".")[0] + ".png"
     shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
+
+
+rule extractAddInfoData:
+    input:
+        tsv = "Pipeline/Paper/Supplementary/SummaryTable.tsv"
+    output:
+        tsv = "Pipeline/Paper/AddInfo.tsv"
+    script:
+        "scripts/extractAddInfoTable.py"
+
+
+
 
 rule all:
     default_target: True
@@ -1626,7 +1650,8 @@ rule all:
         uracil = rules.SupplementUraciltoPNG.output,
         f7 = rules.ScatterSupplementtoPNG.output,
         tua = rules.SupplementTUAssotoPNG.output,
-        corr = rules.ScatterSupplementtoPNG.output
+        corr = rules.ScatterSupplementtoPNG.output,
+        add_data = rules.extractAddInfoData.output
 #tpmemabundace = rules.checkTranscriptAbundanceGO.output
 
 

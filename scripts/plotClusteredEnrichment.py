@@ -15,6 +15,7 @@ def main(tsv, outfile, layout, config):
     fig.update_layout(config["LayoutDefault"])
     fig.update_layout(layout)
     fig.update_yaxes(title=dict(text=""))
+    fig.update_traces(marker=dict(line=dict(color="black", width=1)))
     fig.write_image(outfile)
 
 

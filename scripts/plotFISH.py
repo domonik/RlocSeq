@@ -8,7 +8,6 @@ import plotly.express as px
 import numpy as np
 from scripts.plotly_template import register_template
 from scipy import stats
-from scripts.plotFISHIntensity import calc_summary_and_pval
 import plotly.io as pio
 
 

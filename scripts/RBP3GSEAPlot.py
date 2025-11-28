@@ -61,8 +61,9 @@ def main(df, info, config, output, params):
     fig.update_traces(
         selector=dict(type="bar"),  # only line traces
         showlegend=True,  # hide legend for these traces
+        width=2
     )
-    fig.update_layout(bargap=0.)
+    fig.update_layout(bargap=0., barmode='overlay')
     for i in range(1, len(rh)):
         fig.update_xaxes(row = i, ticks="")
         fig.update_yaxes(row = i+1, ticks="")

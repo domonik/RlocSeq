@@ -9,7 +9,7 @@ detable <- detable[!is.na(detable[[fc]]), ]
 df_sorted <- detable[order(detable[[fc]], decreasing = TRUE), ]
 geneList <- df_sorted[[fc]]
 names(geneList) <- rownames(df_sorted)
-terms <- grep("RBP3_Target", colnames(df_sorted), value = TRUE)
+terms <- grep("Rbp3_Target", colnames(df_sorted), value = TRUE)
 print(head(df_sorted))
 # Convert these columns to logical (boolean)
 df_sorted[, terms] <- lapply(df_sorted[, terms], function(x) x == "True") # why the fuck is this necessary

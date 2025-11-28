@@ -9,6 +9,7 @@ register_template()
 
 def main(file, config, output):
     df = pd.read_csv(file, sep="\t")
+    df = df[df["mRNA"]]
     locs = ["All", "Cytoplasm", "Plasmamembrane", "Cellular thylakoid membrane"]
     rows = 2
     cols = 2
@@ -19,7 +20,7 @@ def main(file, config, output):
             sdf = df
         else:
             sdf = df[df[loc] == True]
-        rbp3_set = set(sdf[sdf["RBP3_Target"] == True]["locus_tag"])
+        rbp3_set = set(sdf[sdf["Rbp3_Target"] == True]["locus_tag"])
         minusp_set = set(sdf[sdf["minusPMembran"] == True]["locus_tag"])
         plusp_set = set(sdf[sdf["plusPMembran"] == True]["locus_tag"])
         subfig = venn_to_plotly(
