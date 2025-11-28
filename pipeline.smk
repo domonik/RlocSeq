@@ -1608,24 +1608,8 @@ rule extractAddInfoData:
 rule all:
     default_target: True
     input:
-        tu = expand(rules.createTUTable.output, condition=["M"], baseline=["C"]),
-        tu2 = expand(rules.createTUTable2.output, condition=["M"], baseline=["C"]),
-        #tu3 = expand(rules.plotHistogramm.output,zip, condition=["M"], baseline=["C"]),
-        stayedGO = expand(rules.GOTermEnrichmentStayed.output, condition=["M"], baseline=["C"]),
-        transintramembrane = expand(rules.joinTables.output, condition=["M"], baseline=["C"]),
-        size_factors = rules.third_runDESeq.output,
-        #protloc = expand(rules.correlationRNAvsProteins.output, condition="M", baseline="C"),
-        summary_fig = expand(rules.compareResults.output, condition="M", baseline="C"),
-        summary_fig2 = expand(rules.compareTotalCell.output, condition="plusP", baseline="minusP"),
-        #overlap= expand(rules.extractOverlap.output, zip, condition=config["primary"]["conditions"],baseline=config["primary"]["baselines"]),
-
-        test = expand(rules.plotGSEA.output, condition="M", baseline="C", run_dir=[os.path.basename(config["RUNS"][run]["RUN_DIR"]) for run in config["RUNS"] if "TC" not in run]),
-        subcell = rules.download_subcell.output,
-        rbp3 = expand(rules.plotRBP3GSEA.output, puro=["plusPuromycin", ]),
-        #prdwep = expand(rules.checkUracilTransmembrane.output, type=["Cellular_thylakoid_membrane", "Cell_membrane"]),
         fig1 = rules.joinFig1.output,
         fig1png = rules.Figure1toPNG.output,
-        rnatypegsea = expand(rules.rnatypeGSEA.output, puro=["minusPuromycin", ]),
         cov2 = rules.plotCoveragesFig2.output,
         f5volc = rules.plotVolcanoFigure5.output,
         f4volc = rules.plotVolcanoFigure4.output,
@@ -1640,7 +1624,6 @@ rule all:
         f3ribo = rules.plotGSEARibosome.output,
         qpcr = rules.Figure4toPNG.output,
         clusteredF4 = rules.F4ClusteredGO.output,
-        transmemgsea = expand(rules.TransmembraneGSEA.output.enriched, puro=["minusPuromycin", "plusPuromycin"], condition="M", baseline="C"),
         f5perc = config["F5Percent"]["file"],
         f5fish = config["F5FISH"]["file"],
         rbp3venn= rules.Figure7toPNG.output,
