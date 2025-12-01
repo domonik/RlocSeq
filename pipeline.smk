@@ -1100,7 +1100,7 @@ rule processFISHImages:
         spots_df = "Pipeline/FISH/single_spots.tsv"
     threads: 10
     notebook:
-        "scripts/generateFISHDistribution.ipynb"
+        "scripts/generateFISHDistribution.py"
 
 
 rule craftSupplementaryTables:
