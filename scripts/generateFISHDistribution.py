@@ -15,7 +15,7 @@ import plotly.express as px
 import copy
 import multiprocessing as mp
 from jinja2.compiler import find_undeclared
-
+import skimage
 
 # In[9]:
 
@@ -112,6 +112,7 @@ def _calc_image_data_only_probe(images, figure, probe, treatment, image, sub_spo
             df["Figure"] = figure
             df["bg_mean"] = bg_mean
             sub_dfs.append(df)
+            breakpoint()
     return sub_dfs
 
 
