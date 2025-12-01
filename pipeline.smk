@@ -18,6 +18,7 @@ NAMEMapping = {
 commit = "41003d8d79f0d012ba791c6b02711820bb009f45"
 
 snakefile = github("domonik/SynDESeq2", path="snakefile.smk", commit=commit)
+snakefile = "../../SynDESeq2/snakefile.smk"
 configfile: "configFile.yml"
 
 config["RUNS"] = {}
@@ -663,7 +664,7 @@ rule checkProteinLocalization:
     output:
         svg = config["F3SubCellLoc"]["file"],
         r_is_not_a_valid_programming_language_and_no_one_should_use_this_bullshit = "Pipeline/SubcellularLoc/SubcellLocSameBullshitButCauseRCantReadDataframesItNeedsToBePreprocessed.tsv"
-
+    conda: "envs/matplotlibPlotly.yml"
     script: "scripts/checkMembraneDistribution.py"
 
 
@@ -1099,7 +1100,8 @@ rule processFISHImages:
         tsv = "Pipeline/FISH/all_distributions.tsv",
         spots_df = "Pipeline/FISH/single_spots.tsv"
     threads: 10
-    notebook:
+    conda: "envs/matplotlibPlotly.yml"
+    script:
         "scripts/generateFISHDistribution.py"
 
 

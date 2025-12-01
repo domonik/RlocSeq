@@ -18,7 +18,7 @@ RUN_DIR: "Pipeline/RUNS/WhyWeDrop" # The Directory to store results in
 CountFile: "initialData/CDS_SinglemappedNew.csv" # The counts file to use
 gff: "initialData/Synsp.gff3"
 uniprot_mapping: "Pipeline/uniprotMapping.tsv"
-
+buildOrgDB: False
 initial_sep: ","
 Rlib: "Rlib" # Some R packages will be installed here due to version conflicts
 

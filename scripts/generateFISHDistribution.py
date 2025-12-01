@@ -199,7 +199,8 @@ for replicate, probe, treatment, image in yield_image(images):
         else:
             b = 0
             h = 0
-            print(l)
+        
+
 #to_del = set(to_del)
 for replicate, probe, treatment, image in to_del:
     del images[replicate][probe][treatment][image]
@@ -231,7 +232,8 @@ px.imshow(tifffile.imread(imgs["Intensity"])[0])
 # In[19]:
 
 
-from scripts.foo import median_intensity
+def median_intensity(mask, image):
+    return np.median((image[mask]))
 
 def _find_spots_center(images):
     dfs = []
@@ -253,9 +255,6 @@ def _find_spots_center(images):
         df = df.merge(probe_intensity, on="label", how="inner")
         df["background"] = float(bg_intensity)
         df["CellIdx"] = df["CellIdx"].astype(int)
-        if probe == "16S rRNA" and figure == "Replicate 1":
-            print("lala")
-            p = 0
         df["Image"] = image
         df["Probe"] = probe
         df["Treatment"] = treatment
@@ -392,6 +391,40 @@ px.box(spots_df, x="Probe", y="area", color="Treatment", hover_data="Image")
 
 # In[35]:
 
+def quantile_intensity(mask, image):
+    vals = image[mask]
+    return np.quantile(vals, 0.25), np.quantile(vals, 0.75)
+
+
+
+def calc_distribution(image, points, rad_step, max_rad):
+    means = np.zeros(
+        (len(points), max_rad // rad_step)
+    )
+    sums = np.zeros(
+        (len(points), max_rad // rad_step)
+    )
+    maxima = np.zeros(
+        (len(points), max_rad // rad_step)
+    )
+    mask = _generate_ring_mask(max_rad, rad_step)
+
+    for idx, center in enumerate(points):
+        x, y = center
+        current_mask = np.zeros_like(image)
+        try:
+            current_mask[x-max_rad:x+max_rad+1, y-max_rad:y+max_rad+1] = mask
+        except ValueError:
+            p= 0
+        ringprops = skimage.measure.regionprops_table(current_mask.astype(int), intensity_image=image,
+                                                      properties= ('label', 'mean_intensity', 'area', "intensity_max"),  #Fragen an Thorsten: WEeelche Mengenangabe hat Area?
+                                                      extra_properties = (intensity_sum,))
+        means[idx] = ringprops["mean_intensity"]
+        sums[idx] = ringprops["intensity_sum"]
+        maxima[idx] = ringprops["intensity_max"]
+
+    return means, sums, maxima
+
 
 def _calc_image_data_only_probe(images, figure, probe, treatment, image, sub_spots_df, rad_step, max_rad, border_distance,):
     sub_dfs = []
@@ -417,7 +450,7 @@ def _calc_image_data_only_probe(images, figure, probe, treatment, image, sub_spo
 
         intensity_masked = intensity * tc_masked
 
-        mean_background = skimage.measure.regionprops_table((~(tc.astype(bool))).astype(int), intensity_image=intensity, properties=("mean_intensity", ), extra_properties=(median_intensity, foo.quantile_intensity ))
+        mean_background = skimage.measure.regionprops_table((~(tc.astype(bool))).astype(int), intensity_image=intensity, properties=("mean_intensity", ), extra_properties=(median_intensity, quantile_intensity ))
         bg_mean = mean_background["mean_intensity"][0]
 
 
@@ -443,7 +476,7 @@ def _calc_image_data_only_probe(images, figure, probe, treatment, image, sub_spo
 
 
 
-            means, sums, maxima = foo.calc_distribution(intensity_masked, points, rad_step, max_rad)
+            means, sums, maxima = calc_distribution(intensity_masked, points, rad_step, max_rad)
 
             values = np.concatenate(( means, sums, maxima), axis=1)
             df = pd.DataFrame(
@@ -465,7 +498,7 @@ def _calc_image_data_only_probe(images, figure, probe, treatment, image, sub_spo
 # In[36]:
 
 
-import foo
+
 
 max_rad = 30
 border_distance = max_rad
@@ -492,9 +525,9 @@ else:
         dfs = pool.starmap(_calc_image_data_only_probe, calls)
 
 dfs = [j for sub in dfs for j in sub]
-print(dfs)
+
 df_all = pd.concat(dfs)
-print(ct)
+
 
 
 # In[36]:
