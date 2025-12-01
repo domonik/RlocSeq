@@ -9,6 +9,15 @@ dependencies:
  - python-kaleido=0.2.1
  - biopython
  - tesseract
+ - conda-forge::pytesseract
+ - tifffile
+ - jupyter
+ - nbconvert
+ - papermill
+ - nbclient
+ - ipykernel
+ - tifffile
+ - scikit-image
  - pip:
     - git+https://github.com/domonik/DEplots.git@main
     - gffutils
