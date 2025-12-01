@@ -915,6 +915,7 @@ rule addRBP3Data:
     output:
         trash_tsv_for_R = "Pipeline/RBP3Check/trashTSVForR.tsv",
         useful_tsv = "Pipeline/Paper/Supplementary/SummaryTable.tsv",
+    conda: "envs/matplotlibPlotly.yml"
     script: "scripts/checkRBP3Data.py"
 
 rule rnatypeGSEA:
