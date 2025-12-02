@@ -33,7 +33,7 @@ def main(df, info, config, output, params):
         xref="x domain",
         xanchor="left",
         yanchor="bottom",
-        text=f"p-value:",
+        text=f"FDF adjusted <i>P</i>:",
         showarrow=False
     )
     for idx, row in info.iterrows():

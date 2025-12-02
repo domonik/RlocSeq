@@ -41,14 +41,13 @@ def main(tsv, gsea, output, params, config):
                     y=-1 * np.log10(n["padj"]),
                     ax=data["x"],
                     ay=data["y"],
-                    text=anno,
+                    text=f"<i>{anno}</i>",
                     showarrow=True,
                     axref="x",
                     ayref="y",
                     arrowwidth=1,
                     arrowsize=0.5,
                     arrowcolor="black",
-                    font=dict(size=lout["annotationsize"])
 
                 )
     fig.update_layout(config["LayoutDefault"])

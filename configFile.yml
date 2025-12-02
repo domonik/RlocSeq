@@ -143,12 +143,12 @@ F1Volcano:
       y: 2
 
     psbA2:
-      x: 1.1
+      x: 1.2
       y: 10
 
     rpl12:
       x: 2.5
-      y: 8
+      y: 6
   file: "Pipeline/Paper/Figure1/F1Volcano.svg"
   x: 0
   y: 100
@@ -157,21 +157,25 @@ F1Volcano:
     height: 250
     margin:
       r: 10
-      b: 30
+      b: 50
       l: 30
     legend:
-      orientation: "h"
-      y: -0.05
-      x: -0.1
+      orientation: "v"
+      y: -0.1
+      x: 1
       yanchor: "top"
+      xanchor: "right"
       indentation: 0
       itemsizing: "constant"
+      bgcolor: "rgba(0, 0,0,0)"
     yaxis:
       title:
-        text: "-Log<sub>10</sub>(p.adj)"
+        text: "-Log<sub>10</sub>(FDR adjusted <i>P</i>)"
     xaxis:
       title:
         text: "Log<sub>2</sub>(Fold Change)"
+        standoff: 1
+
 
 
 F1Percent:
@@ -205,17 +209,14 @@ F1GSEA:
       r: 50
       t: 30
       b: 30
-      l: 30
+      l: 35
     showlegend: False
     annotations:
       font:
         size: 8
-    xaxis:
-      title:
-        standoff: 5
     yaxis:
       title:
-        text: "Enrichment<br>score"
+        text: "Enrichment score"
         standoff: 5
 
 

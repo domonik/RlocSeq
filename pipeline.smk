@@ -18,7 +18,7 @@ NAMEMapping = {
 commit = "41003d8d79f0d012ba791c6b02711820bb009f45"
 
 snakefile = github("domonik/SynDESeq2", path="snakefile.smk", commit=commit)
-snakefile = "../../SynDESeq2/snakefile.smk"
+#snakefile = "../../SynDESeq2/snakefile.smk"
 configfile: "configFile.yml"
 
 config["RUNS"] = {}
