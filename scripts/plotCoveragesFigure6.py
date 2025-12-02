@@ -36,7 +36,7 @@ def main(design, gff, db_name, output_path, cfg):
         line_mapping=lmap,
         vertical_spacing=0,
         horizontal_spacing=0.08,
-        row_heights=[0.9, 0.1],
+        row_heights=[0.85, 0.15],
         cols=2,
     )
     fig.update_layout(cfg["LayoutDefault"])
@@ -67,7 +67,7 @@ def main(design, gff, db_name, output_path, cfg):
         force=True,
         line_mapping=lmap,
         vertical_spacing=0,
-        row_heights=[0.9, 0.1],
+        row_heights=[0.8, 0.2],
         cols=1
     )
     for trace in fig2.data:
@@ -91,7 +91,7 @@ def main(design, gff, db_name, output_path, cfg):
             x=[None],
             y=[None],
             mode="markers",
-            name=f"Membrane untreated",
+            name=f"Membrane<br>untreated",
             marker=dict(color=cfg["TRACE_COLORS"]["-p M"], symbol="square", size=10),
 
 
@@ -102,7 +102,7 @@ def main(design, gff, db_name, output_path, cfg):
             x=[None],
             y=[None],
             mode="markers",
-            name=f"Cytosol untreated",
+            name=f"Cytosol<br>untreated",
             marker=dict(color=cfg["TRACE_COLORS"]["-p C"], symbol="square", size=10),
 
 
@@ -113,7 +113,7 @@ def main(design, gff, db_name, output_path, cfg):
             x=[None],
             y=[None],
             mode="markers",
-            name=f"Membrane Puromycin",
+            name=f"Membrane<br>Puromycin",
             marker=dict(color=cfg["TRACE_COLORS"]["+p M"], symbol="square", size=10),
 
 
@@ -124,7 +124,7 @@ def main(design, gff, db_name, output_path, cfg):
             x=[None],
             y=[None],
             mode="markers",
-            name=f"Cytosol Puromycin",
+            name=f"Cytosol<br>Puromycin",
             marker=dict(color=cfg["TRACE_COLORS"]["+p C"], symbol="square", size=10),
 
         )
@@ -175,12 +175,13 @@ def main(design, gff, db_name, output_path, cfg):
         lambda t: t.update(legendgroup=None, legendgrouptitle=None)
     )
 
-
+    for anno in fig.layout.annotations:
+        anno.update(text=f"<i>{anno.text}</i>")
     fig.update_xaxes(range=[rpl10_12start - 50, rpl10_12end + 50],  col=2, )
     fig.update_yaxes(ticks="", row=2)
     fig.update_xaxes(ticks="", row=1, showline=False)
     fig.update_layout(cfg["F6Coverage"]["layout"])
-    fig.update_layout(legend=dict(entrywidthmode="fraction", entrywidth=0.25, maxheight=0, yanchor="top", y=-0.1, x=-0.1,
+    fig.update_layout(legend=dict(entrywidthmode="fraction", entrywidth=0.25, maxheight=0, yanchor="top", y=-0.15, x=-0.15,
                                  orientation="h", bgcolor="rgba(0,0,0,0)", indentation=0, ))
 
     fig.write_image(output_path)

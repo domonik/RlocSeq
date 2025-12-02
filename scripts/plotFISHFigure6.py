@@ -6,7 +6,7 @@ import pandas as pd
 import tifffile
 import plotly.express as px
 import numpy as np
-from scripts.plotly_template import register_template
+from scripts.plotly_template import register_template, PT7
 from scipy import stats
 import plotly.io as pio
 
@@ -23,11 +23,11 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
     df = pd.read_csv(file, sep="\t")
     probe_names = [probe[0] for probe in probes]
 
-    lr = 0.03 / len(probes)
-    r = 0.11 / (len(probes) // 2)
+    lr = 0.04 / len(probes)
+    r = 0.12 / (len(probes) // 2)
     specs = [
         [{"type": "image", "l": lr, "r": lr}, {"type": "image", "l": lr, "r": lr}, {"type": "xy", "b": 0.05, "t": 0.1, "r": r} ] * (len(probes) // 2),
-        [{"type": "xy", "colspan": 1, "r": 0.03}, {"type": "xy", "colspan": 1, "l": 0.03}, None] * (len(probes) //2),  # Row 1: two image plots
+        [{"type": "xy", "colspan": 1, "r": lr}, {"type": "xy", "colspan": 1, "l": lr}, None] * (len(probes) //2),  # Row 1: two image plots
     ]
     base = 1 / len(probes)
 
@@ -69,7 +69,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
         rows=row,
         cols=col,
         row_heights=row_heights,
-        x_title="distance to probe [nm]",
+        x_title="Distance to probe [nm]",
         specs=specs,
         column_widths=column_widths,
         column_titles = col_titles,
@@ -79,10 +79,10 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
     )
     if intensities is None:
         for annotation in fig.layout.annotations:
-            annotation.update(font=dict(size=8))
+            annotation.update(font=dict(size=PT7))
     else:
         for annotation in fig.layout.annotations:
-            annotation.update(font=dict(size=8))
+            annotation.update(font=dict(size=PT7))
 
     fig.update_layout(cfg["LayoutDefault"])
 
@@ -91,7 +91,9 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
         traces = []
         errors = []
         image_dir = f"initialData/AllFISHData/{probe}/{replicate}"
-        files = [f for f in os.listdir(image_dir) if f.endswith(f"{treatment}_green.tif") and "Image" in f]
+        treatl = "untreated" if treatment == "Untreated" else treatment
+
+        files = [f for f in os.listdir(image_dir) if f.endswith(f"{treatl}_green.tif") and "Image" in f]
         cbar_files = [f for f in os.listdir(image_dir) if "CBar" in f]
         if len(cbar_files) > 1:
             cbarfile = [f for f in cbar_files if treatment in f][0]
@@ -214,7 +216,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
             showarrow=False,
             xanchor="left",  # position text to the right of the line
             yanchor="bottom",
-            font=dict(color="black", size=7),
+            font=dict(color="black"),
         )
     fig.add_trace(
         go.Scatter(
@@ -265,7 +267,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
     )
 
     fig.update_yaxes(
-        title=dict(text="norm. Intensity"),
+        title=dict(text="Norm. intensity"),
         row=row,
         col=1,
         showticklabels=True,
@@ -340,7 +342,7 @@ if __name__ == '__main__':
         xanchor="center",
         y=y,
         yanchor="bottom",
-        text=probes[0][0],
+        text=f"<i>{probes[0][0]}</i>",
         showarrow=False,
     )
     fig.add_annotation(
@@ -350,14 +352,14 @@ if __name__ == '__main__':
         xanchor="center",
         y=y,
         yanchor="bottom",
-        text=probes[2][0],
+        text="<i>rpl10, rpl12</i>",
         showarrow=False,
     )
     if "snakemake" not in globals():
         fig.show()
 
     for annotation in fig.layout.annotations:
-        if annotation.text.startswith("distance to"):
+        if annotation.text.startswith("Distance to"):
             annotation.update(yanchor="bottom")
     fig.write_image(outfile)
     fig.write_html(html_outfile)

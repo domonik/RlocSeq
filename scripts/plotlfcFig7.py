@@ -27,7 +27,7 @@ def main(tsv, cfg, outfile):
 
     colors = [cfg["seahawksGrey"], cfg["membraneColor"], cfg["cytosolColor"]]
     names = ["Not sig.", "Membrane", "Cytosol"]
-    lg  = "untreated"
+    lg  = "Untreated"
     for idx, subdf in enumerate([others, mp_m, mp_c, ]):
         color = colors[idx]
         fig.add_trace(
@@ -66,8 +66,8 @@ def main(tsv, cfg, outfile):
 
             )
         )
-    fig.update_xaxes(title="Puromycin log<sub>2</sub>FoldChange")
-    fig.update_yaxes(title="Total Cell log<sub>2</sub>FoldChange")
+    fig.update_xaxes(title="Puromycin log<sub>2</sub>(fold change)")
+    fig.update_yaxes(title="Total cell log<sub>2</sub>(fold change)")
     color = "rgb(0, 0,0)"
     cmin = 0
     cmax = np.abs(subdf["log2FoldChange_minusPuromycin"]).max()
@@ -82,7 +82,7 @@ def main(tsv, cfg, outfile):
                 cmax=cmax,
                 showscale=True,
                 colorbar=dict(
-                    title="abs(log2FC untreated)",
+                    title="abs(log<sub>2</sub>(fold change)) untreated",
                     len=0.4
                 )
             ),
@@ -96,7 +96,7 @@ def main(tsv, cfg, outfile):
             cmin=np.abs(subdf["log2FoldChange_minusPuromycin"]).min(),
             cmax=np.abs(subdf["log2FoldChange_minusPuromycin"]).max(),
             colorbar=dict(
-                title="abs(log2FC untreated)",
+                title="abs(log<sub>2</sub>(fold change)) untreated",
                 thickness=15,
                 len=0.8,
                 x=1.05,
@@ -105,8 +105,8 @@ def main(tsv, cfg, outfile):
                 yanchor="bottom",
             )
         ),
-        xaxis_title="+ Puromycin log<sub>2</sub>FoldChange",
-        yaxis_title="Total Cell log<sub>2</sub>FoldChange"
+        xaxis_title="Puromycin log<sub>2</sub>(fold change)",
+        yaxis_title="Total cell log<sub>2</sub>(fold change)"
     )
     fig.update_layout(cfg["LayoutDefault"])
     fig.update_layout(cfg["SupplementScatter"]["layout"])

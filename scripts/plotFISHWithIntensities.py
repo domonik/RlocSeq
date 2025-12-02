@@ -6,7 +6,7 @@ import pandas as pd
 import tifffile
 import plotly.express as px
 import numpy as np
-from scripts.plotly_template import register_template
+from scripts.plotly_template import register_template, PT7
 from scipy import stats
 import plotly.io as pio
 
@@ -25,16 +25,16 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
     probe_names = [probe[0] for probe in probes]
 
     lr = 0.03 / len(probes)
-    r = 0.11 / (len(probes) // 2)
+    r = 0.135 / (len(probes) // 2)
     specs = [
-        [{"type": "image", "l": lr, "r": lr}, {"type": "image", "l": lr, "r": lr}, {"type": "xy", "b": 0.02, "t": 0.05, "r": r} ] * (len(probes) // 2),
-        [{"type": "box", "colspan": 2, "b": 0.1}, None, None] * (len(probes) // 2),
+        [{"type": "image", "l": lr, "r": lr}, {"type": "image", "l": lr, "r": lr}, {"type": "xy", "b": 0.05, "t": 0.05, "r": r} ] * (len(probes) // 2),
+        [{"type": "box", "colspan": 2, "b": 0.12}, None, None] * (len(probes) // 2),
         [{"type": "xy", "colspan": 1, "r": 0.03}, {"type": "xy", "colspan": 1, "l": 0.03}, None] * (len(probes) //2),  # Row 1: two image plots
     ]
     base = 1 / len(probes)
 
     row_heights =  [0.4, 0.3, 0.3]
-    column_widths = [0.43 * base, 0.43 * base, 0.14 *base] * (len(probes) // 2)
+    column_widths = [0.425 * base, 0.425 * base, 0.15 *base] * (len(probes) // 2)
 
     col = int(len(probes) * 1.5)
     row = 3
@@ -65,13 +65,13 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
     summary['ci95'] = summary['sem'] * stats.t.ppf(0.975, df=summary['count'] - 1)
     summary = summary[summary["variable"] != "max"]
     summary = summary[summary["variable"].astype(int) <= 20]
-    col_titles = ["untreated", "Puromycin", None] * (len(probes) // 2)
+    col_titles = ["Untreated", "Puromycin", None] * (len(probes) // 2)
     del subplot_params["column_titles"]
     fig = make_subplots(
         rows=row,
         cols=col,
         row_heights=row_heights,
-        x_title="distance to probe [nm]",
+        x_title="Distance to probe [nm]",
         specs=specs,
         column_widths=column_widths,
         column_titles = col_titles,
@@ -81,10 +81,10 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
     )
     if intensities is None:
         for annotation in fig.layout.annotations:
-            annotation.update(font=dict(size=8), yanchor="top")
+            annotation.update(font=dict(size=PT7), yanchor="top")
     else:
         for annotation in fig.layout.annotations:
-            annotation.update(font=dict(size=8))
+            annotation.update(font=dict(size=PT7))
 
     fig.update_layout(cfg["LayoutDefault"])
 
@@ -93,7 +93,9 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
         traces = []
         errors = []
         image_dir = f"initialData/AllFISHData/{probe}/{replicate}"
-        files = [f for f in os.listdir(image_dir) if f.endswith(f"{treatment}_green.tif") and "Image" in f]
+        treatl = "untreated" if treatment == "Untreated" else treatment
+
+        files = [f for f in os.listdir(image_dir) if f.endswith(f"{treatl}_green.tif") and "Image" in f]
         cbar_files = [f for f in os.listdir(image_dir) if "CBar" in f]
         if len(cbar_files) > 1:
             cbarfile = [f for f in cbar_files if treatment in f][0]
@@ -192,11 +194,11 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
         values = eval(results_df[results_df.Probe == probe][treatment].iloc[0])
         mean_val = np.mean(values)
         std_val = np.std(values)
-        colors = {"Puromycin": cfg["plusPColor"], "untreated": cfg["minusPColor"]}
+        colors = {"Puromycin": cfg["plusPColor"], "Untreated": cfg["minusPColor"]}
 
         fig.add_trace(
             go.Bar(
-                x=[f"{treatment} – <i>{probe}</i>"],
+                x=[f"{treatment}"],
                 y=[mean_val],
                 name=f"{treatment} – <i>{probe}</i>",
                 marker=dict(color=_color_to_calpha(colors[treatment], 0.7), line=dict(color="black", width=1)),
@@ -239,7 +241,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
             showarrow=False,
             xanchor="left",  # position text to the right of the line
             yanchor="bottom",
-            font=dict(color="black", size=7),
+            font=dict(color="black"),
         )
     colors = list(color_map.values())
     # fig.add_traces(
@@ -326,7 +328,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
     )
 
     fig.update_yaxes(
-        title=dict(text="norm. Intensity"),
+        title=dict(text="Norm. intensity", standoff=2),
         row=row,
         col=1,
         showticklabels=True,

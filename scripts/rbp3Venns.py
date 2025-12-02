@@ -25,11 +25,11 @@ def main(file, config, output):
         plusp_set = set(sdf[sdf["plusPMembran"] == True]["locus_tag"])
         subfig = venn_to_plotly(
             (minusp_set, rbp3_set, plusp_set),
-            ("untreated at membrane", "RBP3 Target", "Puromycin at membrane"),
+            ("Untreated at membrane", "Rbp3 Target", "Puromycin at membrane"),
             L_color=[_color_to_calpha(config["plusPColor"], 0.4), _color_to_calpha(config["minusPColor"], 0.4), _color_to_calpha(config["seahawksGrey"], 0.4)])
         row = idx // cols
         figures[row].append(subfig)
-    stitels = ["All", "Cytoplasm", "Plasmamembrane", "Thylakoid membrane"]
+    stitels = ["All", "Cytoplasm", "Plasma membrane", "Thylakoid membrane"]
     multi_fig = make_subplots(rows=rows, cols=cols, horizontal_spacing=0, vertical_spacing=0.05, subplot_titles=stitels)
     multi_fig.update_annotations(font=dict(size=8))
     for row, subfigs in enumerate(figures, 1):

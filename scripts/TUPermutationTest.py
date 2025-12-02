@@ -82,7 +82,7 @@ def main(df, values, cfg,  outfile):
         y=1,  # relative y in paper coordinates (1 = top)
         xref="x domain",  # first subplot
         yref="paper",
-        text=f"p-Value: {mem_pval:.1e}",
+        text=f"<i>P</i>: {mem_pval:.1e}",
         showarrow=False,
         yanchor="top",
         xanchor="left",
@@ -93,7 +93,7 @@ def main(df, values, cfg,  outfile):
         y=1,  # relative y in paper coordinates (1 = top)
         xref="x2 domain",  # first subplot
         yref="paper",
-        text=f"p-Value: {cyt_pval:.1e}",
+        text=f"<i>P</i>: {cyt_pval:.1e}",
         showarrow=False,
         yanchor="top",
         xanchor="left",

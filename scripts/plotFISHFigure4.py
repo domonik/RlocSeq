@@ -84,6 +84,6 @@ if __name__ == '__main__':
         fig.show()
     for annotation in fig.layout.annotations:
         if annotation.text.startswith("Distance to"):
-            annotation.update(yanchor="bottom")
+            annotation.update(yanchor="middle")
     fig.write_image(outfile)
     fig.write_html(html_outfile)

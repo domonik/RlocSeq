@@ -110,7 +110,9 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
         traces = []
         errors = []
         image_dir = f"initialData/AllFISHData/{probe}/{replicate}"
-        files = [f for f in os.listdir(image_dir) if f.endswith(f"{treatment}_green.tif") and "Image" in f]
+        treatl = "untreated" if treatment == "Untreated" else treatment
+
+        files = [f for f in os.listdir(image_dir) if f.endswith(f"{treatl}_green.tif") and "Image" in f]
         cbar_files = [f for f in os.listdir(image_dir) if "CBar" in f]
         if len(cbar_files) > 1:
             cbarfile = [f for f in cbar_files if treatment in f][0]

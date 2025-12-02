@@ -62,7 +62,7 @@ def main(tsv, config, svg):
         if shape.xref == "x":
             shape.update(xref="x1", yref="y1")
     multi_fig.update_xaxes(
-        title=dict(text="untreated<br>(log<sub>2</sub>FoldChange)"),
+        title=dict(text="Untreated<br>log<sub>2</sub>(fold change)"),
         scaleanchor=None,
         range=[-5, 3],
         dtick=1,
@@ -79,7 +79,7 @@ def main(tsv, config, svg):
         col=1
     )
     multi_fig.update_yaxes(
-        title=dict(text="+ Puromycin<br>(log<sub>2</sub>FoldChange)"),
+        title=dict(text="Puromycin<br>log<sub>2</sub>(fold change)"),
         scaleanchor=None,
         col=2,
         dtick=1,

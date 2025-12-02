@@ -11,14 +11,13 @@ def main(tsv, output):
         "asRNA",
         "ncRNA",
         "Cytoplasm",
-        "Membrane",
         "Plasmamembrane",
         "Cellular thylakoid membrane",
         "TU",
         "Rbp3_Target"
     ]
     df =df[columns]
-    df = df.rename({"gene_name": "Gene", "Cellular thylakoid membrane": "Thylakoid membrane"}, axis=1)
+    df = df.rename({"gene_name": "Gene", "Cellular thylakoid membrane": "Thylakoid membrane protein", "Plasmamembrane": "Plasma membrane protein", "Cytosol": "Cytosolic protein"}, axis=1)
     df = df.set_index("locus_tag")
     df.to_csv(output, sep= "\t")
 

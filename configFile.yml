@@ -173,7 +173,7 @@ F1Volcano:
         text: "-Log<sub>10</sub>(FDR adjusted <i>P</i>)"
     xaxis:
       title:
-        text: "Log<sub>2</sub>(Fold Change)"
+        text: "Log<sub>2</sub>(fold change)"
         standoff: 1
 
 
@@ -328,6 +328,7 @@ F3ClusteredGO:
         text: "Ontology"
     coloraxis:
       colorbar:
+        thickness: 10
         title:
           text: "FDR adjusted <i>P</i>"
 
@@ -462,11 +463,23 @@ F4Volcano:
   layout:
     width: 310
     height: 250
+    margin:
+      l: 40
+      b: 60
     legend:
-      orientation: "h"
+      orientation: "v"
       itemsizing: "constant"
+      y: -0.2
+      x: -0.1
+      xanchor: "left"
+      yanchor: "top"
+      bgcolor: "rgba(0, 0,0 ,0)"
+    yaxis:
+      title:
+        text: "-Log<sub>10</sub>(FDR adjusted <i>P</i>)"
     xaxis:
       title:
+        text: "Log<sub>2</sub>(fold change)"
         standoff: 1
 
 F4ClusteredGO:
@@ -480,7 +493,16 @@ F4ClusteredGO:
       r: 50
       l: 120
       t: 30
-      b: 50
+      b: 70
+    legend:
+      title:
+        text: "Ontology"
+    coloraxis:
+      colorbar:
+        thickness: 10
+        title:
+          text: "FDR adjusted <i>P</i>"
+
 
 
 F4QTPCR:
@@ -499,9 +521,11 @@ F4QTPCR:
     margin:
       r: 10
       t: 10
-      b: 30
-    xaxis:
-      title_standoff: 1
+      b: 60
+      l: 40
+    yaxis:
+      title:
+        text: "Log<sub>2</sub>(fold change)"
     yaxis3:
       title_standoff: 1
 
@@ -523,16 +547,8 @@ F4CupAIntensities:
     margin:
       r: 10
       t: 40
-      b: 20
+      b: 30
       l: 40
-
-
-
-
-
-
-
-
 
 
 
@@ -552,9 +568,9 @@ F5Percent:
     width: 280
     height: 120
     margin:
-      r: 10
+      r: 7
       t: 50
-      l: 10
+      l: 9
       b: 50
     legend:
       orientation: "h"
@@ -576,24 +592,26 @@ VolcanoFigure5:
     width: 280
     height: 330
     margin:
-      l: 30
+      l: 40
       t: 40
       b: 40
       r: 10
     xaxis:
       title_standoff: 1
       title:
-        text: "Log<sub>2</sub>(FoldChange)"
+        text: "Log<sub>2</sub>(fold change)"
     yaxis:
       title_standoff: 1
       title:
-        text: "-Log<sub>10</sub>(pval)"
+        text: "-Log<sub>10</sub>(FDR adjusted <i>P</i>)"
     legend:
       orientation: "h"
       itemsizing: "constant"
+      x: 0
+      y: -0.15
   annotations:
     fusB:
-      x: -1.1
+      x: -1.2
       y: 25
 
     psaA:
@@ -601,7 +619,7 @@ VolcanoFigure5:
       y: 10
 
     psbA2:
-      x: 1
+      x: 1.4
       y: 25
 
 
@@ -620,7 +638,7 @@ Fig5Venn:
 
     legend:
       orientation: "h"
-      y: 0
+      y: -0.1
       x: -0.05
       xref: "paper"
       yref: "paper"
@@ -645,8 +663,8 @@ F5FISH:
     margin:
       r: 10
       l: 50
-      t: 30
-      b: 30
+      t: 25
+      b: 40
 
 
 
@@ -673,45 +691,49 @@ F6ClusteredGO:
       b: 50
     coloraxis:
       colorbar:
+        title:
+          text: "FDR adjusted <i>P</i>"
         thickness: 10
     legend:
       itemsizing: "constant"
-      itemwidth: 30
+      title:
+        text: "Ontology"
 
 
 
 F6Coverage:
   file: "Pipeline/Paper/Figure6/Coverages.svg"
-  x: 250
+  x: 240
   y: 0
   layout:
-    width: 430
+    width: 440
     height: 150
     legend:
       orientation: "h"
       tracegroupgap: 0
     yaxis:
-      title_standoff: 1
+      title:
+        text: "Norm.<br>read count"
     margin:
       r: 20
-      t: 20
+      t: 10
       b: 5
-      l: 40
+      l: 50
 
 
 F6FISH:
   file: "Pipeline/Paper/Figure6/F6FISH.svg"
-  x: 250
+  x: 235
   y: 150
   layout:
-    width: 430
+    width: 445
     height: 200
     legend:
       visible: False
 
     margin:
       r: 10
-      l: 30
+      l: 35
       t: 25
       b: 30
 
@@ -753,10 +775,12 @@ RBP3GSEA:
     margin:
       r: 50
       t: 30
-      b: 5
+      l: 50
+      b: 50
     legend:
       orientation: "h"
-      x: -0.1
+      x: -0.15
+      y: -0.15
 
 
 F8:
@@ -783,6 +807,7 @@ CorrMinusPuro:
       r: 20
       t: 10
       b: 50
+      l: 70
 
 CorrPlusPuro:
   file: "Pipeline/Paper/Supplementary/Correlation/RunWhyWeDropFigure.svg"
@@ -798,7 +823,7 @@ CorrPlusPuro:
       r: 20
       t: 10
       b: 50
-      l: 50
+      l: 70
 
 
 CorrTotalCell:
@@ -815,7 +840,7 @@ CorrTotalCell:
       r: 20
       t: 10
       b: 50
-      l: 50
+      l: 70
 
 SupplementCorr:
   a: "CorrMinusPuro"
@@ -827,7 +852,7 @@ SupplementCorr:
 Supplement16SFISH:
   file: "Pipeline/Paper/Supplementary/16SFISH/16SFISH.svg"
   x: 0
-  y: 450
+  y: 0
   layout:
     width: 332
     height: 300
@@ -835,7 +860,7 @@ Supplement16SFISH:
       visible: False
 
     margin:
-      r: 50
+      r: 30
       t: 50
       b: 50
       l: 50
@@ -862,17 +887,9 @@ SupplementUracilTransmembrane:
   layout:
     width: 332
     height: 200
-    legend:
-      title:
-        font:
-          size: 10
-    annotations:
-      font:
-        size: 10
-
     margin:
       r: 30
-      l: 30
+      l: 50
       t: 30
       b: 50
 
@@ -881,8 +898,17 @@ SupplementFullEnrichment:
   layout:
     height: 1000
     width: 680
+    legend:
+      title:
+        text: "Ontology"
+    coloraxis2:
+      colorbar:
+        thickness: 10
+        title:
+          text: "FDR adjusted <i>P</i>"
     margin:
-      l: 180
+      l: 250
+      t: 50
       b: 50
 
 

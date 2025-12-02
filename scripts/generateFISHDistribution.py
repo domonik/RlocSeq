@@ -429,7 +429,7 @@ if __name__ == '__main__':
         color = color.split("(")[-1].split(")")[0]
         return f"rgba({color}, {alpha})"
 
-
+    df_all["Treatment"] = df_all["Treatment"].str.capitalize()
     df_all.to_csv(snakemake.output.tsv, sep="\t", index=False)
 
 
@@ -484,6 +484,7 @@ if __name__ == '__main__':
         }
         return pd.DataFrame(df)
 
+    spots_df["Treatment"] = spots_df["Treatment"].str.capitalize()
 
     spots_df.to_csv(snakemake.output.spots_df, sep="\t", index=False)
 
