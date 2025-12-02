@@ -1112,6 +1112,7 @@ rule craftSupplementaryTables:
     output:
         dist = "Pipeline/Paper/Supplementary/FISHDistributionSummary.tsv",
         intensities = "Pipeline/Paper/Supplementary/FISHIntensitiesSummary.tsv",
+    conda: "envs/biopython.yml"
     script:
         "scripts/finalizeFISHData.py"
 
@@ -1206,7 +1207,7 @@ rule plotF4cupAIntensities:
     output:
         svg=config["F4CupAIntensities"]["file"],
         tsv= "Pipeline/Paper/Figure4/IntensitiesTestPval.tsv"
-
+    conda: "envs/matplotlibPlotly.yml"
     script:
         "scripts/plotFISHIntensity.py"
 

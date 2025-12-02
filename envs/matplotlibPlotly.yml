@@ -18,6 +18,8 @@ dependencies:
  - ipykernel
  - tifffile
  - scikit-image
+ - scipy
+ - statsmodels
  - pip:
     - git+https://github.com/domonik/DEplots.git@main
     - gffutils
