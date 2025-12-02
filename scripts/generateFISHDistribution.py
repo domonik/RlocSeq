@@ -16,18 +16,17 @@ import copy
 import multiprocessing as mp
 from jinja2.compiler import find_undeclared
 import skimage
-
-# In[9]:
-
-
-#viewer = napari.Viewer()
-#napari.run()
-
-
-# In[2]:
+import tifffile
+import pandas as pd
+import numpy as np
+import skimage
+from scipy.ndimage import map_coordinates
+from skimage.segmentation import disk_level_set
 
 
 import plotly.io as pio
+def intensity_sum(mask, image):
+    return (mask * image).sum()
 
 
 def median_intensity(mask, image):
@@ -52,7 +51,7 @@ def _calc_image_data_only_probe(images, figure, probe, treatment, image, sub_spo
 
     for type in ("mean", "sum", "maxima"):
         colnames += [f"ring_{i}_{type}" for i in range(n_steps)]
-    parts = ("Measured")
+    parts = ["Measured"]
 
     tc = tifffile.imread(images[figure][probe][treatment][image]["TotalCell"])
 
@@ -112,7 +111,6 @@ def _calc_image_data_only_probe(images, figure, probe, treatment, image, sub_spo
             df["Figure"] = figure
             df["bg_mean"] = bg_mean
             sub_dfs.append(df)
-            breakpoint()
     return sub_dfs
 
 
@@ -134,11 +132,8 @@ def _find_spots_center(images):
         df = pd.DataFrame(probe_probs)
         df = df.rename({"median_intensity": "CellIdx", "centroid-0": "x", "centroid-1": "y"}, axis=1)
         df = df.merge(probe_intensity, on="label", how="inner")
-        df["background"] = float(bg_intensity)
+        df["background"] = float(bg_intensity.item())
         df["CellIdx"] = df["CellIdx"].astype(int)
-        if probe == "16S rRNA" and figure == "Replicate 1":
-            print("lala")
-            p = 0
         df["Image"] = image
         df["Probe"] = probe
         df["Treatment"] = treatment
@@ -314,11 +309,6 @@ if __name__ == '__main__':
     spots_df = _find_spots_center(images)
 
 
-    spots_df.to_csv(snakemake.output.spots_df, sep="\t", index=False)
-
-
-    # In[24]:
-
 
     import numpy as np
 
@@ -332,6 +322,7 @@ if __name__ == '__main__':
     normalized = []
     normalized_images = []
 
+    print("_" * 200)
 
     for figure, probe, treatment, image in yield_image(images):
         intensities = images[figure][probe][treatment][image]["Intensity"]
@@ -414,7 +405,6 @@ if __name__ == '__main__':
     ct = 0
 
 
-
     calls = []
     threads = snakemake.threads if "snakemake" in globals() else 1
     for figure, probe, treatment, image in yield_image(images):
@@ -423,7 +413,8 @@ if __name__ == '__main__':
         probe_mask = spots_df["Probe"] == probe
         sub_spots_df = spots_df[image_mask & treat_mask & probe_mask]
         calls.append((images, figure, probe, treatment, image, sub_spots_df, rad_step, max_rad, border_distance ))
-
+    p = 0
+    print("*" * 200)
     if threads == 1:
         dfs = [_calc_image_data_only_probe(*call) for call in calls]
     else:
@@ -494,5 +485,6 @@ if __name__ == '__main__':
         return pd.DataFrame(df)
 
 
+    spots_df.to_csv(snakemake.output.spots_df, sep="\t", index=False)
 
 
