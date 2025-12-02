@@ -20,7 +20,7 @@ def extract_terms_before_brackets(text):
 
 def check_membrane_dist(table, config, output, uni_col="Gene Names (ordered locus)"):
     df = pd.read_csv(table, sep="\t")
-    x = ("Cytoplasm", "Plasmamembrane", "Cellular thylakoid membrane")
+    x = ("Cytoplasm", "Plasma membrane", "Thylakoid membrane")
 
     #odf = odf[["locus_tag_x", "Gene Names", "mRNA", "UTR", "antisense", "non-coding"] + list(x)]
 
@@ -33,9 +33,9 @@ def check_membrane_dist(table, config, output, uni_col="Gene Names (ordered locu
     df = df[df["baseMean_minusPuromycin"] > 0]
     df = df[df["mRNA"]]
 
-    df["Membrane enriched"] = df["minusPMembran"]
-    df["Cytosol enriched"] = df["minusPCytosol"]
-    df["not significant"] = ~(df["minusPCytosol"] | df["minusPMembran"])
+    df["Membrane"] = df["minusPMembran"]
+    df["Cytosol"] = df["minusPCytosol"]
+    df["Not significant"] = ~(df["minusPCytosol"] | df["minusPMembran"])
 
     cell_membrane = df[df["Cell membrane"] == True]
     membrane = df[df["Membrane"] == True]
@@ -49,9 +49,9 @@ def check_membrane_dist(table, config, output, uni_col="Gene Names (ordered locu
     all = np.asarray([cytoplasm.shape[0], inner_membrane.shape[0], thylakoid.shape[0]])
     traces = []
     parts = {
-        "Cytosol enriched": (config["cytosolColor"], None),
-        "not significant": ("rgb(234, 234, 234)", None),
-        "Membrane enriched": (config["membraneColor"], None),
+        "Cytosol": (config["cytosolColor"], None),
+        "Not significant": ("rgb(234, 234, 234)", None),
+        "Membrane": (config["membraneColor"], None),
 
     }
     for part, (color, pattern) in parts.items():

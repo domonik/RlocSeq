@@ -247,7 +247,8 @@ MinusPuroCoverage:
     height: 150
     margin:
       r: 50
-      t: 10
+      l: 40
+      t: 30
       b: 20
 
 F2FISH:
@@ -263,7 +264,7 @@ F2FISH:
       y: 0
     margin:
       r: 50
-      l: 30
+      l: 40
       t: 20
       b: 30
 
@@ -290,7 +291,7 @@ F3SubCellLoc:
   x: 0
   y: 0
   layout:
-    width: 450
+    width: 400
     height: 120
     margin:
       t: 20
@@ -299,7 +300,7 @@ F3SubCellLoc:
       b: 40
     xaxis:
       title:
-        text: "fraction of transcripts [%]"
+        text: "Fraction of transcripts [%]"
         standoff: 1
     legend:
       orientation: "h"
@@ -315,19 +316,24 @@ F3ClusteredGO:
   x: 0
   y: 120
   layout:
-    width: 450
+    width: 400
     height: 230
     margin:
       r: 50
       l: 140
       t: 15
       b: 50
-
-
+    legend:
+      title:
+        text: "Ontology"
+    coloraxis:
+      colorbar:
+        title:
+          text: "FDR adjusted <i>P</i>"
 
 F3FISH:
   file: "Pipeline/Paper/Figure3/F3FISH.svg"
-  x: 450
+  x: 400
   y: 0
   layout:
     width: 230

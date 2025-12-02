@@ -1162,7 +1162,7 @@ rule plotFISHFigure3:
     params:
         probes =[("16S rRNA", "untreated", "Replicate 1")],
         layout= config["F3FISH"]["layout"],
-        subplot=dict(vertical_spacing=0.0, horizontal_spacing=0.0, column_titles=["16S rRNA"],)
+        subplot=dict(vertical_spacing=0.0, horizontal_spacing=0.0, column_titles=["<i>16S rRNA</i>"],)
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISHFigure3.py"

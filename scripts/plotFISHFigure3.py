@@ -32,9 +32,9 @@ if __name__ == '__main__':
     fig, df = main(file, probes, cfg, layout, subplot_params)
     df.to_csv(distribution_out, sep="\t", index=False)
     for annotation in fig.layout.annotations:
-        if annotation.text.startswith("distance to"):
+        if annotation.text.startswith("Distance to"):
             annotation.update(yanchor="bottom", text="")
-    fig.update_xaxes(title=dict(text="distance to probe [nm]"), row=2, col=1)
+    fig.update_xaxes(title=dict(text="Distance to probe [nm]"), row=2, col=1)
     if "snakemake" not in globals():
         print("showing")
         fig.show()
