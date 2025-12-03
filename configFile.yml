@@ -291,17 +291,16 @@ F3SubCellLoc:
   x: 0
   y: 0
   layout:
-    width: 400
+    width: 340
     height: 120
     margin:
       t: 20
-      r: 5
-      l: 140
-      b: 40
+      r: 20
+      l: 110
+      b: 50
     xaxis:
       title:
         text: "Fraction of transcripts [%]"
-        standoff: 1
     legend:
       orientation: "h"
       y: 1.25
@@ -313,16 +312,16 @@ F3SubCellLoc:
 
 F3ClusteredGO:
   file: "Pipeline/Paper/Figure3/F3CluteredGO.svg"
-  x: 0
-  y: 120
+  x: 340
+  y: 0
   layout:
-    width: 400
-    height: 230
+    width: 340
+    height: 350
     margin:
       r: 50
       l: 140
-      t: 15
-      b: 50
+      t: 5
+      b: 30
     legend:
       title:
         text: "Ontology"
@@ -334,11 +333,11 @@ F3ClusteredGO:
 
 F3FISH:
   file: "Pipeline/Paper/Figure3/F3FISH.svg"
-  x: 400
-  y: 0
+  x: 0
+  y: 120
   layout:
-    width: 230
-    height: 350
+    width: 340
+    height: 200
     legend:
       yanchor: "bottom"
       orientation: "h"
@@ -347,8 +346,8 @@ F3FISH:
       y: 0
     margin:
       r: 10
-      l: 50
-      t: 30
+      l: 20
+      t: 50
       b: 50
     annotations:
       font:
@@ -492,8 +491,8 @@ F4ClusteredGO:
     margin:
       r: 50
       l: 120
-      t: 30
-      b: 70
+      t: 15
+      b: 50
     legend:
       title:
         text: "Ontology"
@@ -535,18 +534,18 @@ F4QTPCR:
 F4CupAIntensities:
   file: "Pipeline/Paper/Figure4/F4cupAIntensities.svg"
   x: 230
-  y: 310
+  y: 320
   layout:
     showlegend: False
     width: 450
-    height: 220
+    height: 210
     legend:
       title:
         font:
           size: 10
     margin:
       r: 10
-      t: 40
+      t: 30
       b: 30
       l: 40
 
@@ -682,17 +681,17 @@ F6ClusteredGO:
   x: 0
   y: 0
   layout:
-    width: 250
-    height: 300
+    width: 257
+    height: 350
     margin:
-      r: 10
-      l: 100
-      t: 30
-      b: 50
+      r: 0
+      l: 130
+      t: 5
+      b: 35
     coloraxis:
       colorbar:
         title:
-          text: "FDR adjusted <i>P</i>"
+          text: "FDR<br>adjusted <i>P</i>"
         thickness: 10
     legend:
       itemsizing: "constant"
@@ -703,10 +702,10 @@ F6ClusteredGO:
 
 F6Coverage:
   file: "Pipeline/Paper/Figure6/Coverages.svg"
-  x: 240
+  x: 250
   y: 0
   layout:
-    width: 440
+    width: 430
     height: 150
     legend:
       orientation: "h"
@@ -715,7 +714,7 @@ F6Coverage:
       title:
         text: "Norm.<br>read count"
     margin:
-      r: 20
+      r: 10
       t: 10
       b: 5
       l: 50
@@ -723,16 +722,16 @@ F6Coverage:
 
 F6FISH:
   file: "Pipeline/Paper/Figure6/F6FISH.svg"
-  x: 235
+  x: 237
   y: 150
   layout:
-    width: 445
+    width: 443
     height: 200
     legend:
       visible: False
 
     margin:
-      r: 10
+      r: 5
       l: 35
       t: 25
       b: 30

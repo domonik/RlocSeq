@@ -202,6 +202,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
             xanchor="right",
             text=text,
             showarrow=False,
+            borderpad= 0.2,
             bgcolor="white",
             opacity=1,
 
