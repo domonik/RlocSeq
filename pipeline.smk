@@ -15,7 +15,7 @@ NAMEMapping = {
 
 
 
-commit = "41003d8d79f0d012ba791c6b02711820bb009f45"
+commit = "2d3840e03b5a0195fb404e6c51497062973707bc"
 
 snakefile = github("domonik/SynDESeq2", path="snakefile.smk", commit=commit)
 #snakefile = "../../SynDESeq2/snakefile.smk"
@@ -1112,6 +1112,7 @@ rule craftSupplementaryTables:
     output:
         dist = "Pipeline/Paper/Supplementary/FISHDistributionSummary.tsv",
         intensities = "Pipeline/Paper/Supplementary/FISHIntensitiesSummary.tsv",
+    conda: "envs/biopython.yml"
     script:
         "scripts/finalizeFISHData.py"
 
@@ -1206,7 +1207,7 @@ rule plotF4cupAIntensities:
     output:
         svg=config["F4CupAIntensities"]["file"],
         tsv= "Pipeline/Paper/Figure4/IntensitiesTestPval.tsv"
-
+    conda: "envs/matplotlibPlotly.yml"
     script:
         "scripts/plotFISHIntensity.py"
 
