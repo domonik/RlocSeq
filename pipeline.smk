@@ -1412,6 +1412,16 @@ rule plotFULLGOTermEnrichment:
 
     script: "scripts/plotEnrichmentPlots.py"
 
+rule supplementaryTableFullEnrichment:
+    input:
+        untreated=expand(rules.other_GOEnrichment.output.up,condition="M",baseline="C")[0],
+        puro=expand(rules.second_GOEnrichment.output,condition=["M"],baseline=["C"])[0],
+        stayed=expand(rules.GOTermEnrichmentStayed.output,condition=["M"],baseline=["C"])[0],
+        tc=expand(rules.tc_GOEnrichment.output,condition=["plusP"],baseline=["minusP"])[0],
+    output:
+        tsv = "Pipeline/Paper/Supplementary/FullGOEnrichment.tsv"
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/joinEnrichmentSupplementary.py"
 
 rule F3ClusteredGO:
     input:

@@ -1,0 +1,7 @@
+name: RlocSeq
+channels:
+ - conda-forge
+ - bioconda
+dependencies:
+ - snakemake
+ - openpyxl
