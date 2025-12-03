@@ -6,7 +6,7 @@ import pandas as pd
 import tifffile
 import plotly.express as px
 import numpy as np
-from scripts.plotly_template import register_template
+from scripts.plotly_template import register_template, PT8, PT7
 from scipy import stats
 import plotly.io as pio
 
@@ -88,7 +88,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
         rows=row,
         cols=col,
         row_heights=row_heights,
-        x_title="distance to probe [nm]",
+        x_title="Distance to probe [nm]",
         specs=specs,
         column_widths=column_widths,
         column_titles = col_titles,
@@ -98,10 +98,10 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
     )
     if intensities is None:
         for annotation in fig.layout.annotations:
-            annotation.update(font=dict(size=8), yanchor="top")
+            annotation.update(font=dict(size=PT7), yanchor="top")
     else:
         for annotation in fig.layout.annotations:
-            annotation.update(font=dict(size=8))
+            annotation.update(font=dict(size=PT7))
 
     fig.update_layout(cfg["LayoutDefault"])
 
@@ -110,7 +110,9 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
         traces = []
         errors = []
         image_dir = f"initialData/AllFISHData/{probe}/{replicate}"
-        files = [f for f in os.listdir(image_dir) if f.endswith(f"{treatment}_green.tif") and "Image" in f]
+        treatl = "untreated" if treatment == "Untreated" else treatment
+
+        files = [f for f in os.listdir(image_dir) if f.endswith(f"{treatl}_green.tif") and "Image" in f]
         cbar_files = [f for f in os.listdir(image_dir) if "CBar" in f]
         if len(cbar_files) > 1:
             cbarfile = [f for f in cbar_files if treatment in f][0]
@@ -348,7 +350,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities=None, test_outpu
     )
 
     fig.update_yaxes(
-        title=dict(text="norm. Intensity"),
+        title=dict(text="Norm. intensity"),
         row=row,
         col=1,
         showticklabels=True,
@@ -388,7 +390,7 @@ if __name__ == '__main__':
     fig, df = main(file, probes, cfg, layout, subplot_params)
     df.to_csv(distribution_out, sep="\t", index=False)
     for annotation in fig.layout.annotations:
-        if annotation.text.startswith("distance to"):
+        if annotation.text.startswith("Distance to"):
             annotation.update(yanchor="bottom")
     if "snakemake" not in globals():
         fig.show()

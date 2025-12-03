@@ -11,7 +11,9 @@ def main(df, info, config, output, params):
     df = pd.read_csv(df, sep="\t")
     info = pd.read_csv(info, sep="\t")
     info.Description = info.Description.str.replace("_", " ").str.replace("and", "&")
+    info.Description = info.Description.str.replace("Cellular t", "T").str.replace("and", "&")
     df.Description = df.Description.str.replace("_", " ").str.replace("and", "&")
+    df.Description = df.Description.str.replace("Cellular t", "T").str.replace("and", "&")
     descs = df["Description"].unique()
     to_display = len(descs)
 
@@ -33,7 +35,7 @@ def main(df, info, config, output, params):
         xref="x domain",
         xanchor="left",
         yanchor="bottom",
-        text=f"p-value:",
+        text=f"FDF adjusted <i>P</i>:",
         showarrow=False
     )
     for idx, row in info.iterrows():

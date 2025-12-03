@@ -13,13 +13,13 @@ def calc_summary_and_pval(spots_df, probes):
     # Run Welch’s t-test for each probe
     results = []
     for probe in df['Probe'].unique():
-        untreated = df.query("Treatment == 'untreated' and Probe == @probe")['subtractedIntensity']
+        untreated = df.query("Treatment == 'Untreated' and Probe == @probe")['subtractedIntensity']
         puromycin = df.query("Treatment == 'Puromycin' and Probe == @probe")['subtractedIntensity']
         if len(untreated) == len(puromycin):
             tstat, pval = ttest_rel(untreated, puromycin, )
         else:
             tstat, pval = ttest_ind(untreated, puromycin, equal_var=False)
-        results.append({'Probe': probe, 't-statistic': tstat, 'p-value': pval, "untreated": untreated.tolist(), "Puromycin": puromycin.tolist(), "untreated_mean": untreated.mean(), "puromycin_mean": puromycin.mean()})
+        results.append({'Probe': probe, 't-statistic': tstat, 'p-value': pval, "Untreated": untreated.tolist(), "Puromycin": puromycin.tolist(), "Untreated_mean": untreated.mean(), "Puromycin_mean": puromycin.mean()})
 
     results_df = pd.DataFrame(results)
     reject, pvals_corr, _, _ = multipletests(results_df['p-value'], method='fdr_bh')

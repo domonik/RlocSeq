@@ -83,7 +83,7 @@ if __name__ == '__main__':
     if "snakemake" not in globals():
         fig.show()
     for annotation in fig.layout.annotations:
-        if annotation.text.startswith("distance to"):
-            annotation.update(yanchor="bottom")
+        if annotation.text.startswith("Distance to"):
+            annotation.update(yanchor="middle")
     fig.write_image(outfile)
     fig.write_html(html_outfile)

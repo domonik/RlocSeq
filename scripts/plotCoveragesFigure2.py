@@ -118,6 +118,9 @@ def main(design, gff, db_name, output_path, cfg):
     for anno in f3.layout.annotations:
         anno.update(xref="x6", yref="y6", text="tRNA13")
         fig.add_annotation(anno)
+
+    for anno in fig.layout.annotations:
+        anno.update(text=f"<i>{anno.text}</i>")
     fig.update_xaxes(range=[t13_start - 25, t13_end + 25],  col=3, )
     fig.update_yaxes(range=[-.5, .5], row=2)
     fig.update_yaxes(title=None, col=2)

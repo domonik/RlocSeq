@@ -2,14 +2,14 @@ import pandas as pd
 from DEplots.enrichment import enrichment_plot_from_cp_table
 from plotly.subplots import make_subplots
 import numpy as np
-from scripts.plotly_template import register_template
+from scripts.plotly_template import register_template, PT7
 
 register_template()
 
 def main(tsv1, tsv2, tsv3, config, svg, html, png):
     colorscale = ["purple", "yellow"]
-    fig = make_subplots(rows=1, cols=3, shared_yaxes=True, column_titles=["untreated", "+ Puromycin", "intersection"])
-    fig.update_annotations(font=dict(size=8))
+    fig = make_subplots(rows=1, cols=3, shared_yaxes=True, column_titles=["Untreated", "Puromycin", "Intersection"], x_title="Gene ratio")
+    fig.update_annotations(font=dict(size=PT7))
     dfs = []
     for i, tsv in enumerate((tsv1, tsv2, tsv3)):
         df = pd.read_csv(tsv, sep="\t", )

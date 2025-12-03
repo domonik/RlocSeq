@@ -9,7 +9,7 @@ import plotly.express as px
 import plotly.io as pio
 from scipy.stats import ttest_rel, ttest_ind
 from statsmodels.stats.multitest import multipletests
-from scripts.plotly_template import register_template
+from scripts.plotly_template import register_template, PT7
 import pytesseract
 
 register_template()
@@ -46,36 +46,39 @@ def find_and_extract_cbar(image_dir, treatment):
 
 def main(results_df, cfg, outfile, outtsv):
     probes = ["psbA2", "cupA"]
-    treatments = ["untreated", "Puromycin"]
+    treatments = ["Untreated", "Puromycin"]
     # Create subplot grid: 2 rows, 2 columns
-    r = 0.06
+    r = 0.08
     l = 0.001
+    base = 1/len(probes)
+    column_widths = [0.4 * base, 0.4 * base, 0.2 *base] * len(probes)
+
     fig = make_subplots(
         rows=2,
-        cols=8,
-        column_widths=[0.25 * 0.7, 0.25*0.3] * 4,
+        cols=6,
+        column_widths=column_widths,
         row_heights=[0.6, 0.4],  # top row for images, bottom for boxplot
         specs=[
-            [{"type": "image"}, {"type": "xy", "r": r, "l": l, "t": 0.05, "b": 0.05}] * 4,  # Row 1: two image plots
-            [{"type": "box", "colspan": 4, "r":(r+l )}, None,  None, None] * 2  # Row 2: one boxplot spanning both cols
+            [{"type": "image", "l": l, "r": l}, {"type": "image", "l": l, "r": l}, {"type": "xy", "b": 0.02, "t": 0.05, "r": r}] * len(probes) ,
+            [{"type": "box", "colspan": 3, "r":(r+l )}, None,  None] * 2  # Row 2: one boxplot spanning both cols
         ],
         horizontal_spacing=0,
         vertical_spacing=0.05,
-        subplot_titles=[f"untreated", None, "Puromycin", None,] * 2
+        subplot_titles=[f"Untreated", "Puromycin", None] * 2
     )
-    fig.update_annotations(font=dict(size=8))
+    fig.update_annotations(font=dict(size=PT7))
 
     # Add images for each treatment
     idx = 1
     for probe in probes:
         for i, treatment in enumerate(treatments, start=1):
+            treatl = "untreated" if treatment == "Untreated" else treatment
             image_dir = f"initialData/AllFISHData/{probe}/Replicate 3"
-            files = [f for f in os.listdir(image_dir) if f.endswith(f"{treatment}_green.tif") and "Image" in f]
+            files = [f for f in os.listdir(image_dir) if f.endswith(f"{treatl}_green.tif") and "Image" in f]
             if not files:
                 print(f"No image found for {treatment} in {image_dir}")
                 continue
-            colorscale, max_v = find_and_extract_cbar(image_dir, treatment)
-            fig.add_trace(colorscale, row=1, col=idx+1)
+
 
             image_file = os.path.join(image_dir, files[0])
             fig.add_trace(
@@ -96,17 +99,21 @@ def main(results_df, cfg, outfile, outtsv):
                 col=idx,
                 showline=False
             )
-            fig.update_yaxes(
-                tickvals=[0, max_v // 2, max_v], row=1, col=idx+1,
-                range=[0, max_v],
-                side="right",
-                showticklabels=True,
-                showline=False
+            if treatment == "Puromycin":
+                colorscale, max_v = find_and_extract_cbar(image_dir, treatment)
+                fig.add_trace(colorscale, row=1, col=idx+1)
+                fig.update_yaxes(
+                    tickvals=[0, max_v // 2, max_v], row=1, col=idx+1,
+                    range=[0, max_v],
+                    side="right",
+                    showticklabels=True,
+                    showline=False
 
-            )
-            idx += 2
+                )
+                idx += 1
+            idx += 1
 
-    colors = {"untreated": cfg["minusPColor"], "Puromycin": cfg["plusPColor"]}
+    colors = {"Untreated": cfg["minusPColor"], "Puromycin": cfg["plusPColor"]}
     # Add boxplot spanning both columns
     for pidx , probe in enumerate(probes):
         for treatment in treatments:
@@ -120,7 +127,7 @@ def main(results_df, cfg, outfile, outtsv):
                     line=dict(width=1, color="black")
                 ),
                 row=2,
-                col=1 if pidx == 0 else 5
+                col=1 if pidx == 0 else 4
             )
             if treatment == "Puromycin":
                 pval = results_df.loc[results_df["Probe"] == probe, "adj p-value (FDR)"].values
@@ -150,18 +157,17 @@ def main(results_df, cfg, outfile, outtsv):
                         showarrow=False,
                         font=dict(size=10, color="black"),
                         row=2,
-                        col=1 if pidx == 0 else 5
+                        col=1 if pidx == 0 else 4
                     )
-    fig.update_yaxes(title=dict(text="mean Intensities"), row=2, col=1)
+    fig.update_yaxes(title=dict(text="Mean intensities"), row=2, col=1)
 
 
     hs = 0.1
-    l = (1- (len(probes)-1)*hs) / len(probes)
     y = 1.1
 
     fig.add_shape(
         type="line",
-        xref="x9",
+        xref="x7",
         yref="paper",
         x0=0,
         x1=1,
@@ -172,7 +178,7 @@ def main(results_df, cfg, outfile, outtsv):
     )
     fig.add_shape(
         type="line",
-        xref="x10",
+        xref="x8",
         yref="paper",
         x0=0,
         x1=1,
@@ -182,7 +188,7 @@ def main(results_df, cfg, outfile, outtsv):
         opacity=1
     )
     fig.add_annotation(
-        xref="x9",
+        xref="x7",
         yref="paper",
         x=0.5,
         xanchor="center",
@@ -192,7 +198,7 @@ def main(results_df, cfg, outfile, outtsv):
         showarrow=False,
     )
     fig.add_annotation(
-        xref="x10",
+        xref="x8",
         yref="paper",
         x=0.5,
         xanchor="center",
@@ -209,7 +215,6 @@ def main(results_df, cfg, outfile, outtsv):
     fig.update_xaxes(ticks="", row=1, showticklabels=False, showline=False)
     fig.update_layout(cfg["F4CupAIntensities"]["layout"])
     fig.write_image(outfile)
-    fig.show()
     results_df.to_csv(outtsv, index=False, sep="\t")
 
 

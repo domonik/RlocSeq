@@ -5,7 +5,7 @@ import numpy as np
 import re
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from scripts.plotly_template import register_template
+from scripts.plotly_template import register_template, PT7
 import plotly.io as pio
 
 register_template()
@@ -91,8 +91,8 @@ def main(tsv, outputs, config):
 
     #df = df[~pd.isna(df["Uracil_content"])]
     treats = ["minusPuromycin", "plusPuromycin"]
-    fig = make_subplots(rows=1, cols=2, column_titles=["untreated", "Puromycin"], shared_yaxes=True, x_title="log2FoldChange", horizontal_spacing=0.05)
-    fig.update_annotations(font=dict(size=8))
+    fig = make_subplots(rows=1, cols=2, column_titles=["Untreated", "Puromycin"], shared_yaxes=True, x_title="log<sub>2</sub>(fold change)", horizontal_spacing=0.05)
+    fig.update_annotations(font=dict(size=PT7))
     for idx, puro in enumerate(treats):
         filter = "minusP" if puro == "minusPuromycin" else "plusP"
         sdf = df[~(df[f"{filter}Membran"] | df[f"{filter}Cytosol"])]

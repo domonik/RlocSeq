@@ -18,7 +18,7 @@ NAMEMapping = {
 commit = "41003d8d79f0d012ba791c6b02711820bb009f45"
 
 snakefile = github("domonik/SynDESeq2", path="snakefile.smk", commit=commit)
-snakefile = "../../SynDESeq2/snakefile.smk"
+#snakefile = "../../SynDESeq2/snakefile.smk"
 configfile: "configFile.yml"
 
 config["RUNS"] = {}
@@ -997,7 +997,7 @@ rule PercentagePlotF4:
         svg = config["F4Percent"]["file"],
     params:
         condition="Puromycin",
-        baseline="untreated",
+        baseline="Untreated",
         figureConfig="F4Percent",
         name="FOO",
         log2FCCutOff=config["primary"]["log2FCCutOff"],
@@ -1124,7 +1124,7 @@ rule plotFISHFigure2:
         svg = config["F2FISH"]["file"],
         distribution_out = "Pipeline/Paper/Figure2/DistanceDistribution.tsv"
     params:
-        probes = [("psaA", "untreated", "Replicate 2"), ("cupA", "untreated", "Replicate 1"), ("rnpB", "untreated", "Replicate 1"), ("fusB", "Puromycin", "Replicate 1") ],
+        probes = [("psaA", "Untreated", "Replicate 2"), ("cupA", "Untreated", "Replicate 1"), ("rnpB", "Untreated", "Replicate 1"), ("fusB", "Puromycin", "Replicate 1") ],
         layout= config["F2FISH"]["layout"],
         subplot=dict(vertical_spacing=0.00, horizontal_spacing=0.0, column_titles=["<i>psaA</i>", "<i>cupA</i>", "<i>rnpB</i>", "<i>fusB</i>"])
 
@@ -1161,9 +1161,9 @@ rule plotFISHFigure3:
         html = str(config["F3FISH"]["file"]).split(".")[0] + ".html",
         distribution_out = "Pipeline/Paper/Figure3/DistanceDistribution.tsv"
     params:
-        probes =[("16S rRNA", "untreated", "Replicate 1")],
+        probes =[("16S rRNA", "Untreated", "Replicate 1")],
         layout= config["F3FISH"]["layout"],
-        subplot=dict(vertical_spacing=0.0, horizontal_spacing=0.0, column_titles=["16S rRNA"],)
+        subplot=dict(vertical_spacing=0.0, horizontal_spacing=0.0, column_titles=["<i>16S rRNA</i>"],)
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISHFigure3.py"
@@ -1175,7 +1175,7 @@ rule plotFISHFigure3:
 #     output:
 #         svg = config["F4FISH"]["file"]
 #     params:
-#         probes =[("16S rRNA", "untreated", "Replicate 1")],
+#         probes =[("16S rRNA", "Untreated", "Replicate 1")],
 #         layout= config["F4FISH"]["layout"],
 #         subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,)
 #
@@ -1252,10 +1252,10 @@ rule plotVolcanoFigure5:
 #         html= str(config["F4FISH"]["file"]).split(".")[0] + ".html"
 #
 #     params:
-#         probes =[("psbA2","untreated","Replicate 1"), ("psbA2","Puromycin","Replicate 1"), ("16S rRNA", "untreated", "Replicate 1"), ("16S rRNA", "Puromycin", "Replicate 1")],
+#         probes =[("psbA2","Untreated","Replicate 1"), ("psbA2","Puromycin","Replicate 1"), ("16S rRNA", "Untreated", "Replicate 1"), ("16S rRNA", "Puromycin", "Replicate 1")],
 #         layout= config["F4FISH"]["layout"],
 #         subplot=dict(vertical_spacing=0.05, horizontal_spacing=0.05,
-#                               column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
+#                               column_titles=["Untreated", "Puromycin", "Untreated", "Puromycin"])
 #
 #     conda: "envs/matplotlibPlotly.yml"
 #     script: "scripts/plotFISHFigure4.py"
@@ -1271,10 +1271,10 @@ rule plotFISHFigure5:
         html= str(config["F5FISH"]["file"]).split(".")[0] + ".html",
         distribution_out = "Pipeline/Paper/Figure5/DistanceDistribution.tsv"
     params:
-        probes =[("fusB","untreated","Replicate 1"), ("fusB","Puromycin","Replicate 1"), ("psaA", "untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")],
+        probes =[("fusB","Untreated","Replicate 1"), ("fusB","Puromycin","Replicate 1"), ("psaA", "Untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")],
         layout= config["F5FISH"]["layout"],
         subplot = dict(vertical_spacing=0.0, horizontal_spacing=0.0,
-                              column_titles=["untreated", "Puromycin", None, "untreated", "Puromycin", None])
+                              column_titles=["Untreated", "Puromycin", None, "Untreated", "Puromycin", None])
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISHFigure4.py"
@@ -1291,10 +1291,10 @@ rule plotFISHFigure6:
         distribution_out = "Pipeline/Paper/Figure6/DistanceDistribution.tsv"
 
     params:
-        probes =[("psbA2","untreated","Replicate 1"), ("psbA2","Puromycin","Replicate 1"), ("rpl10_12", "untreated", "Replicate 1"), ("rpl10_12", "Puromycin", "Replicate 1")],
+        probes =[("psbA2","Untreated","Replicate 1"), ("psbA2","Puromycin","Replicate 1"), ("rpl10_12", "Untreated", "Replicate 1"), ("rpl10_12", "Puromycin", "Replicate 1")],
         layout= config["F6FISH"]["layout"],
         subplot=dict(vertical_spacing=0., horizontal_spacing=0.,
-                              column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
+                              column_titles=["Untreated", "Puromycin", "Untreated", "Puromycin"])
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISHFigure6.py"
@@ -1381,7 +1381,7 @@ rule plotVolcanoFigure4:
     params:
         figureConfig = "F4Volcano",
         suffix = "tc",
-        basename = "untreated",
+        basename = "Untreated",
         condition_name = "Puromycin"
     output:
         svg = config["F4Volcano"]["file"],
@@ -1572,11 +1572,11 @@ rule plot16SFISH:
         distribution_out= "Pipeline/Paper/Supplementary/16SFISH/DistanceDistribution.tsv"
 
     params:
-        probes =[("16S rRNA","untreated","Replicate 1"), ("16S rRNA","Puromycin","Replicate 1")],
+        probes =[("16S rRNA","Untreated","Replicate 2"), ("16S rRNA","Puromycin","Replicate 2")],
 
         layout = config["Supplement16SFISH"]["layout"],
         subplot = dict(vertical_spacing=0.05, horizontal_spacing=0,
-                              column_titles=["untreated", "Puromycin", "untreated", "Puromycin"])
+                              column_titles=["Untreated", None, "Puromycin", None])
 
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/plotFISH16SrRNA.py"
