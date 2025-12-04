@@ -38,7 +38,7 @@ afterwards you can run the pipeline with the following command. Please adjust th
 
 
 ```shell
-snakemake -s pipeline.smk --cores 4 --use-conda --configfile config.yml --rerun-incomplete
+snakemake -s pipeline.smk --cores 4 --use-conda --configfile configFile.yml --rerun-incomplete
 ```
 
 This will run the whole pipeline and place generated files in a Pipeline directory. 
