@@ -1647,7 +1647,8 @@ rule all:
         f7 = rules.ScatterSupplementtoPNG.output,
         tua = rules.SupplementTUAssotoPNG.output,
         corr = rules.ScatterSupplementtoPNG.output,
-        add_data = rules.extractAddInfoData.output
+        add_data = rules.extractAddInfoData.output,
+        supplementary_fulle = rules.supplementaryTableFullEnrichment.output
 #tpmemabundace = rules.checkTranscriptAbundanceGO.output
 
 

@@ -1,13 +1,13 @@
 from Bio import SeqIO
 from Bio.Seq import Seq
-from DEplots import gff_helper
+from scripts.gff_helper import read_gff3
 import pandas as pd
 
 
 
 
 def main(gff, fasta, tsv, output_file):
-    gff = gff_helper.read_gff3(gff)
+    gff = read_gff3(gff)
     df = pd.read_csv(tsv, sep="\t")
     recs = []
 
