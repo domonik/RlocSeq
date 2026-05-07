@@ -1,4 +1,5 @@
 from scripts.plotFISHWithIntensities import main
+from scripts.plotlyTrash import replace_square_images
 
 
 
@@ -26,7 +27,7 @@ if __name__ == '__main__':
         distribution_out = "foo.tsv"
         with open("configFile.yml", 'r') as f:
             cfg = yaml.safe_load(f)
-        probes =[("fusB","untreated","Replicate 1"), ("fusB","Puromycin","Replicate 1"), ("psaA", "untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")]
+        probes =[("fusB","untreated","Replicate 1"), ("fusB","Puromycin","Replicate 3"), ("psaA", "untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")]
 
         layout = cfg["F5FISH"]["layout"]
         subplot_params = dict(vertical_spacing=0., horizontal_spacing=0.,
@@ -35,7 +36,7 @@ if __name__ == '__main__':
 
     hs = subplot_params["horizontal_spacing"]
     l = (1- (len(probes)-1)*hs) / len(probes)
-    fig, df = main(file, probes, cfg, layout, subplot_params, intensities=intensities, test_output=res_tsv)
+    fig, df, images_to_replace = main(file, probes, cfg, layout, subplot_params, intensities=intensities, test_output=res_tsv)
     df.to_csv(distribution_out, sep="\t", index=False)
     y = 1.075
     fig.add_shape(
@@ -85,5 +86,7 @@ if __name__ == '__main__':
     for annotation in fig.layout.annotations:
         if annotation.text.startswith("Distance to"):
             annotation.update(yanchor="middle")
-    fig.write_image(outfile)
+    tmp_out = outfile + ".tmp"
+    fig.write_image(tmp_out, format="svg")
+    replace_square_images(tmp_out, images_to_replace, outfile)
     fig.write_html(html_outfile)

@@ -9,6 +9,7 @@ import numpy as np
 from scripts.plotly_template import register_template, PT7
 from scipy import stats
 import plotly.io as pio
+from scripts.plotlyTrash import replace_square_images
 
 
 register_template()
@@ -87,7 +88,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
             annotation.update(font=dict(size=PT7))
 
     fig.update_layout(cfg["LayoutDefault"])
-
+    images_to_replace = []
     color_map = {"Replicate 1": "rgb(0, 106, 56)", "Replicate 2": "rgb(0, 48, 135)", "Replicate 3": "rgb( 111, 160, 130)"}
     for i, (probe, treatment, replicate) in enumerate(probes):
         traces = []
@@ -106,7 +107,12 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
         image_file = os.path.join(image_dir, files[0])
         img = tifffile.imread(image_file)
         tmp = px.imshow(img)
-        fig.add_trace(tmp.data[0], row=1, col=int(i*2) + 1)
+        images_to_replace.append(image_file)
+        fig.add_trace(
+            go.Image(z=img),
+            row=1,
+            col=(i * 2) + 1
+        )
 
         image_file = os.path.join(image_dir, cbarfile)
         img = tifffile.imread(image_file)
@@ -338,7 +344,7 @@ def main(file, probes, cfg, layout, subplot_params, intensities, test_output=Non
         shape['layer'] = 'above'
     df = df.rename({"Figure": "Replicate"}, axis=1)
 
-    return fig, df
+    return fig, df, images_to_replace
 
 
 
@@ -379,10 +385,12 @@ if __name__ == '__main__':
 
     hs = subplot_params["horizontal_spacing"]
     l = (1- (len(probes)-1)*hs) / len(probes)
-    fig, df = main(file, probes, cfg, layout, subplot_params, intensities=intensities)
+    fig, df, images_to_replace = main(file, probes, cfg, layout, subplot_params, intensities=intensities)
     df.to_csv(distribution_out, sep="\t", index=False)
 
 
     if "snakemake" not in globals():
         fig.show()
-    fig.write_image(outfile)
+    tmp_out = outfile + ".tmp"
+    fig.write_image(tmp_out, format="svg")
+    replace_square_images(tmp_out, images_to_replace, outfile)

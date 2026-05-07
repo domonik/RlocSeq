@@ -9,6 +9,7 @@ import numpy as np
 from scripts.plotly_template import register_template, PT8, PT7
 from scipy import stats
 import plotly.io as pio
+from scripts.plotlyTrash import replace_square_images
 
 register_template()
 pio.renderers.default = "browser"
@@ -76,6 +77,7 @@ def main(file, probes, cfg, layout, subplot_params):
 
     color_map = {"Replicate 1": "rgb(0, 106, 56)", "Replicate 2": "rgb(0, 48, 135)",
                  "Replicate 3": "rgb( 111, 160, 130)"}
+    images_to_replace = []
     for i, (probe, treatment, replicate) in enumerate(probes):
         traces = []
         errors = []
@@ -92,7 +94,13 @@ def main(file, probes, cfg, layout, subplot_params):
         image_file = os.path.join(image_dir, files[0])
         img = tifffile.imread(image_file)
         tmp = px.imshow(img)
-        fig.add_trace(tmp.data[0], row=1, col=(i * 2) + 1)
+        images_to_replace.append(image_file)
+        fig.add_trace(
+            go.Image(z=img),
+            row=1,
+            col=(i * 2) + 1
+        )
+
 
         image_file = os.path.join(image_dir, cbarfile)
         img = tifffile.imread(image_file)
@@ -286,7 +294,7 @@ def main(file, probes, cfg, layout, subplot_params):
     for shape in fig.layout.shapes:
         shape['layer'] = 'above'
     df = df.rename({"Figure": "Replicate"}, axis=1)
-    return fig, df
+    return fig, df, images_to_replace
 
 
 if __name__ == '__main__':
@@ -313,7 +321,7 @@ if __name__ == '__main__':
 
     hs = subplot_params["horizontal_spacing"]
     l = (1- (len(probes)-1)*hs) / len(probes)
-    fig, df = main(file, probes, cfg, layout, subplot_params)
+    fig, df, images_to_replace = main(file, probes, cfg, layout, subplot_params)
     df.to_csv(distribution_out, sep="\t", index=False)
     for annotation in fig.layout.annotations:
         if annotation.text.startswith("Distance to"):
@@ -332,5 +340,7 @@ if __name__ == '__main__':
     if "snakemake" not in globals():
         print("showing")
         fig.show()
-    fig.write_image(outfile)
+    tmp_out = outfile + ".tmp"
+    fig.write_image(tmp_out, format="svg")
+    replace_square_images(tmp_out, images_to_replace, outfile)
     fig.write_html(html_outfile)

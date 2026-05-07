@@ -3,7 +3,6 @@ from scripts.readCount import plot_precomputed_coverage
 from scripts.gff_helper import read_gff3, read_gff_via_gffutils, optimize_gff_lines
 import plotly.graph_objs as go
 from scripts.plotly_template import register_template
-
 register_template()
 
 def main(design, gff, db_name, output_path, cfg):
@@ -87,7 +86,7 @@ def main(design, gff, db_name, output_path, cfg):
         if trace.legendgroup == "Annotations":
             type = trace.name.split("-")[0]
             if type not in already and type != "gene":
-                trace.update(name=type)
+                trace.update(name=type, showlegend=False)
                 already.add(type)
             else:
                 trace.update(showlegend=False)
@@ -95,7 +94,8 @@ def main(design, gff, db_name, output_path, cfg):
             trace.update(line=dict(width=1), showlegend=False)
     fig.layout.annotations = [anno for anno in fig.layout.annotations if not anno.text.startswith("ncRNA")]
     fig.update_yaxes(title=None)
-    fig.update_yaxes(title="normalized read count", row=1, col=1)
+    fig.update_yaxes(title="Norm. read count  ", row=1, col=1)
+    
     fig.update_yaxes(row=2, showgrid=False)
     for trace in f2.data:
         if trace.xaxis == "x":
@@ -126,7 +126,7 @@ def main(design, gff, db_name, output_path, cfg):
     fig.update_yaxes(title=None, col=2)
     fig.update_yaxes(title=None, col=3)
 
-    lgroup = "Read Counts"
+    lgroup = "Colors"
     fig.add_trace(
         go.Scatter(
             x=[None],
@@ -146,16 +146,18 @@ def main(design, gff, db_name, output_path, cfg):
             name=f"Cytosol",
             marker=dict(color=cfg["cytosolColor"], symbol="square", size=10),
             legendgroup=lgroup,
-            legendrank=1
+            legendrank=1,
+            legendgrouptitle=dict(text=lgroup),
 
         )
     )
+    lgroup2 = "Line style"
     fig.add_trace(
         go.Scatter(
             x=[None],
             y=[None],
-            legendgroup=lgroup,
-            legendgrouptitle=dict(text=lgroup),
+            legendgroup=lgroup2,
+            legendgrouptitle=dict(text=lgroup2),
             mode="lines",
             name=f"Mean",
             line=dict(color='black'),
@@ -169,7 +171,7 @@ def main(design, gff, db_name, output_path, cfg):
             mode="lines",
             name=f"Median",
             line=dict(dash="dot", color="black"),
-            legendgroup=lgroup,
+            legendgroup=lgroup2,
 
         )
     )
@@ -182,13 +184,16 @@ def main(design, gff, db_name, output_path, cfg):
             fill="toself",
             fillcolor='rgba(0,0,0,0.4)',
             line=dict(color='rgba(255,255,255,0)'),
-            legendgroup=lgroup,
+            legendgroup=lgroup2,
 
         )
     )
     fig.update_layout(cfg["LayoutDefault"])
-
+    fig.update_layout(legend=dict(yref="paper", yanchor="top", y = 0.99, xref="paper", x=1.02, xanchor="left", orientation="v"))
+    fig.update_layout(legend=dict(tracegroupgap=0))
+    
     fig.update_layout(cfg["MinusPuroCoverage"]["layout"])
+    
     fig.update_xaxes(showline=False, ticks="", row=1)
     fig.update_yaxes(ticks="", row=2)
 

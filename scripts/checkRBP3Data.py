@@ -16,6 +16,7 @@ def main(snakemake_input, config, output):
     joined = pd.read_csv(snakemake_input.joined, sep="\t")
     joined = joined.merge(df, on="locus_tag", how="left")
     joined["Rbp3_Target"] = (~pd.isna(joined["Rbp3_log2FC"])) == True
+    joined["Rbp3_Target"] = joined["Rbp3_Target"].astype("boolean")
     joined.loc[~(joined["mRNA"] == True), "Rbp3_Target"] = pd.NA
     joined.to_csv(output.useful_tsv, sep="\t", index=False)
     joined_out = joined[joined["mRNA"]]

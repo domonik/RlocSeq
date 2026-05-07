@@ -1271,7 +1271,7 @@ rule plotFISHFigure5:
         html= str(config["F5FISH"]["file"]).split(".")[0] + ".html",
         distribution_out = "Pipeline/Paper/Figure5/DistanceDistribution.tsv"
     params:
-        probes =[("fusB","Untreated","Replicate 1"), ("fusB","Puromycin","Replicate 1"), ("psaA", "Untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")],
+        probes =[("fusB","Untreated","Replicate 1"), ("fusB","Puromycin","Replicate 3"), ("psaA", "Untreated", "Replicate 1"), ("psaA", "Puromycin", "Replicate 1")],
         layout= config["F5FISH"]["layout"],
         subplot = dict(vertical_spacing=0.0, horizontal_spacing=0.0,
                               column_titles=["Untreated", "Puromycin", None, "Untreated", "Puromycin", None])

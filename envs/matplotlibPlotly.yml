@@ -6,8 +6,9 @@ dependencies:
  - pandas
  - plotly
  - matplotlib-venn
- - python-kaleido=0.2.1
+ - python-kaleido=1.1
  - biopython
+ - gffutils
  - tesseract
  - conda-forge::pytesseract
  - tifffile
