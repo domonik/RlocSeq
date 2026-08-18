@@ -1,0 +1,54 @@
+# SynDESeq configuration for the puromycin-treated versus untreated membrane
+# comparison. Cytosol samples are retained to estimate the treatment-by-fraction
+# interaction; total-cell samples are not part of this model.
+
+RUN_DIR: "Pipeline/RUNS/MembranePuroComp"
+CountFile: "initialData/CDS_SinglemappedNew.csv"
+gff: "initialData/Synsp.gff3"
+uniprot_mapping: "Pipeline/uniprotMapping.tsv"
+buildOrgDB: False
+initial_sep: ","
+Rlib: "Rlib"
+
+column_mapping: ["Puromycin", "Fraction", "Replicate"]
+
+# BiologicalSample combines treatment and replicate (for example minusP_R1),
+# so M and C are paired within a biological sample but equally numbered
+# replicates are not paired across treatments. PuromycinMembraneInteraction is
+# 1 only for +Puromycin membrane samples; its coefficient measures
+# (M - C) under +Puromycin minus (M - C) under -Puromycin.
+design: "~ BiologicalSample + Fraction + PuromycinMembraneInteraction"
+conditions: ["plusP"]
+baselines: ["minusP"]
+contrast_coefficients:
+  - "PuromycinMembraneInteraction_1_vs_0"
+
+drop_condition: {"Fraction": ["TC"]}
+blacklisted_samples: ["plusP_M_R3", "plusP_C_R3"]
+
+use-spike-ins: True
+spike-in-pattern: "ERCC"
+use-housekeeping: False
+housekeeping: ""
+
+GOTermDir: "GOTerms2"
+tax_id: 1111708
+genus: "Synechocystis"
+species: "sp"
+
+log2FCCutOff: 0.8
+pAdjCutOff: 0.05
+minGSSize: 30
+maxGSSize: 500
+
+keggOrgID: "syn"
+
+cluster-eps: 0.25
+sort_method: "p.adjust"
+ascending: True
+
+highlight: {"mRNA enconding<br>ribosomal proteins": ["black", "rpl|rps"], "ncRNA/sRNA": ["blue", "ncr|ncl"], "tRNA": ["purple", "6803t"], "photosystem": ["green", "psa|psb"]}
+upColor: "rgb(255,0,0)"
+downColor: "rgb(255,0,0)"
+normalColor: "rgb(255,0,0)"
+enrichPlotType: "bar"

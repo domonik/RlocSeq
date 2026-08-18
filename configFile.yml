@@ -1,5 +1,6 @@
 primary-file: "run_configs/minusPuroConfig.yml" # path to the config file that will be used first
 secondary-file: "run_configs/plusPuroConfig.yml"
+membrane-puromycin-file: "run_configs/membranePuromycinConfig.yml"
 tertiary-file: "run_configs/third_config.yml"
 total_cell-file: "run_configs/total_cell_config.yml"
 why-drop-replicate-file: "run_configs/why_drop_replicate.yml"
@@ -106,6 +107,29 @@ memeMotifLD_LPuro:
 
 LayoutDefault:
   template: "simple_white_custom"
+
+MembranePuromycinVolcano:
+  file: "Pipeline/Paper/Supplementary/MembranePuromycinVolcano/MembranePuromycinVolcano.svg"
+  html: "Pipeline/RUNS/MembranePuroComp/PipelineData/Plots/DESeq/MembranePuromycinVolcano.html"
+  layout:
+    width: 450
+    height: 400
+    margin:
+      l: 60
+      r: 30
+      t: 30
+      b: 50
+    legend:
+      orientation: "h"
+      itemsizing: "constant"
+      x: 0
+      y: -0.15
+    xaxis:
+      title:
+        text: "Fraction × treatment Log<sub>2</sub>(fold change)"
+    yaxis:
+      title:
+        text: "-Log<sub>10</sub>(FDR adjusted <i>P</i>)"
 
 
 fonts:
@@ -390,15 +414,17 @@ F3:
 F4Percent:
   file: "Pipeline/Paper/Figure4/F4Percentage.svg"
   x: 0
-  y: 0
+  y: 200
   layout:
     width: 310
-    height: 80
+    height: 90
     margin:
       r: 10
       t: 25
       l: 10
-      b: 35
+      b: 45
+    xaxis:
+      title_standoff: 10
     legend:
       orientation: "h"
       y: 1.2
@@ -455,7 +481,7 @@ F4Volcano:
       y: 15
   file: "Pipeline/Paper/Figure4/F4Volcano.svg"
   x: 0
-  y: 80
+  y: 290
   highlight_go_term:
     ribosome: "rgb(255, 198, 47)"
     "unfolded protein binding": "rgb(79, 38, 131)"
@@ -466,7 +492,7 @@ F4Volcano:
       l: 40
       b: 60
     legend:
-      orientation: "v"
+      orientation: "h"
       itemsizing: "constant"
       y: -0.2
       x: -0.1
@@ -484,13 +510,13 @@ F4Volcano:
 F4ClusteredGO:
   file: "Pipeline/Paper/Figure4/F4ClusteredGO.svg"
   x: 310
-  y: 0
+  y: 210
   layout:
     width: 370
     height: 330
     margin:
-      r: 50
-      l: 120
+      r: 40
+      l: 130
       t: 15
       b: 50
     legend:
@@ -507,7 +533,7 @@ F4ClusteredGO:
 F4QTPCR:
   file: "Pipeline/Paper/Figure4/F4QPCR.svg"
   x: 0
-  y: 330
+  y: 0
   layout:
     width: 230
     height: 200
@@ -534,7 +560,7 @@ F4QTPCR:
 F4CupAIntensities:
   file: "Pipeline/Paper/Figure4/F4cupAIntensities.svg"
   x: 230
-  y: 320
+  y: 0
   layout:
     showlegend: False
     width: 450
@@ -544,19 +570,19 @@ F4CupAIntensities:
         font:
           size: 10
     margin:
-      r: 10
+      r: 0
       t: 30
       b: 30
-      l: 40
+      l: 50
 
 
 
 F4:
-  a: "F4Percent"
-  b: "F4Volcano"
-  c: "F4ClusteredGO"
-  d: "F4QTPCR"
-  e: "F4CupAIntensities"
+  a: "F4QTPCR"
+  b: "F4CupAIntensities"
+  c: "F4Percent"
+  d: "F4Volcano"
+  e: "F4ClusteredGO"
 
 
 F5Percent:
@@ -682,7 +708,7 @@ F6ClusteredGO:
   y: 0
   layout:
     width: 257
-    height: 350
+    height: 400
     margin:
       r: 0
       l: 130
@@ -692,6 +718,7 @@ F6ClusteredGO:
       colorbar:
         title:
           text: "FDR<br>adjusted <i>P</i>"
+        tickangle: 270
         thickness: 10
     legend:
       itemsizing: "constant"
@@ -706,7 +733,7 @@ F6Coverage:
   y: 0
   layout:
     width: 430
-    height: 150
+    height: 175
     legend:
       orientation: "h"
       tracegroupgap: 0
@@ -723,10 +750,10 @@ F6Coverage:
 F6FISH:
   file: "Pipeline/Paper/Figure6/F6FISH.svg"
   x: 237
-  y: 150
+  y: 175
   layout:
     width: 443
-    height: 200
+    height: 225
     legend:
       visible: False
 

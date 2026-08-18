@@ -30,6 +30,9 @@ with open(config["secondary-file"], "r") as handle:
     config["RUNS"]["secondary"] = yaml.safe_load(handle)
     config["secondary"] = config["RUNS"]["secondary"]
 
+with open(config["membrane-puromycin-file"], "r") as handle:
+    config["membrane_puromycin"] = yaml.safe_load(handle)
+
 with open(config["tertiary-file"], "r") as handle:
     config["sizeFactorEstimate"] = yaml.safe_load(handle)
 
@@ -81,6 +84,85 @@ module second_workflow:
     config: config["RUNS"]["secondary"]
 
 use rule * from second_workflow as second_*
+
+module membrane_puromycin_workflow:
+    snakefile: snakefile
+    config: config["membrane_puromycin"]
+
+use rule * from membrane_puromycin_workflow as membrane_puromycin_*
+
+rule membrane_puromycin_addNestedDesign:
+    input:
+        annotation = rules.membrane_puromycin_dropUnusedSamples.output.annotation
+    output:
+        annotation = os.path.join(
+            config["membrane_puromycin"]["RUN_DIR"],
+            "PipelineData/IntermediateData/NestedDesignAnnotation.tsv"
+        )
+    run:
+        annotation = pd.read_csv(input.annotation, sep="\t", index_col=0)
+        annotation["BiologicalSample"] = (
+            annotation["Puromycin"] + "_" + annotation["Replicate"]
+        )
+        annotation["PuromycinMembraneInteraction"] = (
+            (annotation["Puromycin"] == "plusP")
+            & (annotation["Fraction"] == "M")
+        ).astype(int)
+        annotation.to_csv(output.annotation, sep="\t")
+
+use rule runDESeq from membrane_puromycin_workflow as membrane_puromycin_runDESeq with:
+    input:
+        counts = rules.membrane_puromycin_dropUnusedSamples.output.counts,
+        annotation = rules.membrane_puromycin_addNestedDesign.output.annotation
+
+# SynDESeq's standard extractor always applies normal-prior LFC shrinkage,
+# which DESeq2 does not implement for interaction designs. Move that imported
+# output aside and provide the interaction result at the path expected by the
+# imported enrichment rules.
+use rule extractDESeqResult from membrane_puromycin_workflow as membrane_puromycin_extractDESeqResult with:
+    output:
+        result_table = os.path.join(
+            config["membrane_puromycin"]["RUN_DIR"],
+            "PipelineData/DESeqResults/unused_standard_DESeqResult_c{condition}_vs_b{baseline}.tsv"
+        )
+
+rule membrane_puromycin_extractInteractionResult:
+    input:
+        result = os.path.join(
+            config["membrane_puromycin"]["RUN_DIR"],
+            "PipelineData/IntermediateData/DESeqResult.RData"
+        )
+    output:
+        result_table = os.path.join(
+            config["membrane_puromycin"]["RUN_DIR"],
+            "PipelineData/DESeqResults/DESeqResult_c{condition}_vs_b{baseline}.tsv"
+        )
+    params:
+        contrast_coefficients = config["membrane_puromycin"]["contrast_coefficients"]
+    conda:
+        "envs/DESeq2.yml"
+    script:
+        "scripts/extractDESeqInteractionResult.R"
+
+MEMBRANE_PUROMYCIN_ORGDB = os.path.join(
+    config["membrane_puromycin"]["GOTermDir"],
+    "AnnotationDBs",
+    f'{config["membrane_puromycin"]["genus"]}.{config["membrane_puromycin"]["species"]}_taxid{config["membrane_puromycin"]["tax_id"]}'
+)
+
+use rule GOEnrichment from membrane_puromycin_workflow as membrane_puromycin_GOEnrichment with:
+    input:
+        annotation_db = MEMBRANE_PUROMYCIN_ORGDB,
+        deseq_results = rules.membrane_puromycin_extractInteractionResult.output.result_table
+
+use rule GSEAGO from membrane_puromycin_workflow as membrane_puromycin_GSEAGO with:
+    input:
+        annotation_db = MEMBRANE_PUROMYCIN_ORGDB,
+        deseq_results = rules.membrane_puromycin_extractInteractionResult.output.result_table
+
+use rule enrichKEGG from membrane_puromycin_workflow as membrane_puromycin_enrichKEGG with:
+    input:
+        defile = rules.membrane_puromycin_extractInteractionResult.output.result_table
 
 module third_workflow:
     snakefile: snakefile
@@ -974,6 +1056,26 @@ rule minusPVolcanoForFig1:
     conda: "envs/matplotlibPlotly.yml"
     script: "scripts/refineVolcano.py"
 
+rule plotMembranePuromycinVolcano:
+    input:
+        tsv = expand(
+            rules.membrane_puromycin_extractInteractionResult.output.result_table,
+            condition="plusP",
+            baseline="minusP"
+        )[0],
+        gene_names = "initialData/locusTagtoGeneName.csv"
+    output:
+        svg = config["MembranePuromycinVolcano"]["file"],
+        html = config["MembranePuromycinVolcano"]["html"]
+    params:
+        figureConfig = "MembranePuromycinVolcano",
+        condition_name = "Increased membrane enrichment",
+        baseline_name = "Decreased membrane enrichment"
+    conda:
+        "envs/matplotlibPlotly.yml"
+    script:
+        "scripts/plotMembranePuromycinVolcano.py"
+
 rule refinePercentagePlot:
     input:
         tsv = expand(rules.other_extractDESeqResult.output.result_table,condition=["M"], baseline=["C"])[0]
@@ -1332,7 +1434,7 @@ rule joinFig6:
         files = [config[val]["file"] for key, val in config["F6"].items()]
     params:
         figures = config["F6"],
-        ges_y = 350
+        ges_y = 400
     conda: "envs/svgutils.yml"
     output:
         svg = "Pipeline/Paper/Figure6/Figure6.svg"
@@ -1648,7 +1750,7 @@ rule all:
         tua = rules.SupplementTUAssotoPNG.output,
         corr = rules.ScatterSupplementtoPNG.output,
         add_data = rules.extractAddInfoData.output,
-        supplementary_fulle = rules.supplementaryTableFullEnrichment.output
+        supplementary_fulle = rules.supplementaryTableFullEnrichment.output,
+        membrane_puromycin = rules.membrane_puromycin_all.input,
+        membrane_puromycin_volcano = rules.plotMembranePuromycinVolcano.output
 #tpmemabundace = rules.checkTranscriptAbundanceGO.output
-
-
