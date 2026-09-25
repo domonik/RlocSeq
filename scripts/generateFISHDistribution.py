@@ -245,13 +245,23 @@ if __name__ == '__main__':
     from plotly.subplots import make_subplots
 
 
-    probes =  ["psaA", "cupA", "rnpB", "psbA2", "rpl10_12",  "16S rRNA", "fusB"]
-    treatments = ["untreated", "Kasugamycin", "Puromycin"]
-    images = {"Replicate 1": {}, "Replicate 2": {}, "Replicate 3": {}}
+    probes =  ["psaA", "cupA", "rnpB", "psbA2", "rpl10_12",  "16S rRNA", "fusB", "nrtB"]
+    treatments = ["untreated", "Kasugamycin", "Puromycin", "DMSO", "CCCP", "NH4", "NO3"]
+    treatment_labels = {
+        "untreated": "Untreated",
+        "Kasugamycin": "Kasugamycin",
+        "Puromycin": "Puromycin",
+        "DMSO": "DMSO",
+        "CCCP": "CCCP",
+        "NH4": "NH4",
+        "NO3": "NO3",
+    }
+    images = {}
     for probe in probes:
         subdirs = f"initialData/AllFISHData/{probe}"
         replicates = [r for r in os.listdir(subdirs) if "Replicate" in r and "old" not in r]
         for replicate in replicates:
+            images.setdefault(replicate, {})
             images[replicate][probe] = {}
             for treatment in treatments:
                 images[replicate][probe][treatment] = {}
@@ -265,7 +275,7 @@ if __name__ == '__main__':
 
                             if "{Membrane}" in filename:
                                 kind = "Membrane"
-                            elif "_corrected_total_cell" in filename:
+                            elif "_corrected_total_cell" in filename or "{TotalCell}" in filename:
                                 kind = "TotalCell"
                             elif "_label_image_corrected" in filename or "_segmentation_corrected" in filename:
                                 kind = "Probe"
@@ -411,7 +421,8 @@ if __name__ == '__main__':
         image_mask = spots_df["Image"] == image
         treat_mask = spots_df["Treatment"] == treatment
         probe_mask = spots_df["Probe"] == probe
-        sub_spots_df = spots_df[image_mask & treat_mask & probe_mask]
+        figure_mask = spots_df["Figure"] == figure
+        sub_spots_df = spots_df[image_mask & treat_mask & probe_mask & figure_mask]
         calls.append((images, figure, probe, treatment, image, sub_spots_df, rad_step, max_rad, border_distance ))
     p = 0
     print("*" * 200)
@@ -429,7 +440,7 @@ if __name__ == '__main__':
         color = color.split("(")[-1].split(")")[0]
         return f"rgba({color}, {alpha})"
 
-    df_all["Treatment"] = df_all["Treatment"].str.capitalize()
+    df_all["Treatment"] = df_all["Treatment"].map(treatment_labels)
     df_all.to_csv(snakemake.output.tsv, sep="\t", index=False)
 
 
@@ -484,8 +495,6 @@ if __name__ == '__main__':
         }
         return pd.DataFrame(df)
 
-    spots_df["Treatment"] = spots_df["Treatment"].str.capitalize()
+    spots_df["Treatment"] = spots_df["Treatment"].map(treatment_labels)
 
     spots_df.to_csv(snakemake.output.spots_df, sep="\t", index=False)
-
-

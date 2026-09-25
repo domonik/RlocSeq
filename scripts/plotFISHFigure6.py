@@ -349,7 +349,7 @@ if __name__ == '__main__':
         xanchor="center",
         y=y,
         yanchor="bottom",
-        text=f"<i>{probes[0][0]}</i>",
+        text=f"<i>{probes[0][0] if probes[0][0] != "psbA2" else "psbA"}</i>",
         showarrow=False,
     )
     fig.add_annotation(

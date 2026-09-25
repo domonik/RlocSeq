@@ -4,28 +4,59 @@ from statsmodels.stats.multitest import multipletests
 
 
 def calc_summary_and_pval(spots_df, probes):
-    spots_df = spots_df[spots_df.Treatment != "Kasugamycin"]
+    spots_df = spots_df[spots_df.Treatment != "Kasugamycin"].copy()
     spots_df["subtractedIntensity"] = spots_df["ProbeIntensity"] - spots_df["background"]
 
     # Filter dataframe for selected probe
     df = spots_df[spots_df["Probe"].isin(probes)]
     df = df.groupby(["Treatment", "Probe", "Figure", ])["subtractedIntensity"].median().reset_index()
-    # Run Welch’s t-test for each probe
+    # Compare each treatment with the control from the same experiment. The
+    # original Untreated/Puromycin columns are retained for downstream plots.
+    comparisons = [("Untreated", "Puromycin"), ("DMSO", "CCCP")]
     results = []
-    for probe in df['Probe'].unique():
-        untreated = df.query("Treatment == 'Untreated' and Probe == @probe")['subtractedIntensity']
-        puromycin = df.query("Treatment == 'Puromycin' and Probe == @probe")['subtractedIntensity']
-        if len(untreated) == len(puromycin):
-            tstat, pval = ttest_rel(untreated, puromycin, )
-        else:
-            tstat, pval = ttest_ind(untreated, puromycin, equal_var=False)
-        results.append({'Probe': probe, 't-statistic': tstat, 'p-value': pval, "Untreated": untreated.tolist(), "Puromycin": puromycin.tolist(), "Untreated_mean": untreated.mean(), "Puromycin_mean": puromycin.mean()})
+    for control_name, treatment_name in comparisons:
+        for probe in df['Probe'].unique():
+            control = df.query(
+                "Treatment == @control_name and Probe == @probe"
+            )['subtractedIntensity']
+            treatment = df.query(
+                "Treatment == @treatment_name and Probe == @probe"
+            )['subtractedIntensity']
+            if control.empty or treatment.empty:
+                continue
+
+            if len(control) == len(treatment) and len(control) >= 2:
+                tstat, pval = ttest_rel(control, treatment)
+            elif len(control) >= 2 and len(treatment) >= 2:
+                tstat, pval = ttest_ind(control, treatment, equal_var=False)
+            else:
+                # One biological replicate is enough for a descriptive row,
+                # but not for an inferential test.
+                tstat, pval = float("nan"), float("nan")
+
+            results.append({
+                'Probe': probe,
+                'Comparison': f"{treatment_name} vs {control_name}",
+                't-statistic': tstat,
+                'p-value': pval,
+                control_name: control.tolist(),
+                treatment_name: treatment.tolist(),
+                f"{control_name}_mean": control.mean(),
+                f"{treatment_name}_mean": treatment.mean(),
+            })
 
     results_df = pd.DataFrame(results)
-    reject, pvals_corr, _, _ = multipletests(results_df['p-value'], method='fdr_bh')
-
-    results_df['adj p-value (FDR)'] = pvals_corr
-    results_df['significant (FDR<0.05)'] = reject
+    results_df['adj p-value (FDR)'] = float("nan")
+    results_df['significant (FDR<0.05)'] = False
+    for comparison, indices in results_df.groupby('Comparison').groups.items():
+        valid_indices = results_df.loc[indices, 'p-value'].dropna().index
+        if valid_indices.empty:
+            continue
+        reject, pvals_corr, _, _ = multipletests(
+            results_df.loc[valid_indices, 'p-value'], method='fdr_bh'
+        )
+        results_df.loc[valid_indices, 'adj p-value (FDR)'] = pvals_corr
+        results_df.loc[valid_indices, 'significant (FDR<0.05)'] = reject
     return df, results_df
 
 def main(tsv, intensities_tsv, dist_out, intensities_out):

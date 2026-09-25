@@ -39,7 +39,7 @@ def encode_tif_to_data_uri(tif_path):
     return f"data:image/tiff;base64,{encoded}"
 
 
-def replace_square_images(svg_path, tif_list, output_svg):
+def replace_images(svg_path, tif_list, output_svg, square_only=False):
     tree = ET.parse(svg_path)
     root = tree.getroot()
 
@@ -58,7 +58,7 @@ def replace_square_images(svg_path, tif_list, output_svg):
         if not href:
             continue
 
-        if not is_square_image_element(img):
+        if square_only and not is_square_image_element(img):
             continue
 
         try:
@@ -78,6 +78,10 @@ def replace_square_images(svg_path, tif_list, output_svg):
 
     tree.write(output_svg, encoding="utf-8", xml_declaration=True)
     return replacements
+
+
+def replace_square_images(svg_path, tif_list, output_svg):
+    return replace_images(svg_path, tif_list, output_svg, square_only=True)
 
 
 if __name__ == "__main__":

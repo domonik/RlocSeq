@@ -10,6 +10,7 @@ import plotly.io as pio
 from scipy.stats import ttest_rel, ttest_ind
 from statsmodels.stats.multitest import multipletests
 from scripts.plotly_template import register_template, PT7
+from scripts.plotlyTrash import replace_square_images
 import pytesseract
 
 register_template()
@@ -69,6 +70,7 @@ def main(results_df, cfg, outfile, outtsv):
     fig.update_annotations(font=dict(size=PT7))
 
     # Add images for each treatment
+    images_to_replace = []
     idx = 1
     for probe in probes:
         for i, treatment in enumerate(treatments, start=1):
@@ -86,6 +88,7 @@ def main(results_df, cfg, outfile, outtsv):
                 row=1,
                 col=idx
             )
+            images_to_replace.append(image_file)
             fig.update_xaxes(
                 ticks="",
                 showticklabels=False,
@@ -214,7 +217,9 @@ def main(results_df, cfg, outfile, outtsv):
 
     fig.update_xaxes(ticks="", row=1, showticklabels=False, showline=False)
     fig.update_layout(cfg["F4CupAIntensities"]["layout"])
-    fig.write_image(outfile)
+    tmp_out = outfile + ".tmp"
+    fig.write_image(tmp_out, format="svg")
+    replace_square_images(tmp_out, images_to_replace, outfile)
     results_df.to_csv(outtsv, index=False, sep="\t")
 
 
