@@ -4,6 +4,7 @@ import numpy as np
 import ast
 import random
 import os
+from glob import glob
 
 NAMEMapping = {
     "C": "Cytosol",
@@ -690,52 +691,6 @@ rule GSEAGO:
     script: "scripts"
 
 
-rule extractMembraneAndSolubleProteins:
-    input:
-        membrane = "initialData/MembraneProteins.xlsx",
-        soluble = "initialData/SolubleProteins.xlsx"
-    output:
-        tsv = "Pipeline/ProteinLocalization/proteins.tsv"
-    run:
-        from scipy.stats import ttest_ind, false_discovery_control
-
-        membrane_df = pd.read_excel(input.membrane, skiprows=2)
-        cols = ["Accession", "Gene_symbol"] + [col for col in membrane_df.columns if "Ctrl1" in col]
-        membrane_df =membrane_df[cols ]
-        membrane_df = membrane_df[~membrane_df["Accession"].isna()]
-
-        membrane_df["Mean"] = membrane_df[cols[2:]].mean(axis=1)
-        soluble_df = pd.read_excel(input.soluble, skiprows=2)
-        soluble_df = soluble_df[cols]
-        soluble_df["Mean"] = soluble_df[cols[2:]].mean(axis=1)
-
-        soluble_df = soluble_df[~soluble_df["Accession"].isna()]
-
-        stats = []
-
-
-
-
-        df = membrane_df.merge(soluble_df, left_on="Accession", right_on="Accession", suffixes=["_membrane", "_soluble"])
-        df = df.drop("Gene_symbol_membrane", axis=1).rename({"Gene_symbol_soluble": "Gene_symbol"}, axis=1)
-        df = df.fillna(0)
-        membrane = df[[col + "_membrane" for col in cols[2:]]].values
-        soluble = df[[col + "_soluble" for col in cols[2:]]].values
-        for row1, row2 in zip(membrane, soluble):
-            try:
-                stat, pval = ttest_ind(a=row1, b=row2, equal_var=False)
-            except ValueError:
-                stat = np.nan
-            stats.append(pval)
-        df["pval"] = stats
-
-        df = df[~df["pval"].isna()]
-        df["padj"] = false_discovery_control(df["pval"])
-        df["log2FoldChange"] = np.log2(df["Mean_membrane"]) - np.log2(df["Mean_soluble"])
-        df = df[~df['log2FoldChange'].isin([np.inf, -np.inf])]
-        df.to_csv(output.tsv, sep="\t", index=False)
-
-
 hovertemplate = 'Gene: <b>%{text}</b><br>RNA padj: %{customdata[0]:.2e}<br>Protein padj: %{customdata[1]:.2e}'
 
 
@@ -1076,6 +1031,32 @@ rule plotMembranePuromycinVolcano:
     script:
         "scripts/plotMembranePuromycinVolcano.py"
 
+rule plotMembranePuromycinInteractionMA:
+    input:
+        tsv = expand(
+            rules.membrane_puromycin_extractInteractionResult.output.result_table,
+            condition="plusP",
+            baseline="minusP"
+        )[0],
+        gene_names = "initialData/locusTagtoGeneName.csv"
+    output:
+        svg = config["MembranePuromycinInteractionMA"]["file"],
+        html = config["MembranePuromycinInteractionMA"]["html"]
+    params:
+        figureConfig = "MembranePuromycinInteractionMA"
+    conda:
+        "envs/matplotlibPlotly.yml"
+    script:
+        "scripts/plotMembranePuromycinInteractionMA.py"
+
+rule MembranePuromycinInteractionMAtoPNG:
+    input:
+        svg = rules.plotMembranePuromycinInteractionMA.output.svg
+    output:
+        png = config["MembranePuromycinInteractionMA"]["png"]
+    shell:
+        "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
+
 rule refinePercentagePlot:
     input:
         tsv = expand(rules.other_extractDESeqResult.output.result_table,condition=["M"], baseline=["C"])[0]
@@ -1197,7 +1178,49 @@ rule plotCoveragesFig2:
 #         svg =
 
 
+FISH_IMAGE_INPUTS = sorted(
+    path
+    for path in glob("initialData/AllFISHData/*/Replicate */Segmentation_*/*.tif*")
+    if "Composite_Image" in os.path.basename(path)
+    or "_corrected_total_cell" in os.path.basename(path)
+)
+
+FISH_16S_LIGHT_DARK_INPUT_DIRS = sorted(
+    glob("initialData/16sRNAFISHLightDark/Replicate*/*")
+    + glob("initialData/AllFISHData/16S rRNA/Replicate */Segmentation_untreated")
+)
+
+FISH_16S_LIGHT_DARK_PANEL_INPUTS = sorted(
+    glob("initialData/16sRNAFISHLightDark/RepresentativePanels/Replicate*/Composite_*.tif")
+)
+
+CCCP_FISH_IMAGE_INPUTS = sorted(
+    path
+    for path in glob("initialData/AllFISHData/*/Replicate 4/Segmentation_*/*")
+    if path.endswith((".tif", ".tiff"))
+    and any(f"/AllFISHData/{probe}/" in path for probe in ("psaA", "psbA2", "cupA"))
+    and any(f"/Segmentation_{treatment}/" in path for treatment in ("DMSO", "CCCP"))
+    and (
+        os.path.basename(path).startswith("Composite_Image")
+        or "_corrected_total_cell" in os.path.basename(path)
+    )
+)
+
+CCCP_FISH_REPRESENTATIVE_INPUTS = sorted(
+    path
+    for path in glob("initialData/AllFISHData/*/Replicate 4/*.tif")
+    if any(f"/AllFISHData/{probe}/" in path for probe in ("psaA", "psbA2", "cupA"))
+    and (
+        "-1_DMSO_" in os.path.basename(path)
+        or "-1_CCCP_" in os.path.basename(path)
+        or os.path.basename(path).startswith("CBar_CCCP_")
+    )
+)
+
+
 rule processFISHImages:
+    input:
+        images = FISH_IMAGE_INPUTS
     output:
         tsv = "Pipeline/FISH/all_distributions.tsv",
         spots_df = "Pipeline/FISH/single_spots.tsv"
@@ -1205,6 +1228,16 @@ rule processFISHImages:
     conda: "envs/matplotlibPlotly.yml"
     script:
         "scripts/generateFISHDistribution.py"
+
+
+rule process16SRNALightDark:
+    input:
+        data_dirs = FISH_16S_LIGHT_DARK_INPUT_DIRS
+    output:
+        tsv = "Pipeline/FISH/16S_rRNA_light_dark_mean_intensity.tsv"
+    conda: "envs/matplotlibPlotly.yml"
+    script:
+        "scripts/calculate16SRNALightDarkIntensity.py"
 
 
 rule craftSupplementaryTables:
@@ -1702,6 +1735,52 @@ rule Supplement16SFISHtoPNG:
     shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=1200"
 
 
+rule plot16SRNALightDark:
+    input:
+        tsv = rules.process16SRNALightDark.output.tsv,
+        panels = FISH_16S_LIGHT_DARK_PANEL_INPUTS
+    output:
+        svg = config["Supplement16SLightDarkFISH"]["file"],
+        html = str(config["Supplement16SLightDarkFISH"]["file"]).split(".")[0] + ".html",
+        panel_images = directory("Pipeline/Paper/Supplementary/16SLightDarkFISH/PanelImages")
+    params:
+        layout = config["Supplement16SLightDarkFISH"]["layout"]
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/plot16SRNALightDark.py"
+
+
+rule Supplement16SLightDarkFISHtoPNG:
+    input:
+        svg = rules.plot16SRNALightDark.output.svg
+    output:
+        png = "Pipeline/Paper/Supplementary/16SLightDarkFISH/16SLightDarkFISH.png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=300"
+
+
+rule plotCCCPFISH:
+    input:
+        distribution = rules.craftSupplementaryTables.output.dist,
+        images = CCCP_FISH_IMAGE_INPUTS,
+        representatives = CCCP_FISH_REPRESENTATIVE_INPUTS
+    output:
+        svg = config["SupplementCCCPFISH"]["file"],
+        html = str(config["SupplementCCCPFISH"]["file"]).split(".")[0] + ".html",
+        plot_data = "Pipeline/Paper/Supplementary/CCCPFISH/PlotData.tsv",
+        panel_images = directory("Pipeline/Paper/Supplementary/CCCPFISH/PanelImages")
+    params:
+        layout = config["SupplementCCCPFISH"]["layout"]
+    conda: "envs/matplotlibPlotly.yml"
+    script: "scripts/plotCCCPFISH.py"
+
+
+rule SupplementCCCPFISHtoPNG:
+    input:
+        svg = rules.plotCCCPFISH.output.svg
+    output:
+        png = "Pipeline/Paper/Supplementary/CCCPFISH/CCCPFISH.png"
+    shell: "inkscape --export-type=png --export-filename={output.png} {input.svg} --export-dpi=300"
+
+
 rule SupplementTUAssotoPNG:
     input:
         svg = rules.plotTUAssociation.output.svg
@@ -1721,9 +1800,86 @@ rule extractAddInfoData:
 
 
 
+ADDITIONAL_FIGURES = [
+    "FISHAnalysisConcept",
+    "NewWorkflow",
+    "NoProbeImage",
+    "Westernblot",
+    "Workflow",
+]
+
+
+# Only finished figures: exclude component panels, HTML, and data tables.
+FINAL_FIGURE_FILES = [
+    rules.joinFig1.output.svg,
+    rules.Figure1toPNG.output.png,
+    rules.joinFig2.output.svg,
+    rules.Figure2toPNG.output.png,
+    rules.joinFig3.output.svg,
+    rules.Figure3toPNG.output.png,
+    rules.joinFig4.output.svg,
+    rules.Figure4toPNG.output.png,
+    rules.joinFig5.output.svg,
+    rules.Figure5toPNG.output.png,
+    rules.joinFig6.output.svg,
+    rules.Figure6toPNG.output.png,
+    rules.joinFig7.output.svg,
+    rules.Figure7toPNG.output.png,
+    rules.joinSupplementCorrelation.output.svg,
+    rules.SupplementCorrelationtoPNG.output.png,
+    rules.plot16SFISH.output.svg,
+    rules.Supplement16SFISHtoPNG.output.png,
+    rules.plot16SRNALightDark.output.svg,
+    rules.Supplement16SLightDarkFISHtoPNG.output.png,
+    rules.plotCCCPFISH.output.svg,
+    rules.SupplementCCCPFISHtoPNG.output.png,
+    rules.checkUracilTransmembrane.output.svg,
+    rules.SupplementUraciltoPNG.output.png,
+    rules.plotScatterSupplement.output.svg,
+    rules.ScatterSupplementtoPNG.output.png,
+    rules.plotTUAssociation.output.svg,
+    rules.SupplementTUAssotoPNG.output.png,
+    rules.plotFULLGOTermEnrichment.output.svg,
+    rules.plotFULLGOTermEnrichment.output.png,
+    rules.plotMembranePuromycinInteractionMA.output.svg,
+    rules.MembranePuromycinInteractionMAtoPNG.output.png,
+]
+
+
+rule collectAdditionalFigure:
+    input:
+        svg = "{figure}.svg"
+    output:
+        svg = "Pipeline/Paper/AllFigures/{figure}.svg",
+        png = "Pipeline/Paper/AllFigures/{figure}.png"
+    wildcard_constraints:
+        figure = "|".join(ADDITIONAL_FIGURES)
+    shell:
+        """
+        cp {input.svg:q} {output.svg:q}
+        inkscape --export-type=png --export-filename={output.png:q} {input.svg:q} --export-dpi=1200
+        """
+
+
+rule collectAllFigures:
+    input:
+        figures = FINAL_FIGURE_FILES,
+        additional = expand(rules.collectAdditionalFigure.output, figure=ADDITIONAL_FIGURES)
+    output:
+        [os.path.join("Pipeline/Paper/AllFigures", os.path.basename(path))
+         for path in FINAL_FIGURE_FILES]
+    run:
+        import shutil
+
+        os.makedirs("Pipeline/Paper/AllFigures", exist_ok=True)
+        for source, destination in zip(input.figures, output):
+            shutil.copyfile(source, destination)
+
+
 rule all:
     default_target: True
     input:
+        all_figures = rules.collectAllFigures.output,
         fig1 = rules.joinFig1.output,
         fig1png = rules.Figure1toPNG.output,
         cov2 = rules.plotCoveragesFig2.output,
@@ -1745,6 +1901,9 @@ rule all:
         rbp3venn= rules.Figure7toPNG.output,
         supplement = rules.SupplementCorrelationtoPNG.output,
         supplement16FISH = rules.Supplement16SFISHtoPNG.output,
+        supplement16SLightDarkFISH = rules.Supplement16SLightDarkFISHtoPNG.output,
+        supplementCCCPFISH = rules.SupplementCCCPFISHtoPNG.output,
+        fish16SLightDark = rules.process16SRNALightDark.output.tsv,
         uracil = rules.SupplementUraciltoPNG.output,
         f7 = rules.ScatterSupplementtoPNG.output,
         tua = rules.SupplementTUAssotoPNG.output,
@@ -1752,5 +1911,6 @@ rule all:
         add_data = rules.extractAddInfoData.output,
         supplementary_fulle = rules.supplementaryTableFullEnrichment.output,
         membrane_puromycin = rules.membrane_puromycin_all.input,
-        membrane_puromycin_volcano = rules.plotMembranePuromycinVolcano.output
+        membrane_puromycin_interaction_ma = rules.plotMembranePuromycinInteractionMA.output,
+        membrane_puromycin_interaction_ma_png = rules.MembranePuromycinInteractionMAtoPNG.output
 #tpmemabundace = rules.checkTranscriptAbundanceGO.output

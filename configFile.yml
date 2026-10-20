@@ -131,6 +131,29 @@ MembranePuromycinVolcano:
       title:
         text: "-Log<sub>10</sub>(FDR adjusted <i>P</i>)"
 
+MembranePuromycinInteractionMA:
+  file: "Pipeline/Paper/Supplementary/MembranePuromycinInteraction/MembranePuromycinInteractionMA.svg"
+  html: "Pipeline/Paper/Supplementary/MembranePuromycinInteraction/MembranePuromycinInteractionMA.html"
+  png: "Pipeline/Paper/Supplementary/MembranePuromycinInteraction/MembranePuromycinInteractionMA.png"
+  layout:
+    width: 450
+    height: 400
+    margin:
+      l: 65
+      r: 30
+      t: 30
+      b: 50
+    xaxis:
+      type: "log"
+      dtick: 1
+      title:
+        text: "Mean normalized count"
+    yaxis:
+      dtick: 2
+      range: [-6.5, 6.5]
+      title:
+        text: "Fraction × treatment Log<sub>2</sub>(fold change)"
+
 
 fonts:
   multipanel:
@@ -890,6 +913,37 @@ Supplement16SFISH:
       t: 50
       b: 50
       l: 50
+
+
+Supplement16SLightDarkFISH:
+  file: "Pipeline/Paper/Supplementary/16SLightDarkFISH/16SLightDarkFISH.svg"
+  x: 0
+  y: 0
+  layout:
+    width: 1180
+    height: 1400
+    showlegend: False
+    margin:
+      l: 105
+      r: 30
+      t: 65
+      b: 95
+
+
+SupplementCCCPFISH:
+  file: "Pipeline/Paper/Supplementary/CCCPFISH/CCCPFISH.svg"
+  x: 0
+  y: 0
+  layout:
+    width: 680
+    height: 400
+    margin:
+      l: 30
+      r: 8
+      t: 45
+      b: 45
+    legend:
+      visible: False
 
 
 

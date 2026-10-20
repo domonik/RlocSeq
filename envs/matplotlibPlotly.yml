@@ -2,9 +2,10 @@ channels:
  - conda-forge
  - bioconda
 dependencies:
+ - python=3.12
  - matplotlib
  - pandas
- - plotly
+ - plotly=6.5.2
  - matplotlib-venn
  - python-kaleido=1.1
  - biopython
@@ -12,6 +13,7 @@ dependencies:
  - tesseract
  - conda-forge::pytesseract
  - tifffile
+ - pillow
  - jupyter
  - nbconvert
  - papermill
@@ -25,4 +27,3 @@ dependencies:
  - pip:
     - git+https://github.com/domonik/DEplots.git@main
     - gffutils
-    - pysam

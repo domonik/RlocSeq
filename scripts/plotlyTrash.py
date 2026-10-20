@@ -1,14 +1,9 @@
 import base64
-import os
+from io import BytesIO
 import re
 import xml.etree.ElementTree as ET
 
-
-import base64
-import os
-import re
-import xml.etree.ElementTree as ET
-from pathlib import Path
+from PIL import Image
 
 
 SVG_NS = "http://www.w3.org/2000/svg"
@@ -34,9 +29,16 @@ def is_square_image_element(elem):
 
 
 def encode_tif_to_data_uri(tif_path):
-    with open(tif_path, "rb") as f:
-        encoded = base64.b64encode(f.read()).decode("ascii")
-    return f"data:image/tiff;base64,{encoded}"
+    """Embed a TIFF as lossless PNG at its original pixel dimensions."""
+    with Image.open(tif_path) as image:
+        if image.n_frames != 1:
+            raise ValueError(f"Expected a single-frame FISH panel: {tif_path}")
+        if image.mode not in {"1", "L", "LA", "P", "RGB", "RGBA", "I;16"}:
+            raise ValueError(f"Cannot encode {image.mode} as PNG without conversion: {tif_path}")
+        buffer = BytesIO()
+        image.save(buffer, format="PNG")
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
 
 
 def replace_images(svg_path, tif_list, output_svg, square_only=False):

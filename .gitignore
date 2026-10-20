@@ -185,3 +185,15 @@ fabric.properties
 /config4.yml
 /config3.yml
 /MotifEnrichment/
+
+# Local analyses and artifacts outside the publication workflow
+/data/
+/output/
+/rifi_refit/
+/rifi_refit_PLAN.md
+/paper_summary_rifi.md
+
+# Local agent and MCP configuration
+/.mcp.json
+/AGENTS.md
+/CLAUDE.md

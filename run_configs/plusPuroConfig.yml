@@ -16,7 +16,7 @@
 
 RUN_DIR: "Pipeline/RUNS/LightRunPlusPuromycin" # The Directory to store results in
 CountFile: "initialData/CDS_SinglemappedNew.csv" # The counts file to use
-gff: "initialData/Synsp.gff3"
+gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
 uniprot_mapping: "Pipeline/uniprotMapping.tsv"
 buildOrgDB: False
 initial_sep: ","

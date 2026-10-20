@@ -4,7 +4,7 @@
 
 RUN_DIR: "Pipeline/RUNS/MembranePuroComp"
 CountFile: "initialData/CDS_SinglemappedNew.csv"
-gff: "initialData/Synsp.gff3"
+gff: "initialData/20210217_syne_onlyUnique_withFeat.gff3"
 uniprot_mapping: "Pipeline/uniprotMapping.tsv"
 buildOrgDB: False
 initial_sep: ","
