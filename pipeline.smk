@@ -1123,7 +1123,7 @@ rule F1GSEA:
 
 rule txtToPathWorkflow:
     input:
-        file = "Workflow.svg"
+        file = "figures/Workflow.svg"
     output:
         svg = config["F1Workflow"]["file"]
     shell: "inkscape --export-text-to-path -o {output.svg} {input.file}"
@@ -1848,7 +1848,7 @@ FINAL_FIGURE_FILES = [
 
 rule collectAdditionalFigure:
     input:
-        svg = "{figure}.svg"
+        svg = "figures/{figure}.svg"
     output:
         svg = "Pipeline/Paper/AllFigures/{figure}.svg",
         png = "Pipeline/Paper/AllFigures/{figure}.png"
